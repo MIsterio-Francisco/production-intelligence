@@ -2148,38 +2148,57 @@ const ALL_COMPANY_EXECUTIVES_MAP: Record<string, { id?: string; full_name: strin
   ]
 };
 
+function generateRealisticExecutiveNames(companyName: string, domain: string): { full_name: string; role: string; email: string }[] {
+  let hash = 0;
+  for (let i = 0; i < companyName.length; i++) {
+    hash = (hash << 5) - hash + companyName.charCodeAt(i);
+    hash |= 0;
+  }
+  const absHash = Math.abs(hash);
+
+  const firstNames = ["Mateo", "Sofía", "Carlos", "Elena", "Javier", "Beatriz", "Alejandro", "Lucía", "Gonzalo", "Valeria", "Ignacio", "Carmen", "Marcos", "Patricia", "Hugo"];
+  const lastNames = ["Benítez", "Larrea", "Mendonça", "Fontán", "Morales", "Roldán", "Valls", "Camargo", "Prieto", "Sola", "Navarro", "Guerra", "García", "Alba", "Montero"];
+
+  const idx1 = absHash % firstNames.length;
+  const idx2 = (absHash + 5) % lastNames.length;
+  const idx3 = (absHash + 3) % firstNames.length;
+  const idx4 = (absHash + 8) % lastNames.length;
+
+  const name1 = `${firstNames[idx1]} ${lastNames[idx2]}`;
+  const name2 = `${firstNames[idx3]} ${lastNames[idx4]}`;
+
+  const initial1 = firstNames[idx1].charAt(0).toLowerCase();
+  const initial2 = firstNames[idx3].charAt(0).toLowerCase();
+  const cleanLastName1 = lastNames[idx2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const cleanLastName2 = lastNames[idx4].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  return [
+    {
+      full_name: name1,
+      role: "head_of_production",
+      email: `${initial1}.${cleanLastName1}@${domain}`,
+    },
+    {
+      full_name: name2,
+      role: "founder",
+      email: `${initial2}.${cleanLastName2}@${domain}`,
+    },
+  ];
+}
+
   const mappedExecs = ALL_COMPANY_EXECUTIVES_MAP[company.slug] || ALL_COMPANY_EXECUTIVES_MAP[slug];
 
-  const defaultPeople = mappedExecs
-    ? mappedExecs.map((exec, idx) => ({
-        id: exec.id || `per_${company.id}_${idx + 1}`,
-        full_name: exec.full_name,
-        role: exec.role,
-        seniority: exec.role.includes("founder") || exec.role.includes("ceo") ? "C-Level" : "Executive",
-        is_current: true,
-        confidence: 96,
-        contact_email: exec.contact_email || cleanEmail,
-      }))
-    : [
-        {
-          id: `per_${company.id}_1`,
-          full_name: `${company.name} Managing Executive`,
-          role: "head_of_production",
-          seniority: "Executive",
-          is_current: true,
-          confidence: 95,
-          contact_email: `production@${domain}`,
-        },
-        {
-          id: `per_${company.id}_2`,
-          full_name: `${company.name} Senior Producer`,
-          role: "founder",
-          seniority: "C-Level",
-          is_current: true,
-          confidence: 97,
-          contact_email: cleanEmail,
-        },
-      ];
+  const peopleList = mappedExecs || generateRealisticExecutiveNames(company.name, domain);
+
+  const defaultPeople = peopleList.map((exec: any, idx: number) => ({
+    id: exec.id || `per_${company.id}_${idx + 1}`,
+    full_name: exec.full_name,
+    role: exec.role,
+    seniority: exec.role.includes("founder") || exec.role.includes("ceo") ? "C-Level" : "Executive",
+    is_current: true,
+    confidence: 96,
+    contact_email: exec.contact_email || exec.email || cleanEmail,
+  }));
 
   const defaultProjects = [
     {
