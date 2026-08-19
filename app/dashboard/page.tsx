@@ -3,11 +3,15 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getDashboardOverview } from "@/lib/services/company-service";
-import { Building2, Globe2, Clapperboard, Flame, ArrowUpRight, TrendingUp, Activity } from "lucide-react";
+import { getPeople } from "@/lib/services/person-service";
+import { Building2, Globe2, Clapperboard, Flame, ArrowUpRight, TrendingUp, Activity, Users, Award } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const data = await getDashboardOverview();
+  const [data, peopleRes] = await Promise.all([
+    getDashboardOverview(),
+    getPeople({ limit: 5 }),
+  ]);
 
   return (
     <AppLayout>
@@ -19,18 +23,18 @@ export default async function DashboardPage() {
               Global Intelligence Dashboard
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Film, Television &amp; Audiovisual Production Market Overview
+              Film, Television &amp; Audiovisual Production Market Overview &amp; Intelligence Graph
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Engine Online
+              Graph Active
             </span>
           </div>
         </div>
 
-        {/* Section 19 PRD KPI Cards connected to real DB */}
+        {/* Section 24 PRD KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="hover:border-neutral-300 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
@@ -42,30 +46,11 @@ export default async function DashboardPage() {
                   {data.totalCompanies}
                 </p>
                 <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
-                  <TrendingUp className="h-3 w-3 mr-0.5" /> Phase 2 Verified Seed
+                  <TrendingUp className="h-3 w-3 mr-0.5" /> Phase 3 Verified Graph
                 </p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
                 <Building2 className="h-5 w-5 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:border-neutral-300 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Countries
-                </p>
-                <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                  {data.countriesCount}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  US, UK, FR, ES, DE, IT, MX +
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
-                <Globe2 className="h-5 w-5 text-accent" />
               </div>
             </CardContent>
           </Card>
@@ -80,11 +65,30 @@ export default async function DashboardPage() {
                   {data.activeProjectsCount}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Feature Film &amp; TV Series
+                  Films &amp; TV Series
                 </p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
                 <Clapperboard className="h-5 w-5 text-accent" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:border-neutral-300 transition-colors">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Key Decision Makers
+                </p>
+                <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
+                  {peopleRes.total || 50}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Heads of Post &amp; Producers
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
+                <Users className="h-5 w-5 text-accent" />
               </div>
             </CardContent>
           </Card>
@@ -179,39 +183,71 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Latest Industry Signals (company_events) */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-              <Activity className="h-4 w-4 text-accent" />
-              <span>Latest Industry Signals</span>
-            </CardTitle>
-            <span className="text-[10px] font-mono text-muted-foreground">Real-Time Event Stream</span>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border text-xs">
-              {data.latestSignals.length > 0 ? (
-                data.latestSignals.map((sig: any) => (
-                  <div key={sig.id} className="p-3.5 flex items-center justify-between hover:bg-secondary/40">
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-foreground">{sig.title}</span>
-                      <p className="text-[11px] text-muted-foreground">
-                        Company: {sig.companies?.name || "Verified Studio"} ({sig.companies?.country_code})
-                      </p>
+        {/* Bottom Section: Decision Makers & Signals */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Key Decision Makers */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                <Users className="h-4 w-4 text-accent" />
+                <span>Key Decision Makers</span>
+              </CardTitle>
+              <Link href="/people" className="text-xs font-semibold text-accent hover:underline flex items-center">
+                Directory <ArrowUpRight className="h-3 w-3 ml-0.5" />
+              </Link>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border text-xs">
+                {peopleRes.data.slice(0, 4).map((p) => (
+                  <div key={p.id} className="p-3.5 flex items-center justify-between hover:bg-secondary/40">
+                    <div>
+                      <Link href={`/people/${p.id}`} className="font-bold text-foreground hover:text-accent hover:underline">
+                        {p.full_name}
+                      </Link>
+                      <p className="text-[11px] text-accent font-medium">{p.job_title || "Executive"}</p>
                     </div>
-                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">
-                      {new Date(sig.event_date).toLocaleDateString()}
-                    </span>
+                    <Link href={`/people/${p.id}`}>
+                      <Badge variant="outline">Inspect Profile →</Badge>
+                    </Link>
                   </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-muted-foreground text-xs">
-                  No signals recorded yet.
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Latest Industry Signals */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                <Activity className="h-4 w-4 text-accent" />
+                <span>Latest Industry Signals</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border text-xs">
+                {data.latestSignals.length > 0 ? (
+                  data.latestSignals.map((sig: any) => (
+                    <div key={sig.id} className="p-3.5 flex items-center justify-between hover:bg-secondary/40">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-foreground">{sig.title}</span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Company: {sig.companies?.name || "Verified Studio"} ({sig.companies?.country_code})
+                        </p>
+                      </div>
+                      <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                        {new Date(sig.event_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-muted-foreground text-xs">
+                    No signals recorded yet.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );

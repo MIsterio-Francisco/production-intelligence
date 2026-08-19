@@ -1,9 +1,8 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { getCompanyBySlug } from "@/lib/services/company-service";
 import {
   Building2,
@@ -16,10 +15,9 @@ import {
   Flame,
   Activity,
   Calendar,
-  Share2,
-  HelpCircle,
   Clock,
   ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -39,6 +37,18 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
   }
 
   const latestEvent = events?.[0];
+
+  // Group Projects by Role (PRD Section 10)
+  const projectsByRole = (projects || []).reduce((acc: Record<string, any[]>, proj: any) => {
+    const role = proj.company_role || "producer";
+    if (!acc[role]) acc[role] = [];
+    acc[role].push(proj);
+    return acc;
+  }, {});
+
+  // Group People into Current vs Former (PRD Section 14)
+  const currentPeople = (people || []).filter((p) => p.is_current !== false);
+  const formerPeople = (people || []).filter((p) => p.is_current === false);
 
   return (
     <AppLayout>
@@ -113,8 +123,8 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
             </div>
           </div>
 
-          {/* Categories Tags */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          {/* Categories & Graph Counts Bar (PRD Section 22) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
             <div className="flex flex-wrap gap-1.5">
               {(company.categories || ["film", "television"]).map((cat) => (
                 <Badge key={cat} variant="outline" className="capitalize text-xs">
@@ -122,18 +132,22 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
                 </Badge>
               ))}
             </div>
-            {company.last_verified_at && (
-              <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-emerald-600" /> Verified Data
-              </span>
-            )}
+
+            {/* Cross Entity Graph Counts */}
+            <div className="flex items-center space-x-3 font-mono text-[11px] text-muted-foreground">
+              <span><strong className="text-foreground">{projects.length}</strong> Projects</span>
+              <span>•</span>
+              <span><strong className="text-foreground">{people.length}</strong> People</span>
+              <span>•</span>
+              <span><strong className="text-foreground">{events.length}</strong> Events</span>
+            </div>
           </div>
         </div>
 
-        {/* SECONDARY SCORES & EXPLANATION (PRD Section 8) */}
+        {/* SECONDARY SCORES & EXPLANATIONS */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: "Creative Score", score: company.creative_score, desc: "Festivals, awards & prestige" },
+            { label: "Creative Score", score: company.creative_score, desc: "Festivals & awards" },
             { label: "Commercial Score", score: company.commercial_score, desc: "Box office & platform scale" },
             { label: "Momentum", score: company.momentum_score, desc: "Activity in last 90 days" },
             { label: "International", score: company.international_score, desc: "Co-productions & cross-border" },
@@ -147,30 +161,7 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
           ))}
         </div>
 
-        {/* SCORE EXPLANATION TOOLTIPS / CARDS (PRD Section 8) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="p-3.5 rounded-lg bg-background border border-border flex items-start gap-2.5">
-            <HelpCircle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="font-bold text-foreground uppercase tracking-wider text-[10px]">About Power Score</span>
-              <p className="text-muted-foreground text-[11px] leading-normal">
-                Overall estimate of production importance based on active projects, awards prestige, commercial impact, scale, international reach, and 90-day momentum.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-lg bg-accent/5 border border-accent/20 flex items-start gap-2.5">
-            <Flame className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="font-bold text-accent uppercase tracking-wider text-[10px]">About MCL Match</span>
-              <p className="text-muted-foreground text-[11px] leading-normal">
-                Estimated commercial relevance for premium post-production, color grading, finishing, and VFX vendor services.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* LATEST ACTIVITY HIGHLIGHT (PRD Section 11) */}
+        {/* LATEST ACTIVITY HIGHLIGHT */}
         <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-subtle">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center shrink-0">
@@ -192,7 +183,7 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
           )}
         </div>
 
-        {/* PROFILE TABS NAVIGATION (PRD Section 9) */}
+        {/* PROFILE TABS NAVIGATION */}
         <div className="flex space-x-1 border-b border-border pb-2 overflow-x-auto text-xs font-bold">
           {[
             { id: "overview", label: "OVERVIEW", count: null },
@@ -204,7 +195,7 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
             <Link
               key={t.id}
               href={`/companies/${slug}?tab=${t.id}`}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
+              className={`px-3.5 py-1.5 rounded-md transition-colors ${
                 tab === t.id
                   ? "bg-primary text-primary-foreground shadow-subtle"
                   : "bg-secondary text-secondary-foreground hover:bg-neutral-200"
@@ -215,11 +206,10 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
           ))}
         </div>
 
-        {/* TAB CONTENTS (PRD Section 9) */}
+        {/* TAB CONTENTS */}
         {tab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {/* Description */}
               <Card>
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
@@ -248,7 +238,7 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
                 </CardContent>
               </Card>
 
-              {/* TIMELINE SECTION (PRD Section 10) */}
+              {/* TIMELINE SECTION */}
               <Card>
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
@@ -281,26 +271,27 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
               </Card>
             </div>
 
-            {/* Right Quick Summary Panel */}
             <div className="space-y-6">
               <Card>
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-xs font-bold uppercase tracking-wider">
-                    Score Confidence &amp; Status
+                    Provenance &amp; Score Status
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-3 text-xs">
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Data Confidence Score</span>
-                    <span className="font-mono font-bold text-emerald-700">{company.score_confidence || 95}%</span>
+                    <span className="text-muted-foreground">Data Provenance</span>
+                    <Badge variant="success" className="uppercase font-mono text-[10px]">
+                      {company.provenance_type || "verified"}
+                    </Badge>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Verification Status</span>
-                    <span className="font-mono font-semibold text-foreground">Verified Fact</span>
+                    <span className="text-muted-foreground">Classification</span>
+                    <span className="font-mono font-semibold text-foreground">{company.data_classification || "VERIFIED_FACT"}</span>
                   </div>
                   <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Active Projects</span>
-                    <span className="font-mono font-bold text-foreground">{projects.length}</span>
+                    <span className="text-muted-foreground">Confidence Level</span>
+                    <span className="font-mono font-bold text-emerald-700">{company.score_confidence || 95}%</span>
                   </div>
                 </CardContent>
               </Card>
@@ -308,104 +299,169 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
           </div>
         )}
 
-        {/* PROJECTS TAB */}
+        {/* PROJECTS TAB GROUPED BY ROLE (PRD Section 10) */}
         {tab === "projects" && (
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Clapperboard className="h-4 w-4 text-accent" />
-                <span>Associated Production Projects</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {projects.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
-                        <th className="p-3 font-semibold">Title</th>
-                        <th className="p-3 font-semibold">Type</th>
-                        <th className="p-3 font-semibold">Status</th>
-                        <th className="p-3 font-semibold">Role</th>
-                        <th className="p-3 font-semibold">Director</th>
-                        <th className="p-3 font-semibold">Distributor / Streaming</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border font-medium">
-                      {projects.map((proj: any) => (
-                        <tr key={proj.id} className="hover:bg-secondary/40">
-                          <td className="p-3 font-bold text-foreground">{proj.title}</td>
-                          <td className="p-3 text-muted-foreground capitalize">{proj.project_type?.replace("_", " ")}</td>
-                          <td className="p-3">
-                            <Badge variant={proj.status === "post_production" ? "accent" : "secondary"}>
-                              {proj.status?.replace("_", " ")}
-                            </Badge>
-                          </td>
-                          <td className="p-3 font-mono text-[11px] uppercase">{proj.company_role || "producer"}</td>
-                          <td className="p-3 text-muted-foreground">{proj.director_name || "N/A"}</td>
-                          <td className="p-3 text-muted-foreground">{proj.distributor || proj.streaming_platform || "N/A"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="p-8 text-center text-xs text-muted-foreground">
+          <div className="space-y-6">
+            {Object.keys(projectsByRole).length > 0 ? (
+              Object.entries(projectsByRole).map(([role, roleProjects]) => (
+                <Card key={role}>
+                  <CardHeader className="py-3 px-4 flex flex-row items-center justify-between bg-secondary/30">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Clapperboard className="h-4 w-4 text-accent" />
+                      <span>{role.replace("_", " ")} ({roleProjects.length})</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
+                            <th className="p-3 font-semibold">Title</th>
+                            <th className="p-3 font-semibold">Type</th>
+                            <th className="p-3 font-semibold">Status</th>
+                            <th className="p-3 font-semibold">Director</th>
+                            <th className="p-3 font-semibold">Distributor / Streaming</th>
+                            <th className="p-3 font-semibold text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border font-medium">
+                          {roleProjects.map((proj: any) => (
+                            <tr key={proj.id} className="hover:bg-secondary/40">
+                              <td className="p-3 font-bold text-foreground">
+                                <Link href={`/projects/${proj.id}`} className="hover:text-accent hover:underline">
+                                  {proj.title}
+                                </Link>
+                              </td>
+                              <td className="p-3 text-muted-foreground capitalize">{proj.project_type?.replace("_", " ")}</td>
+                              <td className="p-3">
+                                <Badge variant={proj.status === "post_production" ? "accent" : "secondary"}>
+                                  {proj.status?.replace("_", " ")}
+                                </Badge>
+                              </td>
+                              <td className="p-3 text-muted-foreground">{proj.director_name || "N/A"}</td>
+                              <td className="p-3 text-muted-foreground">{proj.distributor || proj.streaming_platform || "N/A"}</td>
+                              <td className="p-3 text-right">
+                                <Link href={`/projects/${proj.id}`}>
+                                  <Badge variant="outline">Inspect Project →</Badge>
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center text-xs text-muted-foreground">
                   No projects have been added yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
 
-        {/* PEOPLE TAB */}
+        {/* PEOPLE TAB DISTINGUISHING CURRENT VS FORMER (PRD Section 14) */}
         {tab === "people" && (
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Users className="h-4 w-4 text-accent" />
-                <span>Decision Makers &amp; Key Executives</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {people.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
-                        <th className="p-3 font-semibold">Name</th>
-                        <th className="p-3 font-semibold">Role</th>
-                        <th className="p-3 font-semibold">Seniority</th>
-                        <th className="p-3 font-semibold">Status</th>
-                        <th className="p-3 font-semibold text-right">Confidence</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border font-medium">
-                      {people.map((p: any) => (
-                        <tr key={p.id} className="hover:bg-secondary/40">
-                          <td className="p-3 font-bold text-foreground">{p.full_name}</td>
-                          <td className="p-3 text-accent font-semibold capitalize">{p.role?.replace("_", " ")}</td>
-                          <td className="p-3 text-muted-foreground">{p.seniority || "Executive"}</td>
-                          <td className="p-3">
-                            <Badge variant={p.is_current ? "success" : "secondary"}>
-                              {p.is_current ? "Current" : "Former"}
-                            </Badge>
-                          </td>
-                          <td className="p-3 text-right font-mono font-bold text-emerald-700">
-                            {p.confidence || 90}%
-                          </td>
+          <div className="space-y-6">
+            {/* CURRENT PEOPLE */}
+            <Card>
+              <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                  <Users className="h-4 w-4 text-accent" />
+                  <span>Current Key Executives ({currentPeople.length})</span>
+                </CardTitle>
+                <Badge variant="success">CURRENT</Badge>
+              </CardHeader>
+              <CardContent className="p-0">
+                {currentPeople.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
+                          <th className="p-3 font-semibold">Name</th>
+                          <th className="p-3 font-semibold">Role</th>
+                          <th className="p-3 font-semibold">Seniority</th>
+                          <th className="p-3 font-semibold text-right">Confidence</th>
+                          <th className="p-3 font-semibold text-right">Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="p-8 text-center text-xs text-muted-foreground">
-                  No people have been added yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </thead>
+                      <tbody className="divide-y divide-border font-medium">
+                        {currentPeople.map((p: any) => (
+                          <tr key={p.id} className="hover:bg-secondary/40">
+                            <td className="p-3 font-bold text-foreground">
+                              <Link href={`/people/${p.id}`} className="hover:text-accent hover:underline">
+                                {p.full_name}
+                              </Link>
+                            </td>
+                            <td className="p-3 text-accent font-semibold capitalize">{p.role?.replace("_", " ")}</td>
+                            <td className="p-3 text-muted-foreground">{p.seniority || "Executive"}</td>
+                            <td className="p-3 text-right font-mono font-bold text-emerald-700">
+                              {p.confidence || 90}%
+                            </td>
+                            <td className="p-3 text-right">
+                              <Link href={`/people/${p.id}`}>
+                                <Badge variant="outline">Inspect Profile →</Badge>
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-xs text-muted-foreground">
+                    No current executives linked.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* FORMER PEOPLE */}
+            {formerPeople.length > 0 && (
+              <Card>
+                <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span>Former Executives &amp; Past Affiliations ({formerPeople.length})</span>
+                  </CardTitle>
+                  <Badge variant="secondary">FORMER</Badge>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
+                          <th className="p-3 font-semibold">Name</th>
+                          <th className="p-3 font-semibold">Former Role</th>
+                          <th className="p-3 font-semibold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border font-medium">
+                        {formerPeople.map((p: any) => (
+                          <tr key={p.id} className="hover:bg-secondary/40">
+                            <td className="p-3 font-bold text-foreground">
+                              <Link href={`/people/${p.id}`} className="hover:text-accent hover:underline">
+                                {p.full_name}
+                              </Link>
+                            </td>
+                            <td className="p-3 text-muted-foreground capitalize">{p.role?.replace("_", " ")}</td>
+                            <td className="p-3 text-right">
+                              <Link href={`/people/${p.id}`}>
+                                <Badge variant="outline">Inspect Profile →</Badge>
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
 
         {/* SOCIAL TAB */}

@@ -37,6 +37,8 @@ export interface Database {
           ai_summary: string | null;
           ai_opportunity_summary: string | null;
           last_verified_at: string | null;
+          provenance_type: string | null;
+          data_classification: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -65,11 +67,14 @@ export interface Database {
           id: string;
           title: string;
           slug: string | null;
+          original_title: string | null;
           project_type: string | null;
           status: string | null;
           release_date: string | null;
           country_code: string | null;
           genre: string[] | null;
+          writers: string[] | null;
+          language: string | null;
           budget_min: number | null;
           budget_max: number | null;
           budget_currency: string | null;
@@ -79,6 +84,7 @@ export interface Database {
           description: string | null;
           source_id: string | null;
           announced_at: string | null;
+          provenance_type: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -103,6 +109,7 @@ export interface Database {
           bio: string | null;
           profile_confidence: number | null;
           ai_summary: string | null;
+          provenance_type: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -112,6 +119,27 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["people"]["Insert"]>;
+      };
+      awards: {
+        Row: {
+          id: string;
+          name: string;
+          organization: string | null;
+          year: number | null;
+          category: string | null;
+          project_id: string | null;
+          company_id: string | null;
+          person_id: string | null;
+          result: string | null;
+          source_id: string | null;
+          provenance_type: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["awards"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["awards"]["Insert"]>;
       };
       sources: {
         Row: {
