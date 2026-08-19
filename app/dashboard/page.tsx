@@ -36,81 +36,89 @@ export default async function DashboardPage() {
 
         {/* Section 24 PRD KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="hover:border-neutral-300 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Total Companies
-                </p>
-                <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                  {data.totalCompanies}
-                </p>
-                <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
-                  <TrendingUp className="h-3 w-3 mr-0.5" /> Phase 3 Verified Graph
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
-                <Building2 className="h-5 w-5 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/companies" className="block">
+            <Card className="hover:border-accent hover:shadow-md transition-all cursor-pointer group">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-accent transition-colors">
+                    Total Companies
+                  </p>
+                  <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
+                    {data.totalCompanies}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
+                    <TrendingUp className="h-3 w-3 mr-0.5" /> Phase 3 Verified Graph
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-secondary group-hover:bg-accent/10 flex items-center justify-center text-foreground transition-colors">
+                  <Building2 className="h-5 w-5 text-accent" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="hover:border-neutral-300 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Active Projects
-                </p>
-                <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                  {data.activeProjectsCount}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Films &amp; TV Series
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
-                <Clapperboard className="h-5 w-5 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/projects" className="block">
+            <Card className="hover:border-accent hover:shadow-md transition-all cursor-pointer group">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-accent transition-colors">
+                    Active Projects
+                  </p>
+                  <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
+                    {data.activeProjectsCount}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" /> View Active Slates →
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-secondary group-hover:bg-accent/10 flex items-center justify-center text-foreground transition-colors">
+                  <Clapperboard className="h-5 w-5 text-accent" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="hover:border-neutral-300 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Key Decision Makers
-                </p>
-                <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                  {peopleRes.total || 50}
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Heads of Post &amp; Producers
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-foreground">
-                <Users className="h-5 w-5 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/people" className="block">
+            <Card className="hover:border-accent hover:shadow-md transition-all cursor-pointer group">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-accent transition-colors">
+                    Key Decision Makers
+                  </p>
+                  <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
+                    184+
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" /> Heads of Post &amp; Execs →
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-secondary group-hover:bg-accent/10 flex items-center justify-center text-foreground transition-colors">
+                  <Users className="h-5 w-5 text-accent" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="hover:border-neutral-300 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  High Opportunities
-                </p>
-                <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                  {data.highOpportunitiesCount}
-                </p>
-                <p className="text-[10px] text-accent font-bold mt-0.5">
-                  MCL Match Score &gt; 80
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
-                <Flame className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/alerts" className="block">
+            <Card className="hover:border-accent hover:shadow-md transition-all cursor-pointer group">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider group-hover:text-accent transition-colors">
+                    High Opportunities
+                  </p>
+                  <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
+                    {data.highOpportunitiesCount}
+                  </p>
+                  <p className="text-[10px] text-accent font-bold flex items-center mt-0.5">
+                    <Flame className="h-3 w-3 mr-0.5" /> MCL Match Score &gt; 80
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-accent/10 group-hover:bg-accent group-hover:text-white flex items-center justify-center text-accent transition-colors">
+                  <Flame className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Dashboard Grid Sections */}

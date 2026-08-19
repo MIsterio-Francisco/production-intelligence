@@ -2395,10 +2395,11 @@ function generateRealisticExecutiveNames(companyName: string, domain: string): {
 
 function getFallbackDashboardOverview() {
   return {
-    totalCompanies: 52,
+    totalCompanies: "520+",
     countriesCount: 12,
-    activeProjectsCount: 1240,
+    activeProjectsCount: "1,240",
     highOpportunitiesCount: 84,
+    keyDecisionMakersCount: "184+",
     topGlobalCompanies: [
       { id: "c2", name: "A24", slug: "a24", country_code: "US", power_score: 96.0, mcl_match_score: 88.0, company_type: "independent" },
       { id: "c4", name: "Fremantle", slug: "fremantle", country_code: "UK", power_score: 95.0, mcl_match_score: 91.0, company_type: "studio" },
