@@ -2,10 +2,13 @@ import React from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Sliders, Shield, Database, Cpu, CheckCircle2 } from "lucide-react";
+import { Settings, Sliders, Shield, Database, Cpu, CheckCircle2, Network, RefreshCw, AlertCircle } from "lucide-react";
 import { SCORING_ENGINE_VERSION, POWER_SCORE_WEIGHTS, MCL_MATCH_WEIGHTS } from "@/lib/scoring";
+import { ProviderRegistry } from "@/lib/ingestion/registry";
 
 export default function SettingsPage() {
+  const providerConfigs = ProviderRegistry.getAllConfigs();
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -13,16 +16,63 @@ export default function SettingsPage() {
           <div>
             <h1 className="text-xl font-black uppercase tracking-tight text-foreground flex items-center gap-2">
               <Settings className="h-5 w-5 text-accent" />
-              Platform Settings &amp; Scoring Engine Config
+              Platform Settings &amp; Ingestion Pipeline
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Deterministic scoring weights, canonical algorithm versioning, and system health.
+              Provider adapters, entity resolution settings, data freshness metrics, and scoring engine weights.
             </p>
           </div>
           <Badge variant="accent" className="font-mono text-xs font-bold">
             Scoring Engine {SCORING_ENGINE_VERSION}
           </Badge>
         </div>
+
+        {/* Section 50 PRD: Data Ingestion & Provider Status */}
+        <Card>
+          <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b border-border">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              <Network className="h-4 w-4 text-accent" />
+              <span>Data Provider Registry &amp; Ingestion Adapters (Phase 6)</span>
+            </CardTitle>
+            <Badge variant="outline" className="font-mono text-[10px]">Netlify Serverless Compatible</Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto text-xs">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
+                    <th className="p-3 font-semibold">Provider Name</th>
+                    <th className="p-3 font-semibold">Type</th>
+                    <th className="p-3 font-semibold">Status</th>
+                    <th className="p-3 font-semibold">Source Tier</th>
+                    <th className="p-3 font-semibold">Rate Limit</th>
+                    <th className="p-3 font-semibold text-right">Reliability</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border font-medium">
+                  {providerConfigs.map((prov) => (
+                    <tr key={prov.provider_id} className="hover:bg-secondary/40">
+                      <td className="p-3 font-bold text-foreground">
+                        {prov.provider_name}
+                      </td>
+                      <td className="p-3 font-mono text-muted-foreground text-[11px]">{prov.provider_type}</td>
+                      <td className="p-3">
+                        <Badge variant={prov.enabled ? "success" : "secondary"}>
+                          {prov.enabled ? "CONNECTED" : "NOT CONNECTED"}
+                        </Badge>
+                      </td>
+                      <td className="p-3 font-mono text-[11px]">Tier {prov.source_tier}</td>
+                      <td className="p-3 font-mono text-muted-foreground text-[11px]">{prov.rate_limit_per_min} req/min</td>
+                      <td className="p-3 text-right font-mono font-bold text-emerald-700">
+                        {prov.reliability_score}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Section 29 PRD: Scoring Engine Configuration */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -37,7 +87,7 @@ export default function SettingsPage() {
             <CardContent className="p-4 text-xs space-y-3">
               <div className="space-y-2 font-mono">
                 {[
-                  { name: "Production Scale", weight: `${POWER_SCORE_WEIGHTS.PRODUCTION_SCALE * 100}%`, desc: "Active & released project volume, budget evidence" },
+                  { name: "Production Scale", weight: `${POWER_SCORE_WEIGHTS.PRODUCTION_SCALE * 100}%`, desc: "Active & released project volume" },
                   { name: "Creative Prestige", weight: `${POWER_SCORE_WEIGHTS.CREATIVE * 100}%`, desc: "Awards, festival selections, auteur portfolio" },
                   { name: "Commercial Strength", weight: `${POWER_SCORE_WEIGHTS.COMMERCIAL * 100}%`, desc: "Box office, streaming deals, distribution output" },
                   { name: "Momentum (90d)", weight: `${POWER_SCORE_WEIGHTS.MOMENTUM * 100}%`, desc: "Recency-weighted 30/90/180/365 day activity" },
@@ -86,34 +136,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Database & Security Section */}
-        <Card>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-              <Database className="h-4 w-4 text-accent" />
-              <span>System &amp; Database Health</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 text-xs space-y-3 text-muted-foreground">
-            <div className="flex justify-between py-1 border-b border-border">
-              <span className="font-semibold text-foreground">Supabase PostgreSQL Engine</span>
-              <span className="font-mono text-emerald-600 font-bold flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Connected &amp; RLS Enforced
-              </span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-border">
-              <span className="font-semibold text-foreground">Deterministic Scoring Engine</span>
-              <span className="font-mono text-emerald-600 font-bold flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Pure Mathematical Normalization (v1.0)
-              </span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="font-semibold text-foreground">Score Ledger Table</span>
-              <span className="font-mono text-foreground font-bold">company_scores (Immutable Snapshot History)</span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </AppLayout>
   );
