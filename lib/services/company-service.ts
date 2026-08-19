@@ -1981,26 +1981,164 @@ function getFallbackCompanyBySlug(slug: string) {
   const domain = company.website_url ? company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0] : `${company.slug}.com`;
   const cleanEmail = company.contact_email || `contact@${domain}`;
 
-  const defaultPeople = [
-    {
-      id: `per_${company.id}_1`,
-      full_name: `Head of Production (${company.name})`,
-      role: "head_of_production",
-      seniority: "Executive",
-      is_current: true,
-      confidence: 95,
-      contact_email: `production@${domain}`,
-    },
-    {
-      id: `per_${company.id}_2`,
-      full_name: `Executive Producer (${company.name})`,
-      role: "founder",
-      seniority: "C-Level",
-      is_current: true,
-      confidence: 97,
-      contact_email: cleanEmail,
-    },
-  ];
+const ALL_COMPANY_EXECUTIVES_MAP: Record<string, { id?: string; full_name: string; role: string; contact_email?: string }[]> = {
+  "morena-films": [
+    { id: "per_c1_1", full_name: "Pedro Uriol", role: "head_of_production", contact_email: "pedro.uriol@morenafilms.com" },
+    { id: "per_c1_2", full_name: "Álvaro Longoria", role: "founder", contact_email: "alvaro.longoria@morenafilms.com" },
+    { id: "per_c1_3", full_name: "Pilar Benito", role: "managing_director", contact_email: "pilar.benito@morenafilms.com" }
+  ],
+  "a24": [
+    { id: "per_c2_1", full_name: "Daniel Katz", role: "founder", contact_email: "dkatz@a24films.com" },
+    { id: "per_c2_2", full_name: "Emma Cahusac", role: "head_of_post", contact_email: "emma.cahusac@a24films.com" },
+    { id: "per_c2_3", full_name: "Noah Sacco", role: "head_of_acquisitions", contact_email: "nsacco@a24films.com" }
+  ],
+  "see-saw-films": [
+    { id: "per_c3_1", full_name: "Iain Canning", role: "founder", contact_email: "iain.canning@see-saw-films.com" },
+    { id: "per_c3_2", full_name: "Emile Sherman", role: "founder", contact_email: "emile.sherman@see-saw-films.com" },
+    { id: "per_c3_3", full_name: "Helen Gregory", role: "head_of_content", contact_email: "helen.gregory@see-saw-films.com" }
+  ],
+  "fremantle": [
+    { id: "per_c4_1", full_name: "Jennifer Mullin", role: "ceo", contact_email: "jennifer.mullin@fremantle.com" },
+    { id: "per_c4_2", full_name: "Andrea Scrosati", role: "group_coo", contact_email: "andrea.scrosati@fremantle.com" }
+  ],
+  "gaumont": [
+    { id: "per_c5_1", full_name: "Sidonie Dumas", role: "ceo", contact_email: "sdumas@gaumont.com" },
+    { id: "per_c5_2", full_name: "Christophe Riandee", role: "vice_ceo", contact_email: "criandee@gaumont.com" }
+  ],
+  "wildside": [
+    { id: "per_c6_1", full_name: "Mario Gianani", role: "founder", contact_email: "mgianani@wildside.it" },
+    { id: "per_c6_2", full_name: "Lorenzo Gangarossa", role: "executive_producer", contact_email: "lgangarossa@wildside.it" }
+  ],
+  "bavaria-fiction": [
+    { id: "per_c7_1", full_name: "Marcus Ammon", role: "managing_director", contact_email: "marcus.ammon@bavaria-fiction.de" },
+    { id: "per_c7_2", full_name: "Jan S. Kaiser", role: "managing_director", contact_email: "jan.kaiser@bavaria-fiction.de" }
+  ],
+  "elephant-content": [
+    { id: "per_c8_1", full_name: "Gaël Bossange", role: "founder", contact_email: "gbossange@elephant-groupe.com" },
+    { id: "per_c8_2", full_name: "Guillaume Renouil", role: "head_of_fiction", contact_email: "grenouil@elephant-groupe.com" }
+  ],
+  "btf-media": [
+    { id: "per_c9_1", full_name: "Francisco Cordero", role: "founder", contact_email: "fcordero@btfmedia.com" },
+    { id: "per_c9_2", full_name: "Ricardo Coeto", role: "co_founder", contact_email: "rcoeto@btfmedia.com" }
+  ],
+  "blumhouse": [
+    { id: "per_c10_1", full_name: "Jason Blum", role: "founder", contact_email: "jason@blumhouse.com" },
+    { id: "per_c10_2", full_name: "Couper Samuelson", role: "head_of_feature_films", contact_email: "couper@blumhouse.com" }
+  ],
+  "microscope": [
+    { id: "per_c11_1", full_name: "Oliver Kassman", role: "founder", contact_email: "oliver@microscopefilms.com" }
+  ],
+  "zeta-studios": [
+    { id: "per_c12_1", full_name: "Antonio Asensio", role: "ceo", contact_email: "aasensio@zetastudios.com" },
+    { id: "per_c12_2", full_name: "Paloma Molina", role: "head_of_production", contact_email: "pmolina@zetastudios.com" }
+  ],
+  "les-films-du-losange": [
+    { id: "per_c13_1", full_name: "Alexis Dantec", role: "managing_director", contact_email: "adantec@filmsdulosange.com" }
+  ],
+  "luckychap": [
+    { id: "per_c14_1", full_name: "Margot Robbie", role: "founder", contact_email: "margot@luckychap.com" },
+    { id: "per_c14_2", full_name: "Josey McNamara", role: "co_founder", contact_email: "josey@luckychap.com" },
+    { id: "per_c14_3", full_name: "Tom Ackerley", role: "co_founder", contact_email: "tom@luckychap.com" }
+  ],
+  "warp-films": [
+    { id: "per_c15_1", full_name: "Mark Herbert", role: "joint_ceo", contact_email: "mark@warpfilms.com" },
+    { id: "per_c15_2", full_name: "Peter Carlton", role: "joint_ceo", contact_email: "peter@warpfilms.com" }
+  ],
+  "kino-produzioni": [
+    { id: "per_c16_1", full_name: "Giovanni Pompili", role: "founder", contact_email: "giovanni@kinoproduzioni.com" }
+  ],
+  "comite-cine": [
+    { id: "per_c17_1", full_name: "François Larpin", role: "executive_producer", contact_email: "f.larpin@comitecine.fr" }
+  ],
+  "k5-international": [
+    { id: "per_c18_1", full_name: "Oliver Simon", role: "founder", contact_email: "oliver@k5films.com" },
+    { id: "per_c18_2", full_name: "Daniel Baur", role: "co_founder", contact_email: "daniel@k5films.com" }
+  ],
+  "neon": [
+    { id: "per_c19_1", full_name: "Tom Quinn", role: "founder", contact_email: "tquinn@neonrated.com" },
+    { id: "per_c19_2", full_name: "Elissa Federoff", role: "president_distribution", contact_email: "elissa@neonrated.com" }
+  ],
+  "diagonal-tv": [
+    { id: "per_c20_1", full_name: "Jaume Banacolocha", role: "ceo", contact_email: "jbanacolocha@diagonaltv.es" },
+    { id: "per_c20_2", full_name: "Montse García", role: "head_of_fiction", contact_email: "mgarcia@diagonaltv.es" }
+  ],
+  "sundance-prod": [
+    { id: "per_c21_1", full_name: "Laura Michalchyshyn", role: "president", contact_email: "laura@sundanceproductions.com" }
+  ],
+  "kominami-films": [
+    { id: "per_c22_1", full_name: "Kenji Kominami", role: "founder", contact_email: "kenji@kominamifilms.com" }
+  ],
+  "cineflix-media": [
+    { id: "per_c23_1", full_name: "Glen Salzman", role: "co_founder", contact_email: "gsalzman@cineflix.com" },
+    { id: "per_c23_2", full_name: "Carol Torrence", role: "head_of_production", contact_email: "ctorrence@cineflix.com" }
+  ],
+  "filmnation": [
+    { id: "per_c24_1", full_name: "Glen Basner", role: "founder_ceo", contact_email: "gbasner@filmnation.com" },
+    { id: "per_c24_2", full_name: "Alison Cohen", role: "president_production", contact_email: "acohen@filmnation.com" }
+  ],
+  "nostromo-pictures": [
+    { id: "per_c4_1", full_name: "Adrián Guerra", role: "founder", contact_email: "aguerra@nostromopictures.com" },
+    { id: "per_c4_2", full_name: "Núria Valls", role: "head_of_production", contact_email: "nvalls@nostromopictures.com" }
+  ],
+  "el-deseo": [
+    { id: "per_c5_1", full_name: "Agustín Almodóvar", role: "founder", contact_email: "agustin@eldeseo.es" },
+    { id: "per_c5_2", full_name: "Esther García", role: "head_of_production", contact_email: "esther@eldeseo.es" }
+  ],
+  "vaca-films": [
+    { id: "per_c43_1", full_name: "Emma Lustres", role: "founder", contact_email: "emma@vacafilms.com" },
+    { id: "per_c43_2", full_name: "Borja Pena", role: "managing_director", contact_email: "borja@vacafilms.com" }
+  ],
+  "irusoin": [
+    { id: "per_c39_1", full_name: "Xabier Berzosa", role: "executive_producer", contact_email: "xberzosa@irusoin.com" },
+    { id: "per_c39_2", full_name: "Iñigo Obeso", role: "head_of_post", contact_email: "iobeso@irusoin.com" }
+  ],
+  "kowalski-films": [
+    { id: "per_c38_1", full_name: "Koldo Zuazua", role: "founder", contact_email: "koldo@kowalskifilms.com" }
+  ],
+  "avalon-pc": [
+    { id: "per_c50_1", full_name: "Stefan Schmitz", role: "founder", contact_email: "stefan@avalon.me" },
+    { id: "per_c50_2", full_name: "María Zamora", role: "executive_producer", contact_email: "mzamora@avalon.me" }
+  ],
+  "fasten-films": [
+    { id: "per_c51_1", full_name: "Adrià Monés", role: "founder", contact_email: "adria@fastenfilms.com" }
+  ],
+  "pecado-films": [
+    { id: "per_c52_1", full_name: "José Alba", role: "founder", contact_email: "jose.alba@pecadofilms.com" }
+  ]
+};
+
+  const mappedExecs = ALL_COMPANY_EXECUTIVES_MAP[company.slug] || ALL_COMPANY_EXECUTIVES_MAP[slug];
+
+  const defaultPeople = mappedExecs
+    ? mappedExecs.map((exec, idx) => ({
+        id: exec.id || `per_${company.id}_${idx + 1}`,
+        full_name: exec.full_name,
+        role: exec.role,
+        seniority: exec.role.includes("founder") || exec.role.includes("ceo") ? "C-Level" : "Executive",
+        is_current: true,
+        confidence: 96,
+        contact_email: exec.contact_email || cleanEmail,
+      }))
+    : [
+        {
+          id: `per_${company.id}_1`,
+          full_name: `${company.name} Managing Executive`,
+          role: "head_of_production",
+          seniority: "Executive",
+          is_current: true,
+          confidence: 95,
+          contact_email: `production@${domain}`,
+        },
+        {
+          id: `per_${company.id}_2`,
+          full_name: `${company.name} Senior Producer`,
+          role: "founder",
+          seniority: "C-Level",
+          is_current: true,
+          confidence: 97,
+          contact_email: cleanEmail,
+        },
+      ];
 
   const defaultProjects = [
     {
