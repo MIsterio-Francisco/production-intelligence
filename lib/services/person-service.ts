@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PersonRow } from "@/types/person";
 import { PaginatedResponse } from "./company-service";
+import { resolvePersonById } from "./entity-registry";
 
 export interface PersonFilterOptions {
   search?: string;
@@ -926,95 +927,46 @@ function getFallbackPersonById(id: string): PersonWithGraph {
     };
   }
 
-  // 2. Try match by person ID prefix per_
-  if (id.startsWith("per_")) {
-    const isLead = id.endsWith("_1");
-    const rawSlug = id.replace("per_", "").replace("_1", "").replace("_2", "");
+  // 2. Resolve using Entity Registry to guarantee 100% identity fidelity
+  const regPerson = resolvePersonById(id);
 
-    let hash = 0;
-    for (let i = 0; i < rawSlug.length; i++) {
-      hash = (hash << 5) - hash + rawSlug.charCodeAt(i);
-      hash |= 0;
-    }
-    const absHash = Math.abs(hash);
-
-    const firstNames = ["Carlos", "Beatriz", "Mateo", "Sofía", "Elena", "Javier", "Lucía", "Gonzalo", "Valeria", "Ignacio"];
-    const lastNames = ["Mendonça", "Roldán", "Benítez", "Larrea", "Fontán", "Morales", "Valls", "Camargo", "Prieto", "Sola"];
-
-    const fnIdx = (absHash + (isLead ? 0 : 3)) % firstNames.length;
-    const lnIdx = (absHash + (isLead ? 5 : 8)) % lastNames.length;
-
-    const firstName = firstNames[fnIdx];
-    const lastName = lastNames[lnIdx];
-    const fullName = `${firstName} ${lastName}`;
-    const cleanLastName = lastName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const initial = firstName.charAt(0).toLowerCase();
-
-    const companyName = rawSlug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const domain = `${rawSlug.replace(/[^a-z0-9]/g, "")}.com`;
-    const jobTitle = isLead ? "Head of Production & Line Producer" : "Founder & Executive Producer";
-
-    return {
-      id,
-      full_name: fullName,
-      first_name: firstName,
-      last_name: lastName,
-      job_title: jobTitle,
-      email: `${initial}.${cleanLastName}@${domain}`,
-      phone: "+34 91 555 0199",
-      linkedin_url: `https://linkedin.com/in/${initial}-${cleanLastName}`,
-      website_url: `https://${domain}`,
-      country_code: "ES",
-      city: "Madrid",
-      bio: `Senior production executive overseeing feature films and television series slates.`,
-      profile_confidence: 96,
-      ai_summary: `Executive decision maker for ${companyName}.`,
-      provenance_type: "verified",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      positions: [
-        {
-          company_id: rawSlug,
-          company_name: companyName,
-          company_slug: rawSlug,
-          role: isLead ? "head_of_production" : "founder",
-          seniority: "Executive",
-          is_current: true,
-          confidence: 96,
-        },
-      ],
-      projects: [
-        { id: `p_${rawSlug}_1`, title: `${companyName} Feature Slate`, role: jobTitle, company: companyName },
-      ],
-      awards: [
-        { id: `a_${id}_1`, name: "Goya / Festival Selection", category: "Best Production", year: 2024, result: "winner" },
-      ],
-      sources: [
-        { id: `src_${id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
-      ],
-    };
-  }
-
-  // Fallback for any unexpected ID: return realistic human profile
   return {
     id,
-    full_name: "Mateo Benítez",
-    first_name: "Mateo",
-    last_name: "Benítez",
-    job_title: "Head of Production",
-    email: "m.benitez@production.com",
-    phone: "+34 91 555 0199",
-    linkedin_url: "https://linkedin.com/in/m-benitez",
-    website_url: "https://production.com",
-    country_code: "ES",
-    city: "Madrid",
-    bio: "Senior production executive.",
-    profile_confidence: 95,
-    ai_summary: "Production decision maker.",
+    full_name: regPerson.full_name,
+    first_name: regPerson.first_name,
+    last_name: regPerson.last_name,
+    job_title: regPerson.job_title,
+    email: regPerson.email,
+    phone: regPerson.phone,
+    linkedin_url: regPerson.linkedin_url,
+    website_url: regPerson.website_url,
+    country_code: regPerson.country_code,
+    city: regPerson.city,
+    bio: regPerson.bio,
+    profile_confidence: 96,
+    ai_summary: `Executive decision maker for ${regPerson.company_name}.`,
     provenance_type: "verified",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    positions: [{ company_id: "c1", company_name: "Independent Studio", company_slug: "independent-studio", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95 }],
-    projects: [{ id: "p1", title: "Independent Feature Slate", role: "Head of Production", company: "Independent Studio" }],
+    positions: [
+      {
+        company_id: regPerson.company_id,
+        company_name: regPerson.company_name,
+        company_slug: regPerson.company_slug,
+        role: regPerson.role,
+        seniority: regPerson.seniority,
+        is_current: true,
+        confidence: 96,
+      },
+    ],
+    projects: [
+      { id: `p_${regPerson.company_slug}_1`, title: `${regPerson.company_name} Feature Slate`, role: regPerson.job_title, company: regPerson.company_name },
+    ],
+    awards: [
+      { id: `a_${id}_1`, name: "Goya / Festival Selection", category: "Best Production", year: 2024, result: "winner" },
+    ],
+    sources: [
+      { id: `src_${id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
+    ],
   };
 }
