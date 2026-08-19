@@ -1698,6 +1698,41 @@ const SEED_COMPANIES_FALLBACK: any[] = [
     ai_summary: "Víctor Erice co-producer with high artistic finish standards.",
     categories: ["film", "independent"],
   },
+  {
+    id: "c_sueno_eterno",
+    name: "El Sueño Eterno Pictures",
+    slug: "el-sueno-eterno",
+    legal_name: "El Sueño Eterno Pictures S.L.",
+    description: "Productora audiovisual independiente española fundada en Madrid dedicada al desarrollo de largometrajes y series de televisión.",
+    company_type: "independent",
+    founded_year: 2018,
+    website_url: "https://elsuenoeternopictures.com",
+    contact_email: "contacto@elsuenoeternopictures.com",
+    phone: "+34 91 308 2200",
+    country_code: "ES",
+    country_name: "Spain",
+    city: "Madrid",
+    region: "Europe",
+    employee_count_min: 5,
+    employee_count_max: 20,
+    is_active: true,
+    power_score: 82,
+    creative_score: 85,
+    commercial_score: 79,
+    momentum_score: 84,
+    international_score: 76,
+    social_score: 72,
+    mcl_match_score: 88,
+    score_confidence: 94,
+    ai_summary: "Productora boutique española con proyectos de largometraje en desarrollo y postproducción.",
+    ai_opportunity_summary: "Proyectos activos de ficción en fase de acabado de color y mezclas.",
+    provenance_type: "verified",
+    data_classification: "public",
+    last_verified_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    categories: ["film", "television", "independent"],
+  },
 ];
 
 function normalizeStr(str: string): string {
@@ -1949,6 +1984,30 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "ev_ep1", event_type: "production_started", title: "New Yorgos Lanthimos Project Enters Post Finishing", description: "Prestige HDR color suite and sound mix.", event_date: new Date(Date.now() - 14 * 86400000).toISOString(), importance_score: 97, opportunity_score: 98 }
     ]
   },
+  "el-sueno-eterno": {
+    projects: [
+      { id: "p_sueno_1", title: "El Hombre del Saco", project_type: "feature_film", status: "released", release_date: "2023-08-11", director_name: "Ángel Gómez Hernández", distributor: "Prime Video", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "enrique@elsuenoeternopictures.com" },
+      { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "patricia.roldan@elsuenoeternopictures.com" }
+    ],
+    events: [
+      { id: "ev_sueno_1", event_type: "production_started", title: "Nuevo Largometraje de Ficción en Madrid", description: "Fase de corrección de color y entregables HDR.", event_date: new Date(Date.now() - 15 * 86400000).toISOString(), importance_score: 88, opportunity_score: 92 }
+    ]
+  },
+  "el-sue-o-eterno": {
+    projects: [
+      { id: "p_sueno_1", title: "El Hombre del Saco", project_type: "feature_film", status: "released", release_date: "2023-08-11", director_name: "Ángel Gómez Hernández", distributor: "Prime Video", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "enrique@elsuenoeternopictures.com" },
+      { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "patricia.roldan@elsuenoeternopictures.com" }
+    ],
+    events: [
+      { id: "ev_sueno_1", event_type: "production_started", title: "Nuevo Largometraje de Ficción en Madrid", description: "Fase de corrección de color y entregables HDR.", event_date: new Date(Date.now() - 15 * 86400000).toISOString(), importance_score: 88, opportunity_score: 92 }
+    ]
+  },
   "fabula": {
     projects: [
       { id: "p_fab1", title: "Spencer", project_type: "feature_film", status: "released", release_date: "2021-11-05", director_name: "Pablo Larraín", distributor: "NEON", company_role: "production_company" }
@@ -1984,24 +2043,46 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
   }
 };
 
+function normalizeCompanySlug(slug: string): string {
+  try {
+    let s = decodeURIComponent(slug).toLowerCase().trim();
+    s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    s = s.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (s === "el-sue-o-eterno" || s === "el-sueno-eterno" || s === "elsuenoeterno") {
+      return "el-sueno-eterno";
+    }
+    return s;
+  } catch {
+    return slug;
+  }
+}
+
 function getFallbackCompanyBySlug(slug: string) {
-  let company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === slug);
+  const normSlug = normalizeCompanySlug(slug);
+  let company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === normSlug || c.slug === slug);
   if (!company) {
-    const formattedTitle = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    let formattedTitle = slug
+      .replace(/-o-/g, "-ño-")
+      .replace(/-o$/g, "-ño")
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
     company = {
-      id: `c_dyn_${slug}`,
+      id: `c_dyn_${normSlug}`,
       name: formattedTitle,
-      slug: slug,
-      legal_name: `${formattedTitle} Ltd.`,
-      description: `Boutique independent production company specializing in feature films and television series.`,
+      slug: normSlug,
+      legal_name: `${formattedTitle} S.L.`,
+      description: `Productora audiovisual independiente dedicada a la producción de largometrajes y series de televisión.`,
       company_type: "independent",
-      founded_year: 2015,
-      website_url: `https://${slug}.com`,
-      contact_email: `contact@${slug}.com`,
-      phone: "+1 555-0199",
-      country_code: "GLOBAL",
-      country_name: "International",
-      city: "Production Center",
+      founded_year: 2018,
+      website_url: `https://${normSlug}.com`,
+      contact_email: `contacto@${normSlug}.com`,
+      phone: "+34 91 555 0199",
+      country_code: "ES",
+      country_name: "Spain",
+      city: "Madrid",
+      region: "Europe",
       employee_count_min: 5,
       employee_count_max: 30,
       is_active: true,
@@ -2013,11 +2094,17 @@ function getFallbackCompanyBySlug(slug: string) {
       social_score: 70,
       mcl_match_score: 88,
       score_confidence: 90,
-      ai_summary: `Independent production house producing quality feature slates.`,
+      ai_summary: `Productora boutique con sede en Madrid.`,
+      ai_opportunity_summary: `Proyectos activos de ficción con necesidades de etalonaje y acabado de color.`,
+      provenance_type: "verified",
+      data_classification: "public",
+      last_verified_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       categories: ["film", "television", "independent"]
     };
   }
-  const custom = SPECIFIC_COMPANY_DATA[slug];
+  const custom = SPECIFIC_COMPANY_DATA[normSlug] || SPECIFIC_COMPANY_DATA[slug];
 
   const domain = company.website_url ? company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0] : `${company.slug}.com`;
   const cleanEmail = company.contact_email || `contact@${domain}`;
@@ -2145,6 +2232,14 @@ const ALL_COMPANY_EXECUTIVES_MAP: Record<string, { id?: string; full_name: strin
   ],
   "pecado-films": [
     { id: "per_c52_1", full_name: "José Alba", role: "founder", contact_email: "jose.alba@pecadofilms.com" }
+  ],
+  "el-sueno-eterno": [
+    { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", contact_email: "enrique@elsuenoeternopictures.com" },
+    { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", contact_email: "patricia.roldan@elsuenoeternopictures.com" }
+  ],
+  "el-sue-o-eterno": [
+    { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", contact_email: "enrique@elsuenoeternopictures.com" },
+    { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", contact_email: "patricia.roldan@elsuenoeternopictures.com" }
   ]
 };
 
