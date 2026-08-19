@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getCompanyBySlug } from "@/lib/services/company-service";
 import { SCORING_ENGINE_VERSION, calculateAllCompanyScores } from "@/lib/scoring";
+import { SaveCompanyButton } from "@/components/companies/SaveCompanyButton";
 import {
   Building2,
   Globe,
@@ -120,6 +121,10 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
                     <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> Founded {company.founded_year}
                   </span>
                 )}
+              </div>
+
+              <div className="pt-2">
+                <SaveCompanyButton companyId={company.id} />
               </div>
             </div>
 

@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test:scoring": "tsc scripts/test-scoring.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-scoring.js",
     "test:signals": "tsc scripts/test-signals-ai.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-signals-ai.js",
-    "test:pipeline": "tsc scripts/test-pipeline.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-pipeline.js"
+    "test:pipeline": "tsc scripts/test-pipeline.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-pipeline.js",
+    "test:e2e": "tsc scripts/test-e2e.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-e2e.js",
+    "audit:data": "tsc scripts/audit-data.ts --outDir dist/scripts --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-data.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
