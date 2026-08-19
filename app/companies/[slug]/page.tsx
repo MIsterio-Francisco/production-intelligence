@@ -26,6 +26,8 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
+import { getCompanyInstagramData } from "@/lib/services/social-service";
+import { CompanySocialTab } from "@/components/companies/CompanySocialTab";
 import Link from "next/link";
 
 interface CompanyProfileProps {
@@ -458,6 +460,15 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* SOCIAL TAB */}
+        {tab === "social" && (
+          <CompanySocialTab
+            companyName={company.name}
+            companySlug={slug}
+            initialSocialData={getCompanyInstagramData(slug, company.name)}
+          />
         )}
       </div>
     </AppLayout>
