@@ -35,6 +35,8 @@ export interface CompanyWithDetails extends CompanyRow {
   categories?: string[];
   saved_status?: string;
   user_notes?: string;
+  is_demo?: boolean;
+  data_quality_score?: number;
 }
 
 export interface CompanyFilterOptions {

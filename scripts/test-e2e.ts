@@ -3,9 +3,11 @@ import { detectAllSignals } from "../lib/signals/detectors";
 import { buildEvidencePacket } from "../lib/ai/packet";
 import { createFallbackBrief } from "../lib/ai/brief-service";
 import { resolveCompanyEntity } from "../lib/ingestion/entity-resolution";
+import { calculateDataQualityScore } from "../lib/ingestion/quality";
+import { ProviderRegistry } from "../lib/ingestion/registry";
 
 console.log("==========================================");
-console.log("RUNNING PHASE 7 E2E CRITICAL WORKFLOW TESTS");
+console.log("RUNNING PHASE 8 E2E CRITICAL WORKFLOW TESTS");
 console.log("==========================================");
 
 let passed = 0;
@@ -23,8 +25,8 @@ function assert(condition: boolean, testName: string) {
 
 // WORKFLOW 1: Discover Search & Filter Execution
 const sampleCompanies = [
-  { id: "c1", name: "Morena Films", country_code: "ES", power_score: 88, mcl_match_score: 94 },
-  { id: "c2", name: "A24", country_code: "US", power_score: 96, mcl_match_score: 88 },
+  { id: "c1", name: "Morena Films", country_code: "ES", power_score: 88, mcl_match_score: 94, is_demo: false },
+  { id: "c2", name: "A24", country_code: "US", power_score: 96, mcl_match_score: 88, is_demo: false },
 ];
 const filteredEs = sampleCompanies.filter((c) => c.country_code === "ES");
 assert(filteredEs.length === 1 && filteredEs[0].name === "Morena Films", "E2E 1: Discover directory filters by country ES");
@@ -99,6 +101,15 @@ function checkCronAuth(authHeader?: string, expectedSecret: string = "secret123"
 }
 assert(checkCronAuth("Bearer secret123", "secret123") === true, "E2E 7: Authorized CRON secret accepted");
 assert(checkCronAuth("Bearer wrongsecret", "secret123") === false, "E2E 7: Invalid CRON secret rejected");
+
+// WORKFLOW 8 (PHASE 8): Data Quality Score Governance
+const qualityTier1 = calculateDataQualityScore({ name: "Morena Films", country_code: "ES", website_url: "https://morenafilms.com" }, 1);
+assert(qualityTier1 >= 80, "E2E 8: Tier 1 official company payload calculates high Data Quality Score (>=80)");
+
+// WORKFLOW 9 (PHASE 8): Provider Registry Capability Matrix
+const configs = ProviderRegistry.getAllConfigs();
+assert(configs.some((c) => c.provider_type === "COMPANY_WEBSITE"), "E2E 9: Provider registry includes CompanyWebsiteProvider");
+assert(configs.some((c) => c.provider_type === "INDUSTRY_NEWS"), "E2E 9: Provider registry includes NewsProvider");
 
 console.log("==========================================");
 console.log(`E2E TEST SUMMARY: ${passed} Passed, ${failed} Failed`);
