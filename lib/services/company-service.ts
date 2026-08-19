@@ -1944,7 +1944,38 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
 };
 
 function getFallbackCompanyBySlug(slug: string) {
-  const company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === slug) || SEED_COMPANIES_FALLBACK[0];
+  let company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === slug);
+  if (!company) {
+    const formattedTitle = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    company = {
+      id: `c_dyn_${slug}`,
+      name: formattedTitle,
+      slug: slug,
+      legal_name: `${formattedTitle} Ltd.`,
+      description: `Boutique independent production company specializing in feature films and television series.`,
+      company_type: "independent",
+      founded_year: 2015,
+      website_url: `https://${slug}.com`,
+      contact_email: `contact@${slug}.com`,
+      phone: "+1 555-0199",
+      country_code: "GLOBAL",
+      country_name: "International",
+      city: "Production Center",
+      employee_count_min: 5,
+      employee_count_max: 30,
+      is_active: true,
+      power_score: 82,
+      creative_score: 84,
+      commercial_score: 80,
+      momentum_score: 85,
+      international_score: 78,
+      social_score: 70,
+      mcl_match_score: 88,
+      score_confidence: 90,
+      ai_summary: `Independent production house producing quality feature slates.`,
+      categories: ["film", "television", "independent"]
+    };
+  }
   const custom = SPECIFIC_COMPANY_DATA[slug];
 
   const domain = company.website_url ? company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0] : `${company.slug}.com`;

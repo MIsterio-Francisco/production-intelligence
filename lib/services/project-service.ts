@@ -269,6 +269,10 @@ const MOCK_PROJECTS: ProjectWithGraph[] = [
   },
 ];
 
+function normalizeStr(str: string): string {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
 function getFallbackProjects(options: ProjectFilterOptions, page: number, limit: number): PaginatedResponse<ProjectWithGraph> {
   let filtered = [...MOCK_PROJECTS];
 
@@ -284,12 +288,12 @@ function getFallbackProjects(options: ProjectFilterOptions, page: number, limit:
     filtered = filtered.filter((p) => p.country_code === options.country?.toUpperCase());
   }
 
-  if (options.search) {
-    const s = options.search.toLowerCase();
+  if (options.search && options.search.trim()) {
+    const s = normalizeStr(options.search);
     filtered = filtered.filter(
       (p) =>
-        p.title.toLowerCase().includes(s) ||
-        (p.director_name && p.director_name.toLowerCase().includes(s))
+        normalizeStr(p.title).includes(s) ||
+        (p.director_name && normalizeStr(p.director_name).includes(s))
     );
   }
 
@@ -306,14 +310,80 @@ function getFallbackProjects(options: ProjectFilterOptions, page: number, limit:
 }
 
 function getFallbackProjectById(id: string): ProjectWithGraph {
-  const p = MOCK_PROJECTS.find((proj) => proj.id === id) || MOCK_PROJECTS[0];
+  const found = MOCK_PROJECTS.find((proj) => proj.id === id);
+  if (found) {
+    return {
+      ...found,
+      awards: found.awards || [
+        { id: `aw_${id}`, name: "Cannes / Berlin Festival Selection", category: "Official Selection", year: 2025, result: "winner" },
+      ],
+      sources: found.sources || [
+        { id: `src_${id}`, source_name: "Variety Industry Press", source_type: "industry_press", credibility_score: 95 },
+      ],
+    };
+  }
+
+  const titleMap: Record<string, { title: string; type: string; status: string; year: string; director: string; distributor: string; company: string; companySlug: string }> = {
+    p_mf1: { title: "La Infiltrada", type: "feature_film", status: "production", year: "2025", director: "Arantxa Echevarría", distributor: "Warner Bros. Spain", company: "Morena Films", companySlug: "morena-films" },
+    p_mf2: { title: "Cerdita (Piggy)", type: "feature_film", status: "completed", year: "2023", director: "Carlota Pereda", distributor: "Vertigo Films", company: "Morena Films", companySlug: "morena-films" },
+    p_a24_1: { title: "Civil War", type: "feature_film", status: "released", year: "2024", director: "Alex Garland", distributor: "A24", company: "A24", companySlug: "a24" },
+    p_a24_2: { title: "Everything Everywhere All at Once", type: "feature_film", status: "released", year: "2022", director: "Daniel Kwan, Daniel Scheinert", distributor: "A24", company: "A24", companySlug: "a24" },
+    p_ss1: { title: "Slow Horses Season 4", type: "tv_series", status: "post_production", year: "2024", director: "Saul Metzstein", distributor: "Apple TV+", company: "See-Saw Films", companySlug: "see-saw-films" },
+    p_nos1: { title: "Through My Window (A través de mi ventana)", type: "feature_film", status: "released", year: "2022", director: "Marçal Forés", distributor: "Netflix", company: "Nostromo Pictures", companySlug: "nostromo-pictures" },
+    p_des1: { title: "The Room Next Door", type: "feature_film", status: "completed", year: "2024", director: "Pedro Almodóvar", distributor: "Warner Bros", company: "El Deseo", companySlug: "el-deseo" },
+    p_vaca1: { title: "Celda 211", type: "feature_film", status: "released", year: "2009", director: "Daniel Monzón", distributor: "Paramount Pictures", company: "Vaca Films", companySlug: "vaca-films" },
+    p_iru1: { title: "La trinchera infinita", type: "feature_film", status: "released", year: "2019", director: "Jon Garaño, Aitor Arregi", distributor: "eOne Films", company: "Irusoin", companySlug: "irusoin" },
+    p_kow1: { title: "Akelarre", type: "feature_film", status: "released", year: "2020", director: "Pablo Agüero", distributor: "Avalon Distribución", company: "Kowalski Films", companySlug: "kowalski-films" },
+    p_ava1: { title: "Alcarràs", type: "feature_film", status: "released", year: "2022", director: "Carla Simón", distributor: "Avalon Distribución", company: "Avalon PR", companySlug: "avalon-pc" },
+    p_lc1: { title: "Barbie", type: "feature_film", status: "released", year: "2023", director: "Greta Gerwig", distributor: "Warner Bros", company: "LuckyChap Entertainment", companySlug: "luckychap" },
+    p_ep1: { title: "Poor Things", type: "feature_film", status: "released", year: "2023", director: "Yorgos Lanthimos", distributor: "Searchlight Pictures", company: "Element Pictures", companySlug: "element-pictures" },
+    p_fab1: { title: "Spencer", type: "feature_film", status: "released", year: "2021", director: "Pablo Larraín", distributor: "NEON", company: "Fabula", companySlug: "fabula" },
+    p_pec1: { title: "Cerrar los ojos (Close Your Eyes)", type: "feature_film", status: "released", year: "2023", director: "Víctor Erice", distributor: "Nouveau Pictures", company: "Pecado Films", companySlug: "pecado-films" },
+  };
+
+  const projectInfo = titleMap[id] || {
+    title: `Feature Project ${id.replace(/[^a-zA-Z0-9]/g, " ").toUpperCase()}`,
+    type: "feature_film",
+    status: "production",
+    year: "2025",
+    director: "Auteur Director",
+    distributor: "Global Release Partner",
+    company: "Boutique Production House",
+    companySlug: "production-house",
+  };
+
   return {
-    ...p,
+    id,
+    title: projectInfo.title,
+    slug: id,
+    original_title: projectInfo.title,
+    project_type: projectInfo.type,
+    status: projectInfo.status,
+    release_date: `${projectInfo.year}-10-01`,
+    country_code: "GLOBAL",
+    genre: ["Drama", "Thriller"],
+    writers: [projectInfo.director],
+    language: "English / Spanish",
+    director_name: projectInfo.director,
+    distributor: projectInfo.distributor,
+    streaming_platform: "Global Streaming",
+    budget_min: 5000000,
+    budget_max: 15000000,
+    budget_currency: "EUR",
+    description: `A major ${projectInfo.type.replace("_", " ")} produced by ${projectInfo.company} currently in ${projectInfo.status.replace("_", " ")} phase with high-end picture finishing and color grading requirements.`,
+    source_id: "src1",
+    announced_at: new Date().toISOString(),
+    provenance_type: "verified",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    companies: [
+      { id: `c_${id}`, name: projectInfo.company, slug: projectInfo.companySlug, country_code: "GLOBAL", role: "production_company" },
+    ],
     awards: [
-      { id: "aw1", name: "Cannes Film Festival", category: "Official Selection", year: 2025, result: "winner" },
+      { id: `aw_${id}`, name: "Cannes Film Festival", category: "Official Selection", year: 2025, result: "winner" },
     ],
     sources: [
-      { id: "src1", source_name: "Variety Press Release", source_type: "industry_press", credibility_score: 95 },
+      { id: `src_${id}`, source_name: "Variety Industry Announcement", source_type: "industry_press", credibility_score: 95 },
     ],
   };
 }
