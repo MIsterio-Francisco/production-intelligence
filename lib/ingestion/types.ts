@@ -9,6 +9,14 @@ export type ProviderType =
   | "SOCIAL"
   | "MANUAL";
 
+export type ProviderStatus =
+  | "IMPLEMENTED"
+  | "NOT_CONFIGURED"
+  | "CONFIGURED"
+  | "CONNECTED"
+  | "FAILED"
+  | "DISABLED";
+
 export type DataFreshnessState = "FRESH" | "AGING" | "STALE" | "UNKNOWN";
 
 export type EntityMatchStatus = "MATCHED" | "POSSIBLE_MATCH" | "UNMATCHED";
@@ -18,14 +26,23 @@ export interface DataProviderConfig {
   provider_name: string;
   provider_type: ProviderType;
   enabled: boolean;
+  status: ProviderStatus;
   supported_entities: string[];
   rate_limit_per_min: number;
   priority: number; // 1 = highest
   reliability_score: number; // 0 - 100
   source_tier: number; // 1 - 4
   terms_reference: string;
+  last_attempt?: string | null;
   last_success?: string | null;
   last_failure?: string | null;
+  records_fetched?: number;
+  records_created?: number;
+  records_updated?: number;
+  records_skipped?: number;
+  records_failed?: number;
+  last_error?: string | null;
+  latency_ms?: number;
 }
 
 export interface RawRecordPayload {

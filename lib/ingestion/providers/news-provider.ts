@@ -8,6 +8,7 @@ export class NewsProvider extends BaseProvider {
       provider_name: "Industry Trade Press News Feed",
       provider_type: "INDUSTRY_NEWS",
       enabled: true,
+      status: "CONNECTED",
       supported_entities: ["news", "project", "event"],
       rate_limit_per_min: 60,
       priority: 1,

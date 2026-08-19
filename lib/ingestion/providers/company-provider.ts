@@ -8,6 +8,7 @@ export class CompanyWebsiteProvider extends BaseProvider {
       provider_name: "Official Company Website Ingestion Adapter",
       provider_type: "COMPANY_WEBSITE",
       enabled: true,
+      status: "CONNECTED",
       supported_entities: ["company", "project", "person"],
       rate_limit_per_min: 120,
       priority: 1,

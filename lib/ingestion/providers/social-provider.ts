@@ -8,6 +8,7 @@ export class SocialProvider extends BaseProvider {
       provider_name: "Authorized Social Metrics API",
       provider_type: "SOCIAL",
       enabled: false, // Disabled by default until official API keys configured (PRD Section 59)
+      status: "NOT_CONFIGURED",
       supported_entities: ["social"],
       rate_limit_per_min: 30,
       priority: 4,
