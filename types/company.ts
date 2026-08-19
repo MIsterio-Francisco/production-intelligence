@@ -37,6 +37,8 @@ export interface CompanyWithDetails extends CompanyRow {
   user_notes?: string;
   is_demo?: boolean;
   data_quality_score?: number;
+  contact_email?: string;
+  phone?: string;
 }
 
 export interface CompanyFilterOptions {

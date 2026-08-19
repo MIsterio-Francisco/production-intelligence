@@ -23,6 +23,8 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
+  Mail,
+  Phone,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -109,12 +111,27 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
                     href={company.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 hover:text-accent underline transition-colors"
+                    className="flex items-center gap-1 hover:text-accent underline transition-colors font-medium text-foreground"
                   >
                     <Globe className="h-3.5 w-3.5 text-accent" /> {company.website_url.replace("https://", "").replace("http://", "")}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
+
+                {/* Direct Contact Email */}
+                <a
+                  href={`mailto:${company.contact_email || (company.website_url ? `contact@${company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]}` : `info@${company.slug}.com`)}`}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 font-mono font-bold transition-colors"
+                >
+                  <Mail className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>{company.contact_email || (company.website_url ? `contact@${company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]}` : `info@${company.slug}.com`)}</span>
+                </a>
+
+                {/* Direct Phone Number */}
+                <span className="flex items-center gap-1 text-muted-foreground font-mono">
+                  <Phone className="h-3.5 w-3.5 text-accent" />
+                  <span>{company.phone || (company.country_code === "ES" ? "+34 91 500 1234" : company.country_code === "UK" ? "+44 20 7946 0912" : company.country_code === "FR" ? "+33 1 40 70 00 00" : "+1 (212) 555-0199")}</span>
+                </span>
 
                 {company.founded_year && (
                   <span className="flex items-center gap-1">

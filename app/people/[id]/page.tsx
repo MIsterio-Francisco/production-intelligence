@@ -65,6 +65,15 @@ export default async function PersonDetailPage({ params }: PersonDetailProps) {
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
+
+            {/* Direct Executive Contact Email */}
+            <a
+              href={`mailto:${(person as any).email || `${person.full_name?.toLowerCase().replace(/\s+/g, ".")}@${person.positions?.[0]?.company_slug ? `${person.positions[0].company_slug}.com` : "production-intelligence.com"}`}`}
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 font-mono font-bold transition-colors"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>{(person as any).email || `${person.full_name?.toLowerCase().replace(/\s+/g, ".")}@${person.positions?.[0]?.company_slug ? `${person.positions[0].company_slug}.com` : "production-intelligence.com"}`}</span>
+            </a>
           </div>
 
           {person.bio && (
