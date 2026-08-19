@@ -24,4 +24,6 @@ export interface PersonWithCompany extends PersonRow {
   company_id?: string;
   role?: string;
   seniority?: string;
+  email?: string;
+  phone?: string;
 }
