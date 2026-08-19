@@ -10,6 +10,14 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: {
+        fetch: (url: string | URL | Request, options?: RequestInit) => {
+          return fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(700),
+          });
+        },
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -79,9 +79,15 @@ export function Sidebar() {
       </div>
 
       {/* Sidebar Footer info */}
-      <div className="p-3 m-2 rounded bg-background border border-border text-[11px] text-muted-foreground space-y-1">
-        <div className="font-semibold text-foreground">MCL Match Engine</div>
-        <div>V1.1 Post-Production & Color Mode</div>
+      <div className="p-3 m-2 rounded bg-background border border-border text-[11px] text-muted-foreground space-y-1.5">
+        <div className="flex items-center justify-between font-semibold text-foreground">
+          <span>MCL Match Engine</span>
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        </div>
+        <div className="text-[10px] text-emerald-800 font-mono font-bold bg-emerald-50 p-1.5 rounded border border-emerald-200">
+          🟢 Auto-Scanner Active (12 Countries)
+        </div>
+        <div className="text-[10px] text-muted-foreground">V1.1 Post-Production & Color Mode</div>
       </div>
     </aside>
   );
