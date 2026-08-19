@@ -160,43 +160,64 @@ export async function sendProjectOpportunityEmailAlert(payload: EmailAlertPayloa
 </html>
   `;
 
-  // Check if Resend or SMTP provider is set in environment
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "Production Intelligence <alerts@misteriocolorlab.com>",
-          to: recipientEmail,
-          subject: formattedSubject,
-          html: htmlContent,
-        }),
-      });
-      const data = await res.json();
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("[EmailAlertService] RESEND_API_KEY environment variable not configured.");
+    return {
+      success: false,
+      messageId: "no_api_key",
+      recipient: recipientEmail,
+      timestamp,
+      formattedSubject,
+      htmlContent: "Missing RESEND_API_KEY environment variable.",
+    };
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Production Intelligence <onboarding@resend.dev>",
+        to: [recipientEmail],
+        subject: formattedSubject,
+        html: htmlContent,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("[EmailAlertService] Resend API Error:", data);
       return {
-        success: true,
-        messageId: data.id || `msg_${Date.now()}`,
+        success: false,
+        messageId: data.name || "resend_error",
         recipient: recipientEmail,
         timestamp,
         formattedSubject,
-        htmlContent,
+        htmlContent: `Error: ${JSON.stringify(data)}`,
       };
-    } catch (err) {
-      console.warn("[EmailAlertService] Resend API dispatch warning, falling back to simulated dispatch:", err);
     }
-  }
 
-  // Fallback simulated dispatch response for pre-configured SMTP integration
-  return {
-    success: true,
-    messageId: `mcl_alert_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-    recipient: recipientEmail,
-    timestamp,
-    formattedSubject,
-    htmlContent,
-  };
+    return {
+      success: true,
+      messageId: data.id || `msg_${Date.now()}`,
+      recipient: recipientEmail,
+      timestamp,
+      formattedSubject,
+      htmlContent,
+    };
+  } catch (err: any) {
+    console.error("[EmailAlertService] Exception in Resend dispatch:", err);
+    return {
+      success: false,
+      messageId: "exception",
+      recipient: recipientEmail,
+      timestamp,
+      formattedSubject,
+      htmlContent: `Exception: ${err.message}`,
+    };
+  }
 }
