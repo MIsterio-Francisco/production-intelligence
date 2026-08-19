@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:scoring": "tsc scripts/test-scoring.ts --outDir dist --module commonjs --target es2022 --moduleResolution node && node dist/scripts/test-scoring.js"
+    "test:scoring": "tsc scripts/test-scoring.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-scoring.js",
+    "test:signals": "tsc scripts/test-signals-ai.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-signals-ai.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
