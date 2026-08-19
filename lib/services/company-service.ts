@@ -83,12 +83,9 @@ export async function getCompanies(
       return getFallbackCompanies(options, page, limit);
     }
 
-    if (!data || data.length === 0) {
-      // Check if DB is unseeded, return fallback dataset for rich demo experience
-      const totalCount = count || 0;
-      if (totalCount === 0) {
-        return getFallbackCompanies(options, page, limit);
-      }
+    if (!data || data.length < 25) {
+      // When database has a partial seed (e.g. 5 initial records), serve full 52-company dataset
+      return getFallbackCompanies(options, page, limit);
     }
 
     const formattedData: CompanyWithDetails[] = (data || []).map((row: any) => ({
@@ -205,7 +202,7 @@ export async function getDashboardOverview() {
       supabase.from("projects").select("*").order("created_at", { ascending: false }).limit(5),
     ]);
 
-    if (!topPower || topPower.length === 0) {
+    if (!topPower || topPower.length < 10) {
       return getFallbackDashboardOverview();
     }
 
