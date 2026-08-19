@@ -714,6 +714,10 @@ const MOCK_PEOPLE: (PersonWithGraph & { email?: string; phone?: string })[] = [
   },
 ];
 
+function normalizeStr(str: string): string {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
 function getFallbackPeople(options: PersonFilterOptions, page: number, limit: number): PaginatedResponse<PersonWithGraph> {
   let filtered = [...MOCK_PEOPLE];
 
@@ -725,13 +729,14 @@ function getFallbackPeople(options: PersonFilterOptions, page: number, limit: nu
     filtered = filtered.filter((p) => p.positions?.some((pos) => pos.role === options.role));
   }
 
-  if (options.search) {
-    const s = options.search.toLowerCase();
+  if (options.search && options.search.trim()) {
+    const s = normalizeStr(options.search);
     filtered = filtered.filter(
       (p) =>
-        p.full_name.toLowerCase().includes(s) ||
-        (p.job_title && p.job_title.toLowerCase().includes(s)) ||
-        (p.city && p.city.toLowerCase().includes(s))
+        normalizeStr(p.full_name).includes(s) ||
+        (p.job_title && normalizeStr(p.job_title).includes(s)) ||
+        (p.city && normalizeStr(p.city).includes(s)) ||
+        p.positions?.some((pos) => normalizeStr(pos.company_name).includes(s))
     );
   }
 
@@ -749,16 +754,18 @@ function getFallbackPeople(options: PersonFilterOptions, page: number, limit: nu
 
 function getFallbackPersonById(id: string): PersonWithGraph {
   const person = MOCK_PEOPLE.find((p) => p.id === id) || MOCK_PEOPLE[0];
+  const companyName = person.positions?.[0]?.company_name || "Production Intelligence";
+
   return {
     ...person,
     projects: [
-      { id: "p1", title: "La Infiltrada", role: "Producer", company: "Morena Films" },
+      { id: `p_${person.id}_1`, title: `${companyName} Feature Slate`, role: person.job_title || "Producer", company: companyName },
     ],
     awards: [
-      { id: "a1", name: "BAFTA Award", category: "Best Feature Film", year: 2024, result: "winner" },
+      { id: `a_${person.id}_1`, name: "Goya / BAFTA Award Nominee", category: "Best Production", year: 2024, result: "winner" },
     ],
     sources: [
-      { id: "src1", source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
+      { id: `src_${person.id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
     ],
   };
 }

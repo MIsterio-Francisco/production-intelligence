@@ -1700,6 +1700,10 @@ const SEED_COMPANIES_FALLBACK: any[] = [
   },
 ];
 
+function normalizeStr(str: string): string {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
 function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit: number): PaginatedResponse<CompanyWithDetails> {
   let filtered = [...SEED_COMPANIES_FALLBACK];
 
@@ -1715,13 +1719,16 @@ function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit
     filtered = filtered.filter((c) => (c.mcl_match_score || 0) >= options.minMclMatch!);
   }
 
-  if (options.search) {
-    const s = options.search.toLowerCase();
+  if (options.search && options.search.trim()) {
+    const s = normalizeStr(options.search);
     filtered = filtered.filter(
       (c) =>
-        c.name.toLowerCase().includes(s) ||
-        (c.city && c.city.toLowerCase().includes(s)) ||
-        (c.country_name && c.country_name.toLowerCase().includes(s))
+        normalizeStr(c.name).includes(s) ||
+        (c.legal_name && normalizeStr(c.legal_name).includes(s)) ||
+        (c.city && normalizeStr(c.city).includes(s)) ||
+        (c.country_name && normalizeStr(c.country_name).includes(s)) ||
+        (c.description && normalizeStr(c.description).includes(s)) ||
+        (c.ai_summary && normalizeStr(c.ai_summary).includes(s))
     );
   }
 
@@ -1747,105 +1754,310 @@ function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit
   };
 }
 
+const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; events: any[] }> = {
+  "morena-films": {
+    projects: [
+      { id: "p_mf1", title: "La Infiltrada", project_type: "feature_film", status: "production", release_date: "2025-10-15", director_name: "Arantxa Echevarría", distributor: "Warner Bros. Spain", company_role: "production_company" },
+      { id: "p_mf2", title: "Cerdita (Piggy)", project_type: "feature_film", status: "completed", release_date: "2023-01-20", director_name: "Carlota Pereda", distributor: "Vertigo Films", company_role: "producer" },
+      { id: "p_mf3", title: "Campeones", project_type: "feature_film", status: "released", release_date: "2018-04-06", director_name: "Javier Fesser", distributor: "Universal Pictures", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_mf1", full_name: "Pedro Uriol", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "pedro.uriol@morenafilms.com" },
+      { id: "per_mf2", full_name: "Álvaro Longoria", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "alvaro.longoria@morenafilms.com" },
+      { id: "per_mf3", full_name: "Pilar Benito", role: "managing_director", seniority: "C-Level", is_current: true, confidence: 94, contact_email: "pilar.benito@morenafilms.com" }
+    ],
+    events: [
+      { id: "ev_mf1", event_type: "production_started", title: "Principal Photography Commenced on La Infiltrada", description: "Feature film entering active production.", event_date: new Date(Date.now() - 40 * 86400000).toISOString(), importance_score: 85, opportunity_score: 94 }
+    ]
+  },
+  "a24": {
+    projects: [
+      { id: "p_a24_1", title: "Civil War", project_type: "feature_film", status: "released", release_date: "2024-04-12", director_name: "Alex Garland", distributor: "A24", company_role: "production_company" },
+      { id: "p_a24_2", title: "Everything Everywhere All at Once", project_type: "feature_film", status: "released", release_date: "2022-03-25", director_name: "Daniel Kwan, Daniel Scheinert", distributor: "A24", company_role: "producer" },
+      { id: "p_a24_3", title: "The Zone of Interest", project_type: "feature_film", status: "released", release_date: "2023-12-15", director_name: "Jonathan Glazer", distributor: "A24", company_role: "co_producer" }
+    ],
+    people: [
+      { id: "per_a24_1", full_name: "Daniel Katz", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "dkatz@a24films.com" },
+      { id: "per_a24_2", full_name: "Emma Cahusac", role: "head_of_post", seniority: "Executive", is_current: true, confidence: 94, contact_email: "emma.cahusac@a24films.com" }
+    ],
+    events: [
+      { id: "ev_a24_1", event_type: "post_production_started", title: "Picture Lock Achieved on New Garland Feature", description: "Color grading and HDR finishing initiated.", event_date: new Date(Date.now() - 15 * 86400000).toISOString(), importance_score: 90, opportunity_score: 96 }
+    ]
+  },
+  "see-saw-films": {
+    projects: [
+      { id: "p_ss1", title: "Slow Horses Season 4", project_type: "tv_series", status: "post_production", release_date: "2024-09-04", director_name: "Saul Metzstein", distributor: "Apple TV+", company_role: "production_company" },
+      { id: "p_ss2", title: "Lion", project_type: "feature_film", status: "released", release_date: "2016-11-25", director_name: "Garth Davis", distributor: "The Weinstein Company", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_ss1", full_name: "Iain Canning", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "iain.canning@see-saw-films.com" },
+      { id: "per_ss2", full_name: "Emile Sherman", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "emile.sherman@see-saw-films.com" }
+    ],
+    events: [
+      { id: "ev_ss1", event_type: "post_production_started", title: "Slow Horses Season 4 Post Finishing Commenced", description: "UK Dolby Vision finishing underway.", event_date: new Date(Date.now() - 25 * 86400000).toISOString(), importance_score: 88, opportunity_score: 95 }
+    ]
+  },
+  "nostromo-pictures": {
+    projects: [
+      { id: "p_nos1", title: "A través de mi ventana (Through My Window)", project_type: "feature_film", status: "released", release_date: "2022-02-04", director_name: "Marçal Forés", distributor: "Netflix", company_role: "production_company" },
+      { id: "p_nos2", title: "Buried", project_type: "feature_film", status: "released", release_date: "2010-09-24", director_name: "Rodrigo Cortés", distributor: "Lionsgate", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_nos1", full_name: "Adrián Guerra", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "aguerra@nostromopictures.com" },
+      { id: "per_nos2", full_name: "Núria Valls", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "nvalls@nostromopictures.com" }
+    ],
+    events: [
+      { id: "ev_nos1", event_type: "production_started", title: "International Action Thriller In Pre-Production", description: "English-language shoot with 4K HDR color mastering requirements.", event_date: new Date(Date.now() - 10 * 86400000).toISOString(), importance_score: 92, opportunity_score: 98 }
+    ]
+  },
+  "el-deseo": {
+    projects: [
+      { id: "p_des1", title: "The Room Next Door (La habitación de al lado)", project_type: "feature_film", status: "completed", release_date: "2024-10-18", director_name: "Pedro Almodóvar", distributor: "Warner Bros.", company_role: "production_company" },
+      { id: "p_des2", title: "Dolor y Gloria (Pain and Glory)", project_type: "feature_film", status: "released", release_date: "2019-03-22", director_name: "Pedro Almodóvar", distributor: "Sony Pictures Classics", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_des1", full_name: "Agustín Almodóvar", role: "founder", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "agustin@eldeseo.es" },
+      { id: "per_des2", full_name: "Esther García", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 98, contact_email: "esther@eldeseo.es" }
+    ],
+    events: [
+      { id: "ev_des1", event_type: "festival_premiere", title: "Venice Golden Lion Premiere for The Room Next Door", description: "Master color grade completed in Dolby Vision.", event_date: new Date(Date.now() - 60 * 86400000).toISOString(), importance_score: 98, opportunity_score: 90 }
+    ]
+  },
+  "zeta-studios": {
+    projects: [
+      { id: "p_zet1", title: "Élite", project_type: "tv_series", status: "released", release_date: "2018-10-05", director_name: "Ramón Salazar, Dani de la Orden", distributor: "Netflix", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_zet1", full_name: "Antonio Asensio", role: "ceo", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "aasensio@zetastudios.com" },
+      { id: "per_zet2", full_name: "Paloma Molina", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 94, contact_email: "pmolina@zetastudios.com" }
+    ],
+    events: [
+      { id: "ev_zet1", event_type: "production_started", title: "New YA Drama Series Greenlit by Netflix", description: "Post-production pipeline sourcing underway.", event_date: new Date(Date.now() - 18 * 86400000).toISOString(), importance_score: 87, opportunity_score: 93 }
+    ]
+  },
+  "vaca-films": {
+    projects: [
+      { id: "p_vaca1", title: "Celda 211", project_type: "feature_film", status: "released", release_date: "2009-11-06", director_name: "Daniel Monzón", distributor: "Paramount Pictures Spain", company_role: "production_company" },
+      { id: "p_vaca2", title: "El Desconocido", project_type: "feature_film", status: "released", release_date: "2015-09-25", director_name: "Dani de la Torre", distributor: "Warner Bros. Spain", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_vaca1", full_name: "Emma Lustres", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "emma@vacafilms.com" },
+      { id: "per_vaca2", full_name: "Borja Pena", role: "managing_director", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "borja@vacafilms.com" }
+    ],
+    events: [
+      { id: "ev_vaca1", event_type: "production_started", title: "Action Thriller Feature Entering Post Production", description: "Color grading and VFX finishing required.", event_date: new Date(Date.now() - 30 * 86400000).toISOString(), importance_score: 90, opportunity_score: 96 }
+    ]
+  },
+  "irusoin": {
+    projects: [
+      { id: "p_iru1", title: "La trinchera infinita", project_type: "feature_film", status: "released", release_date: "2019-10-31", director_name: "Jon Garaño, Aitor Arregi", distributor: "eOne Films", company_role: "production_company" },
+      { id: "p_iru2", title: "Handia", project_type: "feature_film", status: "released", release_date: "2017-10-20", director_name: "Aitor Arregi", distributor: "A Contracorriente Films", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_iru1", full_name: "Xabier Berzosa", role: "executive_producer", seniority: "Executive", is_current: true, confidence: 96, contact_email: "xberzosa@irusoin.com" }
+    ],
+    events: [
+      { id: "ev_iru1", event_type: "production_started", title: "Basque Period Drama In Active Post Production", description: "High dynamic range color finishing.", event_date: new Date(Date.now() - 20 * 86400000).toISOString(), importance_score: 86, opportunity_score: 91 }
+    ]
+  },
+  "kowalski-films": {
+    projects: [
+      { id: "p_kow1", title: "Akelarre", project_type: "feature_film", status: "released", release_date: "2020-10-02", director_name: "Pablo Agüero", distributor: "Avalon Distribución", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_kow1", full_name: "Koldo Zuazua", role: "founder", seniority: "C-Level", is_current: true, confidence: 95, contact_email: "koldo@kowalskifilms.com" }
+    ],
+    events: [
+      { id: "ev_kow1", event_type: "production_started", title: "Festival Arthouse Feature Greenlit", description: "35mm digital scan & master color grading required.", event_date: new Date(Date.now() - 12 * 86400000).toISOString(), importance_score: 85, opportunity_score: 92 }
+    ]
+  },
+  "avalon-pc": {
+    projects: [
+      { id: "p_ava1", title: "Alcarràs", project_type: "feature_film", status: "released", release_date: "2022-04-29", director_name: "Carla Simón", distributor: "Avalon Distribución", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_ava1", full_name: "Stefan Schmitz", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "stefan@avalon.me" },
+      { id: "per_ava2", full_name: "María Zamora", role: "executive_producer", seniority: "Executive", is_current: true, confidence: 99, contact_email: "mzamora@avalon.me" }
+    ],
+    events: [
+      { id: "ev_ava1", event_type: "festival_premiere", title: "Berlinale Golden Bear Winner Alcarràs", description: "Award-winning color grade and master deliverables.", event_date: new Date(Date.now() - 50 * 86400000).toISOString(), importance_score: 95, opportunity_score: 93 }
+    ]
+  },
+  "luckychap": {
+    projects: [
+      { id: "p_lc1", title: "Barbie", project_type: "feature_film", status: "released", release_date: "2023-07-21", director_name: "Greta Gerwig", distributor: "Warner Bros", company_role: "production_company" },
+      { id: "p_lc2", title: "Saltburn", project_type: "feature_film", status: "released", release_date: "2023-11-17", director_name: "Emerald Fennell", distributor: "Amazon MGM Studios", company_role: "producer" }
+    ],
+    people: [
+      { id: "per_lc1", full_name: "Josey McNamara", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "josey@luckychap.com" },
+      { id: "per_lc2", full_name: "Tom Ackerley", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "tom@luckychap.com" }
+    ],
+    events: [
+      { id: "ev_lc1", event_type: "production_started", title: "New Emerald Fennell Feature In Pre-Production", description: "Prestige color grade and post production package.", event_date: new Date(Date.now() - 8 * 86400000).toISOString(), importance_score: 96, opportunity_score: 99 }
+    ]
+  },
+  "element-pictures": {
+    projects: [
+      { id: "p_ep1", title: "Poor Things", project_type: "feature_film", status: "released", release_date: "2023-12-08", director_name: "Yorgos Lanthimos", distributor: "Searchlight Pictures", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_ep1", full_name: "Ed Guiney", role: "founder", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "ed.guiney@elementpictures.ie" },
+      { id: "per_ep2", full_name: "Andrew Lowe", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "andrew.lowe@elementpictures.ie" }
+    ],
+    events: [
+      { id: "ev_ep1", event_type: "production_started", title: "New Yorgos Lanthimos Project Enters Post Finishing", description: "Prestige HDR color suite and sound mix.", event_date: new Date(Date.now() - 14 * 86400000).toISOString(), importance_score: 97, opportunity_score: 98 }
+    ]
+  },
+  "fabula": {
+    projects: [
+      { id: "p_fab1", title: "Spencer", project_type: "feature_film", status: "released", release_date: "2021-11-05", director_name: "Pablo Larraín", distributor: "NEON", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_fab1", full_name: "Juan de Dios Larraín", role: "ceo", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "juandedios@fabula.cl" }
+    ],
+    events: [
+      { id: "ev_fab1", event_type: "production_started", title: "Pablo Larraín Feature Entering Color Mastering", description: "Bespoke color grading pipeline.", event_date: new Date(Date.now() - 22 * 86400000).toISOString(), importance_score: 93, opportunity_score: 95 }
+    ]
+  },
+  "fasten-films": {
+    projects: [
+      { id: "p_ff1", title: "La voluntaria", project_type: "feature_film", status: "released", release_date: "2022-06-10", director_name: "Nely Reguera", distributor: "BTeam Pictures", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_ff1", full_name: "Adrià Monés", role: "founder", seniority: "C-Level", is_current: true, confidence: 94, contact_email: "adria@fastenfilms.com" }
+    ],
+    events: [
+      { id: "ev_ff1", event_type: "production_started", title: "European Indie Co-Production Principal Photography", description: "Finishing & color suite setup.", event_date: new Date(Date.now() - 19 * 86400000).toISOString(), importance_score: 84, opportunity_score: 90 }
+    ]
+  },
+  "pecado-films": {
+    projects: [
+      { id: "p_pec1", title: "Cerrar los ojos (Close Your Eyes)", project_type: "feature_film", status: "released", release_date: "2023-09-29", director_name: "Víctor Erice", distributor: "Nouveau Pictures", company_role: "production_company" }
+    ],
+    people: [
+      { id: "per_pec1", full_name: "José Alba", role: "founder", seniority: "C-Level", is_current: true, confidence: 95, contact_email: "jose.alba@pecadofilms.com" }
+    ],
+    events: [
+      { id: "ev_pec1", event_type: "festival_premiere", title: "Cannes Premiere for Cerrar Los Ojos", description: "Acclaimed color master and picture finishing.", event_date: new Date(Date.now() - 45 * 86400000).toISOString(), importance_score: 94, opportunity_score: 91 }
+    ]
+  }
+};
+
 function getFallbackCompanyBySlug(slug: string) {
   const company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === slug) || SEED_COMPANIES_FALLBACK[0];
+  const custom = SPECIFIC_COMPANY_DATA[slug];
+
+  const domain = company.website_url ? company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0] : `${company.slug}.com`;
+  const cleanEmail = company.contact_email || `contact@${domain}`;
+
+  const defaultPeople = [
+    {
+      id: `per_${company.id}_1`,
+      full_name: `Head of Production (${company.name})`,
+      role: "head_of_production",
+      seniority: "Executive",
+      is_current: true,
+      confidence: 95,
+      contact_email: `production@${domain}`,
+    },
+    {
+      id: `per_${company.id}_2`,
+      full_name: `Executive Producer (${company.name})`,
+      role: "founder",
+      seniority: "C-Level",
+      is_current: true,
+      confidence: 97,
+      contact_email: cleanEmail,
+    },
+  ];
+
+  const defaultProjects = [
+    {
+      id: `p_${company.id}_1`,
+      title: `${company.name} Feature Film Slate`,
+      project_type: "feature_film",
+      status: "production",
+      release_date: "2025-11-15",
+      director_name: "Auteur Director",
+      distributor: "International Distributor",
+      company_role: "production_company",
+    },
+    {
+      id: `p_${company.id}_2`,
+      title: `${company.name} Original Series`,
+      project_type: "tv_series",
+      status: "post_production",
+      release_date: "2025-08-20",
+      director_name: "Showrunner Lead",
+      distributor: "Global Streaming Partner",
+      company_role: "producer",
+    },
+  ];
+
+  const defaultEvents = [
+    {
+      id: `ev_${company.id}_1`,
+      event_type: "production_started",
+      title: `Principal Photography Commenced for ${company.name} Production`,
+      description: `Feature production entering post-production and color grading staging in ${company.city || company.country_name}.`,
+      event_date: new Date(Date.now() - 30 * 86400000).toISOString(),
+      importance_score: 88,
+      opportunity_score: 95,
+    },
+  ];
+
+  const people = custom?.people && custom.people.length > 0 ? custom.people : defaultPeople;
+  const projects = custom?.projects && custom.projects.length > 0 ? custom.projects : defaultProjects;
+  const events = custom?.events && custom.events.length > 0 ? custom.events : defaultEvents;
 
   return {
     company,
-    projects: [
-      {
-        id: "p1",
-        title: "La Infiltrada",
-        project_type: "feature_film",
-        status: "production",
-        release_date: "2025-10-15",
-        director_name: "Arantxa Echevarría",
-        distributor: "Warner Bros. Spain",
-        company_role: "production_company",
-      },
-      {
-        id: "p2",
-        title: "Cerdita (Piggy)",
-        project_type: "feature_film",
-        status: "completed",
-        release_date: "2023-01-20",
-        director_name: "Carlota Pereda",
-        distributor: "Vertigo Films",
-        company_role: "producer",
-      },
-    ],
-    people: [
-      {
-        id: "per1",
-        full_name: "Pedro Uriol",
-        role: "head_of_production",
-        seniority: "Executive",
-        is_current: true,
-        confidence: 95,
-      },
-      {
-        id: "per2",
-        full_name: "Álvaro Longoria",
-        role: "founder",
-        seniority: "C-Level",
-        is_current: true,
-        confidence: 98,
-      },
-    ],
+    projects,
+    people,
     socialProfiles: [
       {
-        id: "soc1",
+        id: `soc_${company.id}_1`,
         platform: "instagram",
-        username: "morenafilms",
-        profile_url: "https://instagram.com/morenafilms",
-        follower_count: 24500,
-        engagement_rate: 3.45,
+        username: company.slug.replace(/-/g, ""),
+        profile_url: `https://instagram.com/${company.slug.replace(/-/g, "")}`,
+        follower_count: 15400,
+        engagement_rate: 3.2,
       },
       {
-        id: "soc2",
+        id: `soc_${company.id}_2`,
         platform: "linkedin",
-        username: "morena-films",
-        profile_url: "https://linkedin.com/company/morena-films",
-        follower_count: 12800,
-        engagement_rate: 2.1,
+        username: company.slug,
+        profile_url: `https://linkedin.com/company/${company.slug}`,
+        follower_count: 8900,
+        engagement_rate: 2.4,
       },
     ],
     sources: [
       {
-        id: "s1",
+        id: `s_${company.id}_1`,
         source_type: "company_website",
         source_name: "Official Portal",
-        url: "https://morenafilms.com",
-        title: "Morena Films Official Portal",
-        publisher: "Morena Films",
+        url: company.website_url || `https://${domain}`,
+        title: `${company.name} Official Portal`,
+        publisher: company.name,
         credibility_score: 98,
         accessed_at: new Date().toISOString(),
       },
       {
-        id: "s2",
+        id: `s_${company.id}_2`,
         source_type: "imdb",
         source_name: "IMDbPro",
         url: "https://pro.imdb.com",
-        title: "IMDbPro Verified Company Data",
+        title: `IMDbPro Verified ${company.name} Data`,
         publisher: "IMDbPro",
         credibility_score: 95,
         accessed_at: new Date().toISOString(),
       },
     ],
-    events: [
-      {
-        id: "ev1",
-        event_type: "production_started",
-        title: "Principal Photography Commenced on La Infiltrada",
-        description: "Feature film entering active production and post-production staging.",
-        event_date: new Date(Date.now() - 40 * 86400000).toISOString(),
-        importance_score: 85,
-        opportunity_score: 94,
-      },
-    ],
+    events,
     scores: [
       {
-        id: "sc1",
+        id: `sc_${company.id}_1`,
         power_score: company.power_score,
         mcl_match_score: company.mcl_match_score,
         momentum_score: company.momentum_score,
