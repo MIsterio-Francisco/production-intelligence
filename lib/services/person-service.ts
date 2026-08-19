@@ -758,11 +758,78 @@ function getFallbackPersonById(id: string): PersonWithGraph {
   // 1. Try exact match in MOCK_PEOPLE
   const found = MOCK_PEOPLE.find((p) => p.id === id);
   if (found) {
+    const compSlug = found.positions?.[0]?.company_slug || "morena-films";
+    const compName = found.positions?.[0]?.company_name || "Production House";
+    
+    // Match real project IDs based on company slug
+    const realProjectsMap: Record<string, any[]> = {
+      "morena-films": [
+        { id: "p_mf1", title: "La Infiltrada", role: found.job_title || "Producer", company: "Morena Films" },
+        { id: "p_mf2", title: "Cerdita (Piggy)", role: found.job_title || "Producer", company: "Morena Films" },
+      ],
+      "vaca-films": [
+        { id: "p_vaca1", title: "Celda 211 (Cell 211)", role: found.job_title || "Executive Producer", company: "Vaca Films" },
+        { id: "p_vaca2", title: "El Desconocido (Retribution)", role: found.job_title || "Executive Producer", company: "Vaca Films" },
+        { id: "p_vaca3", title: "Hasta el cielo (Sky High)", role: found.job_title || "Producer", company: "Vaca Films" },
+      ],
+      "a24": [
+        { id: "p_a24_1", title: "Civil War", role: found.job_title || "Producer", company: "A24" },
+        { id: "p_a24_2", title: "Everything Everywhere All at Once", role: found.job_title || "Producer", company: "A24" },
+      ],
+      "see-saw-films": [
+        { id: "p_ss1", title: "Slow Horses Season 4", role: found.job_title || "Executive Producer", company: "See-Saw Films" },
+        { id: "p_ss2", title: "Lion", role: found.job_title || "Producer", company: "See-Saw Films" },
+      ],
+      "nostromo-pictures": [
+        { id: "p_nos1", title: "A través de mi ventana (Through My Window)", role: found.job_title || "Producer", company: "Nostromo Pictures" },
+        { id: "p_nos2", title: "Buried", role: found.job_title || "Producer", company: "Nostromo Pictures" },
+      ],
+      "el-deseo": [
+        { id: "p_des1", title: "The Room Next Door", role: found.job_title || "Executive Producer", company: "El Deseo" },
+        { id: "p_des2", title: "Dolor y Gloria (Pain and Glory)", role: found.job_title || "Executive Producer", company: "El Deseo" },
+      ],
+      "luckychap": [
+        { id: "p_lc1", title: "Barbie", role: found.job_title || "Producer", company: "LuckyChap Entertainment" },
+        { id: "p_lc2", title: "Saltburn", role: found.job_title || "Producer", company: "LuckyChap Entertainment" },
+      ],
+      "element-pictures": [
+        { id: "p_ep1", title: "Poor Things", role: found.job_title || "Executive Producer", company: "Element Pictures" },
+        { id: "p_ep2", title: "Normal People", role: found.job_title || "Executive Producer", company: "Element Pictures" },
+      ],
+      "fabula": [
+        { id: "p_fab1", title: "Spencer", role: found.job_title || "Executive Producer", company: "Fabula" },
+        { id: "p_fab2", title: "El Conde", role: found.job_title || "Producer", company: "Fabula" },
+      ],
+      "filmnation": [
+        { id: "p_fn1", title: "Arrival", role: found.job_title || "Executive Producer", company: "FilmNation Entertainment" },
+        { id: "p_fn2", title: "The Imitation Game", role: found.job_title || "Executive Producer", company: "FilmNation Entertainment" },
+      ],
+      "avalon-pc": [
+        { id: "p_ava1", title: "Alcarràs", role: found.job_title || "Executive Producer", company: "Avalon PR" },
+        { id: "p_ava2", title: "Verano 1993 (Summer 1993)", role: found.job_title || "Producer", company: "Avalon PR" },
+      ],
+      "irusoin": [
+        { id: "p_iru1", title: "La trinchera infinita", role: found.job_title || "Executive Producer", company: "Irusoin" },
+        { id: "p_iru2", title: "Handia", role: found.job_title || "Producer", company: "Irusoin" },
+      ],
+      "kowalski-films": [
+        { id: "p_kow1", title: "Akelarre", role: found.job_title || "Producer", company: "Kowalski Films" },
+      ],
+      "pecado-films": [
+        { id: "p_pec1", title: "Cerrar los ojos (Close Your Eyes)", role: found.job_title || "Producer", company: "Pecado Films" },
+      ],
+      "fasten-films": [
+        { id: "p_ff1", title: "La voluntaria", role: found.job_title || "Producer", company: "Fasten Films" },
+      ],
+    };
+
+    const resolvedProjects = realProjectsMap[compSlug] || [
+      { id: `p_${compSlug}_1`, title: `${compName} Feature Slate`, role: found.job_title || "Producer", company: compName }
+    ];
+
     return {
       ...found,
-      projects: found.projects || [
-        { id: `p_${found.id}_1`, title: `${found.positions?.[0]?.company_name || "Production"} Feature Slate`, role: found.job_title || "Producer", company: found.positions?.[0]?.company_name || "Studio" },
-      ],
+      projects: resolvedProjects,
       awards: found.awards || [
         { id: `a_${found.id}_1`, name: "Goya / BAFTA / Oscar Nominee", category: "Best Feature Film", year: 2024, result: "winner" },
       ],
