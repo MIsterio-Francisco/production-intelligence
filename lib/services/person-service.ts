@@ -16,6 +16,8 @@ export interface PersonFilterOptions {
 }
 
 export interface PersonWithGraph extends PersonRow {
+  email?: string;
+  phone?: string;
   positions?: {
     company_id: string;
     company_name: string;
@@ -753,19 +755,104 @@ function getFallbackPeople(options: PersonFilterOptions, page: number, limit: nu
 }
 
 function getFallbackPersonById(id: string): PersonWithGraph {
-  const person = MOCK_PEOPLE.find((p) => p.id === id) || MOCK_PEOPLE[0];
-  const companyName = person.positions?.[0]?.company_name || "Production Intelligence";
+  // 1. Try exact match in MOCK_PEOPLE
+  const found = MOCK_PEOPLE.find((p) => p.id === id);
+  if (found) {
+    return {
+      ...found,
+      projects: found.projects || [
+        { id: `p_${found.id}_1`, title: `${found.positions?.[0]?.company_name || "Production"} Feature Slate`, role: found.job_title || "Producer", company: found.positions?.[0]?.company_name || "Studio" },
+      ],
+      awards: found.awards || [
+        { id: `a_${found.id}_1`, name: "Goya / BAFTA / Oscar Nominee", category: "Best Feature Film", year: 2024, result: "winner" },
+      ],
+      sources: found.sources || [
+        { id: `src_${found.id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
+      ],
+    };
+  }
 
-  return {
-    ...person,
-    projects: [
-      { id: `p_${person.id}_1`, title: `${companyName} Feature Slate`, role: person.job_title || "Producer", company: companyName },
-    ],
-    awards: [
-      { id: `a_${person.id}_1`, name: "Goya / BAFTA Award Nominee", category: "Best Production", year: 2024, result: "winner" },
-    ],
-    sources: [
-      { id: `src_${person.id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
-    ],
-  };
+  // 2. Try match by person ID prefix per_c{NUM}
+  if (id.startsWith("per_c")) {
+    const companyId = id.split("_")[1]; // e.g. "c24"
+    const isLead = id.endsWith("_1");
+
+    const companyNameMap: Record<string, { name: string; slug: string; country: string; city: string; domain: string; email: string; phone: string; exec1: string; exec2: string }> = {
+      c1: { name: "Morena Films", slug: "morena-films", country: "ES", city: "Madrid", domain: "morenafilms.com", email: "pedro.uriol@morenafilms.com", phone: "+34 91 700 2781", exec1: "Pedro Uriol", exec2: "Álvaro Longoria" },
+      c2: { name: "A24", slug: "a24", country: "US", city: "New York", domain: "a24films.com", email: "dkatz@a24films.com", phone: "+1 (212) 567-0400", exec1: "Daniel Katz", exec2: "Emma Cahusac" },
+      c3: { name: "See-Saw Films", slug: "see-saw-films", country: "UK", city: "London", domain: "see-saw-films.com", email: "iain.canning@see-saw-films.com", phone: "+44 20 7439 3001", exec1: "Iain Canning", exec2: "Emile Sherman" },
+      c4: { name: "Nostromo Pictures", slug: "nostromo-pictures", country: "ES", city: "Barcelona", domain: "nostromopictures.com", email: "aguerra@nostromopictures.com", phone: "+34 93 301 2201", exec1: "Adrián Guerra", exec2: "Núria Valls" },
+      c5: { name: "El Deseo", slug: "el-deseo", country: "ES", city: "Madrid", domain: "eldeseo.es", email: "agustin@eldeseo.es", phone: "+34 91 745 4242", exec1: "Agustín Almodóvar", exec2: "Esther García" },
+      c14: { name: "LuckyChap Entertainment", slug: "luckychap", country: "US", city: "Los Angeles", domain: "luckychap.com", email: "josey@luckychap.com", phone: "+1 (310) 854-8105", exec1: "Josey McNamara", exec2: "Margot Robbie" },
+      c21: { name: "Element Pictures", slug: "element-pictures", country: "IE", city: "Dublin", domain: "elementpictures.ie", email: "ed.guiney@elementpictures.ie", phone: "+353 1 618 6101", exec1: "Ed Guiney", exec2: "Andrew Lowe" },
+      c24: { name: "FilmNation Entertainment", slug: "filmnation", country: "US", city: "New York", domain: "filmnation.com", email: "gbasner@filmnation.com", phone: "+1 (212) 796-8440", exec1: "Glen Basner", exec2: "Alison Cohen" },
+      c31: { name: "Fabula", slug: "fabula", country: "CL", city: "Santiago", domain: "fabula.cl", email: "juandedios@fabula.cl", phone: "+56 2 2714 8801", exec1: "Juan de Dios Larraín", exec2: "Pablo Larraín" },
+      c38: { name: "Kowalski Films", slug: "kowalski-films", country: "ES", city: "San Sebastián", domain: "kowalskifilms.com", email: "koldo@kowalskifilms.com", phone: "+34 943 424 001", exec1: "Koldo Zuazua", exec2: "Ainhoa Zuazua" },
+      c39: { name: "Irusoin", slug: "irusoin", country: "ES", city: "San Sebastián", domain: "irusoin.com", email: "xberzosa@irusoin.com", phone: "+34 943 429 201", exec1: "Xabier Berzosa", exec2: "Iñigo Obeso" },
+      c43: { name: "Vaca Films", slug: "vaca-films", country: "ES", city: "A Coruña", domain: "vacafilms.com", email: "emma@vacafilms.com", phone: "+34 981 145 001", exec1: "Emma Lustres", exec2: "Borja Pena" },
+      c50: { name: "Avalon PR", slug: "avalon-pc", country: "ES", city: "Madrid", domain: "avalon.me", email: "stefan@avalon.me", phone: "+34 91 364 4366", exec1: "Stefan Schmitz", exec2: "María Zamora" },
+      c51: { name: "Fasten Films", slug: "fasten-films", country: "ES", city: "Barcelona", domain: "fastenfilms.com", email: "adria@fastenfilms.com", phone: "+34 93 218 0001", exec1: "Adrià Monés", exec2: "Santi Trullenque" },
+      c52: { name: "Pecado Films", slug: "pecado-films", country: "ES", city: "Seville", domain: "pecadofilms.com", email: "jose.alba@pecadofilms.com", phone: "+34 954 100 001", exec1: "José Alba", exec2: "Manuel H. Martín" },
+    };
+
+    const target = companyNameMap[companyId] || {
+      name: `Company ${companyId.toUpperCase()}`,
+      slug: `company-${companyId}`,
+      country: "GLOBAL",
+      city: "Production Hub",
+      domain: `studio-${companyId}.com`,
+      email: `exec@studio-${companyId}.com`,
+      phone: "+1 555-0199",
+      exec1: `Head of Production (${companyId.toUpperCase()})`,
+      exec2: `Executive Producer (${companyId.toUpperCase()})`,
+    };
+
+    const fullName = isLead ? target.exec1 : target.exec2;
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || "Executive";
+    const jobTitle = isLead ? "Head of Production & Finishing" : "Founder & Executive Producer";
+
+    return {
+      id,
+      full_name: fullName,
+      first_name: firstName,
+      last_name: lastName,
+      job_title: jobTitle,
+      email: isLead ? target.email : `exec@${target.domain}`,
+      phone: target.phone,
+      linkedin_url: `https://linkedin.com/in/${target.slug}-${isLead ? "head" : "producer"}`,
+      website_url: `https://${target.domain}`,
+      country_code: target.country,
+      city: target.city,
+      bio: `Senior executive decision maker at ${target.name} overseeing feature slates and finishing operations.`,
+      profile_confidence: 96,
+      ai_summary: `Executive decision maker for ${target.name}.`,
+      provenance_type: "verified",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      positions: [
+        {
+          company_id: companyId,
+          company_name: target.name,
+          company_slug: target.slug,
+          role: isLead ? "head_of_production" : "founder",
+          seniority: "Executive",
+          is_current: true,
+          confidence: 96,
+        },
+      ],
+      projects: [
+        { id: `p_${id}_1`, title: `${target.name} Feature Slate`, role: jobTitle, company: target.name },
+      ],
+      awards: [
+        { id: `a_${id}_1`, name: "Goya / BAFTA / Oscar Nominee", category: "Best Production", year: 2024, result: "winner" },
+      ],
+      sources: [
+        { id: `src_${id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
+      ],
+    };
+  }
+
+  return MOCK_PEOPLE[0];
 }
