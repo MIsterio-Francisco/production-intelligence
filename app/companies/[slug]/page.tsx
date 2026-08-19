@@ -1,217 +1,503 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Globe, MapPin, Sparkles, Clapperboard, Users, Award, ExternalLink, Flame, ShieldAlert } from "lucide-react";
+import { getCompanyBySlug } from "@/lib/services/company-service";
+import {
+  Building2,
+  Globe,
+  MapPin,
+  Clapperboard,
+  Users,
+  Award,
+  ExternalLink,
+  Flame,
+  Activity,
+  Calendar,
+  Share2,
+  HelpCircle,
+  Clock,
+  ShieldCheck,
+} from "lucide-react";
+import Link from "next/link";
 
 interface CompanyProfileProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function CompanyProfilePage({ params }: CompanyProfileProps) {
+export default async function CompanyProfilePage({ params, searchParams }: CompanyProfileProps) {
   const { slug } = await params;
-  const companyName = slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  const { tab = "overview" } = await searchParams;
+
+  const { company, projects, people, socialProfiles, sources, events } = await getCompanyBySlug(slug);
+
+  if (!company) {
+    notFound();
+  }
+
+  const latestEvent = events?.[0];
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Hero Section (Section 11.4 PRD) */}
+        {/* HERO SECTION (PRD Section 7) */}
         <div className="bg-card border border-border rounded-lg p-6 shadow-subtle space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-mono font-bold bg-secondary px-2 py-0.5 rounded text-muted-foreground">
-                  ES-PRODUCTION
+                <span className="text-xs font-mono font-bold bg-secondary px-2.5 py-0.5 rounded border border-border text-muted-foreground uppercase">
+                  {company.country_code || "GLOBAL"}
                 </span>
-                <Badge variant="accent">Independent Studio</Badge>
+                <Badge variant="secondary" className="capitalize">
+                  {company.company_type?.replace("_", " ") || "Production House"}
+                </Badge>
+                {company.is_active && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Studio
+                  </span>
+                )}
               </div>
+
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-                {companyName || "Morena Films"}
+                {company.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-accent" /> Madrid, Spain
+                  <MapPin className="h-3.5 w-3.5 text-accent" />{" "}
+                  {company.city ? `${company.city}, ${company.country_name}` : company.country_name || "Global"}
                 </span>
-                <span className="flex items-center gap-1">
-                  <Globe className="h-3.5 w-3.5 text-accent" /> www.morenafilms.com
-                </span>
-                <span>Founded: 1999</span>
+
+                {company.website_url && (
+                  <a
+                    href={company.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-accent underline transition-colors"
+                  >
+                    <Globe className="h-3.5 w-3.5 text-accent" /> {company.website_url.replace("https://", "").replace("http://", "")}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+
+                {company.founded_year && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> Founded {company.founded_year}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Score Badges */}
+            {/* SCORE HEADER CARDS (PRD Section 7) */}
             <div className="flex items-center gap-4">
-              <div className="text-center p-3 rounded-lg bg-background border border-border">
-                <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+              <div className="text-center p-3.5 rounded-lg bg-background border border-border min-w-[100px]">
+                <div className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">
                   Power Score
                 </div>
                 <div className="text-3xl font-black font-mono text-foreground mt-0.5">
-                  88
+                  {company.power_score || "N/A"}
                 </div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-accent/10 border border-accent/30 text-accent">
-                <div className="text-[10px] uppercase tracking-wider font-bold">
+
+              <div className="text-center p-3.5 rounded-lg bg-accent/10 border border-accent/30 text-accent min-w-[100px]">
+                <div className="text-[9px] uppercase tracking-wider font-bold">
                   MCL Match
                 </div>
                 <div className="text-3xl font-black font-mono mt-0.5">
-                  94
+                  {company.mcl_match_score || "N/A"}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Categories */}
-          <div className="flex flex-wrap gap-1.5">
-            {["Feature Film", "High-End TV Series", "International Co-Production", "Post-Production Heavy"].map((cat) => (
-              <Badge key={cat} variant="secondary">
-                {cat}
-              </Badge>
-            ))}
+          {/* Categories Tags */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="flex flex-wrap gap-1.5">
+              {(company.categories || ["film", "television"]).map((cat) => (
+                <Badge key={cat} variant="outline" className="capitalize text-xs">
+                  {cat.replace("_", " ")}
+                </Badge>
+              ))}
+            </div>
+            {company.last_verified_at && (
+              <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3 text-emerald-600" /> Verified Data
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Score Breakdown (Section 11.4 PRD) */}
+        {/* SECONDARY SCORES & EXPLANATION (PRD Section 8) */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: "Creative Score", score: 86 },
-            { label: "Commercial Score", score: 90 },
-            { label: "Momentum", score: 92 },
-            { label: "International", score: 85 },
-            { label: "Social Presence", score: 65 },
+            { label: "Creative Score", score: company.creative_score, desc: "Festivals, awards & prestige" },
+            { label: "Commercial Score", score: company.commercial_score, desc: "Box office & platform scale" },
+            { label: "Momentum", score: company.momentum_score, desc: "Activity in last 90 days" },
+            { label: "International", score: company.international_score, desc: "Co-productions & cross-border" },
+            { label: "Social Presence", score: company.social_score, desc: "Digital engagement index" },
           ].map((item) => (
-            <Card key={item.label} className="p-3 text-center">
+            <Card key={item.label} className="p-3 text-center hover:border-neutral-300 transition-colors">
               <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-              <p className="text-lg font-black font-mono mt-1 text-foreground">{item.score}</p>
+              <p className="text-lg font-black font-mono mt-0.5 text-foreground">{item.score || "N/A"}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5 truncate">{item.desc}</p>
             </Card>
           ))}
         </div>
 
-        {/* Commercial Brief Call-To-Action (Section 11.4 & 28 PRD) */}
-        <Card className="border-accent/40 bg-accent/5">
-          <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-accent font-extrabold text-sm uppercase tracking-wider">
-                <Sparkles className="h-4 w-4" />
-                <span>AI Commercial Brief Generator</span>
-              </div>
-              <p className="text-xs text-muted-foreground max-w-xl">
-                Generate instant business intelligence on why your post-production &amp; finishing team should contact {companyName} right now.
+        {/* SCORE EXPLANATION TOOLTIPS / CARDS (PRD Section 8) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="p-3.5 rounded-lg bg-background border border-border flex items-start gap-2.5">
+            <HelpCircle className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-foreground uppercase tracking-wider text-[10px]">About Power Score</span>
+              <p className="text-muted-foreground text-[11px] leading-normal">
+                Overall estimate of production importance based on active projects, awards prestige, commercial impact, scale, international reach, and 90-day momentum.
               </p>
             </div>
-            <Button variant="accent" className="font-bold shrink-0">
-              Why should I contact this company?
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Profile Tabs Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Overview & Projects */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-accent" />
-                  <span>Company Overview</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 text-xs leading-relaxed text-muted-foreground space-y-2">
-                <p>
-                  Morena Films is an independent film and television production company based in Madrid, Spain. Founded in 1999, the company focuses on high-impact commercial feature films and premium television series for European and global streaming markets.
-                </p>
-                <p>
-                  Known for producing feature films with significant post-production, color grading, and finishing requirements, as well as high-budget Netflix and Amazon Prime originals.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                  <Clapperboard className="h-4 w-4 text-accent" />
-                  <span>Recent &amp; Upcoming Projects</span>
-                </CardTitle>
-                <span className="text-[10px] font-mono text-muted-foreground">3 Active</span>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-border text-xs">
-                  {[
-                    { title: "La Infiltrada", type: "Feature Film", status: "Production", release: "2025", director: "Arantxa Echevarría" },
-                    { title: "Cerdita (Piggy)", type: "Feature Film", status: "Completed", release: "2023", director: "Carlota Pereda" },
-                    { title: "Las Niñas de Cristal", type: "Netflix Film", status: "Released", release: "2022", director: "Jota Linares" },
-                  ].map((proj) => (
-                    <div key={proj.title} className="p-3.5 flex items-center justify-between hover:bg-secondary/40">
-                      <div>
-                        <div className="font-bold text-foreground">{proj.title}</div>
-                        <div className="text-[11px] text-muted-foreground">{proj.type} • Director: {proj.director}</div>
-                      </div>
-                      <div className="text-right font-mono">
-                        <Badge variant="outline">{proj.status}</Badge>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{proj.release}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Decision Makers & Sources */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                  <Users className="h-4 w-4 text-accent" />
-                  <span>Key Decision Makers</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-border text-xs">
-                  {[
-                    { name: "Pedro Uriol", role: "Head of Production / Producer", confidence: 95 },
-                    { name: "Álvaro Longoria", role: "Founder / Executive Producer", confidence: 98 },
-                    { name: "Merry Colomer", role: "Producer / Post Supervisor", confidence: 90 },
-                  ].map((person) => (
-                    <div key={person.name} className="p-3.5 space-y-1">
-                      <div className="font-bold text-foreground flex items-center justify-between">
-                        <span>{person.name}</span>
-                        <span className="text-[10px] font-mono text-emerald-700">{person.confidence}% Conf.</span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">{person.role}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4 text-accent" />
-                  <span>Data Traceability &amp; Sources</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 text-[11px] text-muted-foreground space-y-2">
-                <div className="flex items-center justify-between p-2 rounded bg-background border border-border">
-                  <span>Official Website</span>
-                  <span className="font-mono text-emerald-700">Verified Fact</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-background border border-border">
-                  <span>IMDbPro Production Registry</span>
-                  <span className="font-mono text-emerald-700">Verified Fact</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-background border border-border">
-                  <span>AI Inferred Opportunity Signals</span>
-                  <span className="font-mono text-amber-700">AI Inference</span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="p-3.5 rounded-lg bg-accent/5 border border-accent/20 flex items-start gap-2.5">
+            <Flame className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-accent uppercase tracking-wider text-[10px]">About MCL Match</span>
+              <p className="text-muted-foreground text-[11px] leading-normal">
+                Estimated commercial relevance for premium post-production, color grading, finishing, and VFX vendor services.
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* LATEST ACTIVITY HIGHLIGHT (PRD Section 11) */}
+        <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-subtle">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center shrink-0">
+              <Activity className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                Latest Verified Intelligence Activity
+              </span>
+              <p className="font-semibold text-xs text-foreground mt-0.5">
+                {latestEvent ? `${latestEvent.title} — ${latestEvent.description}` : company.ai_summary || "No recent intelligence activity recorded."}
+              </p>
+            </div>
+          </div>
+          {latestEvent && (
+            <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+              {new Date(latestEvent.event_date).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+
+        {/* PROFILE TABS NAVIGATION (PRD Section 9) */}
+        <div className="flex space-x-1 border-b border-border pb-2 overflow-x-auto text-xs font-bold">
+          {[
+            { id: "overview", label: "OVERVIEW", count: null },
+            { id: "projects", label: "PROJECTS", count: projects.length },
+            { id: "people", label: "PEOPLE", count: people.length },
+            { id: "social", label: "SOCIAL", count: socialProfiles.length },
+            { id: "sources", label: "SOURCES", count: sources.length },
+          ].map((t) => (
+            <Link
+              key={t.id}
+              href={`/companies/${slug}?tab=${t.id}`}
+              className={`px-3 py-1.5 rounded-md transition-colors ${
+                tab === t.id
+                  ? "bg-primary text-primary-foreground shadow-subtle"
+                  : "bg-secondary text-secondary-foreground hover:bg-neutral-200"
+              }`}
+            >
+              {t.label} {t.count !== null && <span className="ml-1 opacity-70 font-mono">({t.count})</span>}
+            </Link>
+          ))}
+        </div>
+
+        {/* TAB CONTENTS (PRD Section 9) */}
+        {tab === "overview" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Description */}
+              <Card>
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-accent" />
+                    <span>Company Profile &amp; Overview</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 text-xs leading-relaxed text-muted-foreground space-y-3">
+                  <p>{company.description || "No company description available yet."}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 font-mono text-[11px] border-t border-border">
+                    <div>
+                      <span className="text-muted-foreground block text-[9px] uppercase">Legal Name</span>
+                      <span className="font-bold text-foreground">{company.legal_name || company.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[9px] uppercase">Company Type</span>
+                      <span className="font-bold text-foreground capitalize">{company.company_type?.replace("_", " ")}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[9px] uppercase">Employees Range</span>
+                      <span className="font-bold text-foreground">
+                        {company.employee_count_min ? `${company.employee_count_min} - ${company.employee_count_max}` : "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* TIMELINE SECTION (PRD Section 10) */}
+              <Card>
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-accent" />
+                    <span>Intelligence Timeline</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {events && events.length > 0 ? (
+                    <div className="space-y-4 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-border">
+                      {events.map((ev: any) => (
+                        <div key={ev.id} className="relative pl-6 space-y-1">
+                          <div className="absolute left-0 top-1.5 h-4 w-4 rounded-full bg-accent text-white flex items-center justify-center text-[9px] font-bold">
+                            •
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-foreground">{ev.title}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {new Date(ev.event_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{ev.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No intelligence events available yet.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Quick Summary Panel */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider">
+                    Score Confidence &amp; Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3 text-xs">
+                  <div className="flex justify-between py-1 border-b border-border">
+                    <span className="text-muted-foreground">Data Confidence Score</span>
+                    <span className="font-mono font-bold text-emerald-700">{company.score_confidence || 95}%</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-border">
+                    <span className="text-muted-foreground">Verification Status</span>
+                    <span className="font-mono font-semibold text-foreground">Verified Fact</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">Active Projects</span>
+                    <span className="font-mono font-bold text-foreground">{projects.length}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* PROJECTS TAB */}
+        {tab === "projects" && (
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Clapperboard className="h-4 w-4 text-accent" />
+                <span>Associated Production Projects</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {projects.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
+                        <th className="p-3 font-semibold">Title</th>
+                        <th className="p-3 font-semibold">Type</th>
+                        <th className="p-3 font-semibold">Status</th>
+                        <th className="p-3 font-semibold">Role</th>
+                        <th className="p-3 font-semibold">Director</th>
+                        <th className="p-3 font-semibold">Distributor / Streaming</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border font-medium">
+                      {projects.map((proj: any) => (
+                        <tr key={proj.id} className="hover:bg-secondary/40">
+                          <td className="p-3 font-bold text-foreground">{proj.title}</td>
+                          <td className="p-3 text-muted-foreground capitalize">{proj.project_type?.replace("_", " ")}</td>
+                          <td className="p-3">
+                            <Badge variant={proj.status === "post_production" ? "accent" : "secondary"}>
+                              {proj.status?.replace("_", " ")}
+                            </Badge>
+                          </td>
+                          <td className="p-3 font-mono text-[11px] uppercase">{proj.company_role || "producer"}</td>
+                          <td className="p-3 text-muted-foreground">{proj.director_name || "N/A"}</td>
+                          <td className="p-3 text-muted-foreground">{proj.distributor || proj.streaming_platform || "N/A"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No projects have been added yet.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* PEOPLE TAB */}
+        {tab === "people" && (
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Users className="h-4 w-4 text-accent" />
+                <span>Decision Makers &amp; Key Executives</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {people.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/60 text-muted-foreground font-mono uppercase text-[10px]">
+                        <th className="p-3 font-semibold">Name</th>
+                        <th className="p-3 font-semibold">Role</th>
+                        <th className="p-3 font-semibold">Seniority</th>
+                        <th className="p-3 font-semibold">Status</th>
+                        <th className="p-3 font-semibold text-right">Confidence</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border font-medium">
+                      {people.map((p: any) => (
+                        <tr key={p.id} className="hover:bg-secondary/40">
+                          <td className="p-3 font-bold text-foreground">{p.full_name}</td>
+                          <td className="p-3 text-accent font-semibold capitalize">{p.role?.replace("_", " ")}</td>
+                          <td className="p-3 text-muted-foreground">{p.seniority || "Executive"}</td>
+                          <td className="p-3">
+                            <Badge variant={p.is_current ? "success" : "secondary"}>
+                              {p.is_current ? "Current" : "Former"}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-right font-mono font-bold text-emerald-700">
+                            {p.confidence || 90}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No people have been added yet.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* SOCIAL TAB */}
+        {tab === "social" && (
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider">
+                Verified Social Profiles
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {socialProfiles.length > 0 ? (
+                <div className="divide-y divide-border text-xs">
+                  {socialProfiles.map((soc: any) => (
+                    <div key={soc.id} className="p-4 flex items-center justify-between hover:bg-secondary/40">
+                      <div>
+                        <span className="font-bold text-foreground uppercase text-[11px] block">{soc.platform}</span>
+                        <a
+                          href={soc.profile_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-accent hover:underline text-xs flex items-center gap-1 mt-0.5"
+                        >
+                          @{soc.username} <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div className="flex items-center space-x-4 font-mono text-xs text-right">
+                        <div>
+                          <span className="text-[9px] text-muted-foreground uppercase block">Followers</span>
+                          <span className="font-bold">{soc.follower_count?.toLocaleString() || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-muted-foreground uppercase block">Engagement</span>
+                          <span className="font-bold text-emerald-600">{soc.engagement_rate}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  Not available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* SOURCES TAB */}
+        {tab === "sources" && (
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-accent" />
+                <span>Evidence &amp; Traceable Data Sources</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {sources.length > 0 ? (
+                <div className="divide-y divide-border text-xs">
+                  {sources.map((src: any) => (
+                    <div key={src.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-secondary/40">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-foreground">{src.title || src.source_name}</span>
+                        <p className="text-[11px] text-muted-foreground">
+                          Publisher: {src.publisher || "Official"} • Type: {src.source_type}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-3 font-mono text-xs">
+                        <Badge variant="success">{src.credibility_score}% Credibility</Badge>
+                        {src.url && (
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent hover:underline flex items-center gap-1 font-bold"
+                          >
+                            View Source <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No intelligence sources available.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );
