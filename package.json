@@ -30,9 +30,11 @@
     "audit:source-authenticity": "./node_modules/.bin/tsc scripts/audit-source-authenticity.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-source-authenticity.js",
     "audit:evidence-chain": "./node_modules/.bin/tsc scripts/audit-evidence-chain.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-evidence-chain.js",
     "audit:zero-event": "./node_modules/.bin/tsc scripts/audit-zero-event-scan.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-zero-event-scan.js",
+    "audit:netlify": "./node_modules/.bin/tsc scripts/audit-netlify-infrastructure.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-netlify-infrastructure.js",
     "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js"
   },
   "dependencies": {
+    "@netlify/functions": "^3.0.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "clsx": "^2.1.1",
