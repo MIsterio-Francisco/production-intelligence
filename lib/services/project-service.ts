@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { ProjectRow } from "@/types/project";
+import { createClient } from "../supabase/server";
+import { ProjectRow } from "../../types/project";
 import { PaginatedResponse } from "./company-service";
 
 export interface ProjectFilterOptions {
@@ -497,7 +497,7 @@ function normalizeStr(str: string): string {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-function getFallbackProjects(options: ProjectFilterOptions, page: number, limit: number): PaginatedResponse<ProjectWithGraph> {
+export function getFallbackProjects(options: ProjectFilterOptions, page: number, limit: number): PaginatedResponse<ProjectWithGraph> {
   let filtered = [...MOCK_PROJECTS];
 
   if (options.projectType) {
@@ -544,7 +544,7 @@ function getFallbackProjects(options: ProjectFilterOptions, page: number, limit:
         description: `Active production slate for ${searchTitle} currently undergoing color grading and picture post finishing.`,
         source_id: "s_dyn",
         announced_at: new Date().toISOString(),
-        provenance_type: "verified",
+        provenance_type: "synthetic",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         companies: [
@@ -595,7 +595,7 @@ function getFallbackProjects(options: ProjectFilterOptions, page: number, limit:
         description: `Active production slate monitored by MCL auto-scanner entering post finishing phase.`,
         source_id: `s_gen_${idx}`,
         announced_at: new Date().toISOString(),
-        provenance_type: "verified",
+        provenance_type: "synthetic",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         companies: [
@@ -615,7 +615,7 @@ function getFallbackProjects(options: ProjectFilterOptions, page: number, limit:
   };
 }
 
-function getFallbackProjectById(id: string): ProjectWithGraph {
+export function getFallbackProjectById(id: string): ProjectWithGraph {
   const found = MOCK_PROJECTS.find((proj) => proj.id === id);
   if (found) {
     return {
@@ -656,7 +656,43 @@ function getFallbackProjectById(id: string): ProjectWithGraph {
   let projectInfo = titleMap[id];
 
   if (!projectInfo) {
-    if (id.includes("15") || id.includes("vaca")) {
+    if (id.startsWith("p_gen_")) {
+      const idx = parseInt(id.replace(/^p_gen_/, ""), 10) || 1;
+      const types = ["feature_film", "tv_series", "documentary"];
+      const statuses = ["production", "post_production", "completed", "released"];
+      const countries = ["ES", "US", "UK", "FR", "IT", "IE", "CL", "AR", "BR"];
+      const studioNames = ["Morena Films", "A24", "See-Saw Films", "Nostromo Pictures", "El Deseo", "Vaca Films", "Fremantle", "Zeta Studios", "El Sueño Eterno Pictures"];
+
+      const chosenType = types[idx % types.length];
+      const chosenStatus = statuses[idx % statuses.length];
+      const chosenCountry = countries[idx % countries.length];
+      const chosenStudio = studioNames[idx % studioNames.length];
+
+      projectInfo = {
+        title: `Active Feature Slate #${idx}`,
+        type: chosenType,
+        status: chosenStatus,
+        year: "2025",
+        director: "Director Lead",
+        distributor: "Global Release Partner",
+        company: chosenStudio,
+        companySlug: chosenStudio.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      };
+    } else if (id.startsWith("p_")) {
+      const parts = id.replace(/^p_/, "").split("_");
+      const slug = parts[0];
+      const formattedCompany = slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      projectInfo = {
+        title: `${formattedCompany} Feature Slate`,
+        type: "feature_film",
+        status: "production",
+        year: "2025",
+        director: "Auteur Director",
+        distributor: "Global Release Partner",
+        company: formattedCompany,
+        companySlug: slug,
+      };
+    } else if (id.includes("15") || id.includes("vaca")) {
       projectInfo = titleMap.p_vaca1;
     } else {
       projectInfo = {
@@ -693,7 +729,7 @@ function getFallbackProjectById(id: string): ProjectWithGraph {
     description: `A major ${projectInfo.type.replace("_", " ")} produced by ${projectInfo.company} currently in ${projectInfo.status.replace("_", " ")} phase with high-end picture finishing and color grading requirements.`,
     source_id: "src1",
     announced_at: new Date().toISOString(),
-    provenance_type: "verified",
+    provenance_type: id.startsWith("p_gen_") ? "synthetic" : "seed",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     companies: [

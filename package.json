@@ -14,7 +14,14 @@
     "test:e2e": "tsc scripts/test-e2e.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-e2e.js",
     "audit:data": "tsc scripts/audit-data.ts --outDir dist/scripts --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-data.js",
     "audit:production-data": "tsc scripts/audit-production-data.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-production-data.js",
-    "audit:integrity": "tsc scripts/audit-integrity.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-integrity.js"
+    "audit:integrity": "npx tsx scripts/audit-integrity.ts",
+    "audit:entity-navigation": "npx tsx scripts/audit-entity-navigation.ts",
+    "audit:canonical": "tsc scripts/audit-canonical-identity.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-canonical-identity.js",
+    "audit:forensic": "tsc scripts/audit-forensic-data-truth.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-forensic-data-truth.js",
+    "audit:sales-reality": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js",
+    "audit:freshness": "tsc scripts/test-pipeline.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-pipeline.js",
+    "audit:contactability": "tsc scripts/test-e2e.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-e2e.js",
+    "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

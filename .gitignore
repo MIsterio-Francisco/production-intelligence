@@ -3,15 +3,16 @@
 /.pnp
 .pnp.js
 
+# build & dist outputs
+/dist/
+/build
+
 # testing
 /coverage
 
 # next.js
 /.next/
 /out/
-
-# production
-/build
 
 # debug
 npm-debug.log*

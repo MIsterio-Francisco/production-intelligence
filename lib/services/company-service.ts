@@ -1,7 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { CompanyWithDetails, CompanyFilterOptions } from "@/types/company";
-import { Database } from "@/types/database.types";
-import { getRegisteredExecutivesForCompany } from "./entity-registry";
+import { createClient } from "../supabase/server";
+import { CompanyWithDetails, CompanyFilterOptions } from "../../types/company";
+import { Database } from "../../types/database.types";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -1740,7 +1739,7 @@ function normalizeStr(str: string): string {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit: number): PaginatedResponse<CompanyWithDetails> {
+export function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit: number): PaginatedResponse<CompanyWithDetails> {
   let filtered = [...SEED_COMPANIES_FALLBACK];
 
   if (options.country) {
@@ -1798,7 +1797,7 @@ function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit
         score_confidence: 92,
         ai_summary: `Independent boutique film production company producing active feature slates.`,
         ai_opportunity_summary: `Active production slate with high color finishing and picture post requirements.`,
-        provenance_type: "verified",
+        provenance_type: "synthetic",
         data_classification: "public",
         last_verified_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -1822,7 +1821,7 @@ function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const paged = filtered.slice((page - 1) * limit, page * limit);
 
-  return {
+    return {
     data: paged,
     total,
     page,
@@ -1839,9 +1838,9 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_mf3", title: "Campeones", project_type: "feature_film", status: "released", release_date: "2018-04-06", director_name: "Javier Fesser", distributor: "Universal Pictures", company_role: "producer" }
     ],
     people: [
-      { id: "per_mf1", full_name: "Pedro Uriol", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "pedro.uriol@morenafilms.com" },
-      { id: "per_mf2", full_name: "Álvaro Longoria", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "alvaro.longoria@morenafilms.com" },
-      { id: "per_mf3", full_name: "Pilar Benito", role: "managing_director", seniority: "C-Level", is_current: true, confidence: 94, contact_email: "pilar.benito@morenafilms.com" }
+      { id: "per00000-0000-0000-0000-000000000001", full_name: "Pedro Uriol", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "pedro.uriol@morenafilms.com" },
+      { id: "per00000-0000-0000-0000-000000000002", full_name: "Álvaro Longoria", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "alvaro.longoria@morenafilms.com" },
+      { id: "per00000-0000-0000-0000-000000000003", full_name: "Pilar Benito", role: "managing_director", seniority: "C-Level", is_current: true, confidence: 94, contact_email: "pilar.benito@morenafilms.com" }
     ],
     events: [
       { id: "ev_mf1", event_type: "production_started", title: "Principal Photography Commenced on La Infiltrada", description: "Feature film entering active production.", event_date: new Date(Date.now() - 40 * 86400000).toISOString(), importance_score: 85, opportunity_score: 94 }
@@ -1854,8 +1853,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_a24_3", title: "The Zone of Interest", project_type: "feature_film", status: "released", release_date: "2023-12-15", director_name: "Jonathan Glazer", distributor: "A24", company_role: "co_producer" }
     ],
     people: [
-      { id: "per_a24_1", full_name: "Daniel Katz", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "dkatz@a24films.com" },
-      { id: "per_a24_2", full_name: "Emma Cahusac", role: "head_of_post", seniority: "Executive", is_current: true, confidence: 94, contact_email: "emma.cahusac@a24films.com" }
+      { id: "per00000-0000-0000-0000-000000000012", full_name: "Daniel Katz", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "dkatz@a24films.com" },
+      { id: "per00000-0000-0000-0000-000000000011", full_name: "Emma Cahusac", role: "head_of_post", seniority: "Executive", is_current: true, confidence: 94, contact_email: "emma.cahusac@a24films.com" }
     ],
     events: [
       { id: "ev_a24_1", event_type: "post_production_started", title: "Picture Lock Achieved on New Garland Feature", description: "Color grading and HDR finishing initiated.", event_date: new Date(Date.now() - 15 * 86400000).toISOString(), importance_score: 90, opportunity_score: 96 }
@@ -1867,8 +1866,9 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_ss2", title: "Lion", project_type: "feature_film", status: "released", release_date: "2016-11-25", director_name: "Garth Davis", distributor: "The Weinstein Company", company_role: "producer" }
     ],
     people: [
-      { id: "per_ss1", full_name: "Iain Canning", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "iain.canning@see-saw-films.com" },
-      { id: "per_ss2", full_name: "Emile Sherman", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "emile.sherman@see-saw-films.com" }
+      { id: "per00000-0000-0000-0000-000000000008", full_name: "Iain Canning", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "iain.canning@see-saw-films.com" },
+      { id: "per00000-0000-0000-0000-000000000009", full_name: "Emile Sherman", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "emile.sherman@see-saw-films.com" },
+      { id: "per00000-0000-0000-0000-000000000010", full_name: "Helen Gregory", role: "head_of_content", seniority: "Executive", is_current: true, confidence: 95, contact_email: "helen.gregory@see-saw-films.com" }
     ],
     events: [
       { id: "ev_ss1", event_type: "post_production_started", title: "Slow Horses Season 4 Post Finishing Commenced", description: "UK Dolby Vision finishing underway.", event_date: new Date(Date.now() - 25 * 86400000).toISOString(), importance_score: 88, opportunity_score: 95 }
@@ -1880,8 +1880,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_nos2", title: "Buried", project_type: "feature_film", status: "released", release_date: "2010-09-24", director_name: "Rodrigo Cortés", distributor: "Lionsgate", company_role: "producer" }
     ],
     people: [
-      { id: "per_nos1", full_name: "Adrián Guerra", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "aguerra@nostromopictures.com" },
-      { id: "per_nos2", full_name: "Núria Valls", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "nvalls@nostromopictures.com" }
+      { id: "per00000-0000-0000-0000-000000000004", full_name: "Adrián Guerra", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "aguerra@nostromopictures.com" },
+      { id: "per00000-0000-0000-0000-000000000005", full_name: "Núria Valls", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "nvalls@nostromopictures.com" }
     ],
     events: [
       { id: "ev_nos1", event_type: "production_started", title: "International Action Thriller In Pre-Production", description: "English-language shoot with 4K HDR color mastering requirements.", event_date: new Date(Date.now() - 10 * 86400000).toISOString(), importance_score: 92, opportunity_score: 98 }
@@ -1893,8 +1893,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_des2", title: "Dolor y Gloria (Pain and Glory)", project_type: "feature_film", status: "released", release_date: "2019-03-22", director_name: "Pedro Almodóvar", distributor: "Sony Pictures Classics", company_role: "producer" }
     ],
     people: [
-      { id: "per_des1", full_name: "Agustín Almodóvar", role: "founder", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "agustin@eldeseo.es" },
-      { id: "per_des2", full_name: "Esther García", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 98, contact_email: "esther@eldeseo.es" }
+      { id: "per00000-0000-0000-0000-000000000006", full_name: "Agustín Almodóvar", role: "founder", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "agustin@eldeseo.es" },
+      { id: "per00000-0000-0000-0000-000000000007", full_name: "Esther García", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 98, contact_email: "esther@eldeseo.es" }
     ],
     events: [
       { id: "ev_des1", event_type: "festival_premiere", title: "Venice Golden Lion Premiere for The Room Next Door", description: "Master color grade completed in Dolby Vision.", event_date: new Date(Date.now() - 60 * 86400000).toISOString(), importance_score: 98, opportunity_score: 90 }
@@ -1905,8 +1905,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_zet1", title: "Élite", project_type: "tv_series", status: "released", release_date: "2018-10-05", director_name: "Ramón Salazar, Dani de la Orden", distributor: "Netflix", company_role: "production_company" }
     ],
     people: [
-      { id: "per_zet1", full_name: "Antonio Asensio", role: "ceo", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "aasensio@zetastudios.com" },
-      { id: "per_zet2", full_name: "Paloma Molina", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 94, contact_email: "pmolina@zetastudios.com" }
+      { id: "per00000-0000-0000-0000-000000000014", full_name: "Antonio Asensio", role: "ceo", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "aasensio@zetastudios.com" },
+      { id: "per00000-0000-0000-0000-000000000013", full_name: "Paloma Molina", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 94, contact_email: "pmolina@zetastudios.com" }
     ],
     events: [
       { id: "ev_zet1", event_type: "production_started", title: "New YA Drama Series Greenlit by Netflix", description: "Post-production pipeline sourcing underway.", event_date: new Date(Date.now() - 18 * 86400000).toISOString(), importance_score: 87, opportunity_score: 93 }
@@ -1918,8 +1918,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_vaca2", title: "El Desconocido", project_type: "feature_film", status: "released", release_date: "2015-09-25", director_name: "Dani de la Torre", distributor: "Warner Bros. Spain", company_role: "producer" }
     ],
     people: [
-      { id: "per_vaca1", full_name: "Emma Lustres", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "emma@vacafilms.com" },
-      { id: "per_vaca2", full_name: "Borja Pena", role: "managing_director", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "borja@vacafilms.com" }
+      { id: "per00000-0000-0000-0000-000000000015", full_name: "Emma Lustres", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "emma@vacafilms.com" },
+      { id: "per00000-0000-0000-0000-000000000016", full_name: "Borja Pena", role: "managing_director", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "borja@vacafilms.com" }
     ],
     events: [
       { id: "ev_vaca1", event_type: "production_started", title: "Action Thriller Feature Entering Post Production", description: "Color grading and VFX finishing required.", event_date: new Date(Date.now() - 30 * 86400000).toISOString(), importance_score: 90, opportunity_score: 96 }
@@ -1931,7 +1931,7 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_iru2", title: "Handia", project_type: "feature_film", status: "released", release_date: "2017-10-20", director_name: "Aitor Arregi", distributor: "A Contracorriente Films", company_role: "producer" }
     ],
     people: [
-      { id: "per_iru1", full_name: "Xabier Berzosa", role: "executive_producer", seniority: "Executive", is_current: true, confidence: 96, contact_email: "xberzosa@irusoin.com" }
+      { id: "per00000-0000-0000-0000-000000000017", full_name: "Xabier Berzosa", role: "executive_producer", seniority: "Executive", is_current: true, confidence: 96, contact_email: "xberzosa@irusoin.com" }
     ],
     events: [
       { id: "ev_iru1", event_type: "production_started", title: "Basque Period Drama In Active Post Production", description: "High dynamic range color finishing.", event_date: new Date(Date.now() - 20 * 86400000).toISOString(), importance_score: 86, opportunity_score: 91 }
@@ -1942,7 +1942,7 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_kow1", title: "Akelarre", project_type: "feature_film", status: "released", release_date: "2020-10-02", director_name: "Pablo Agüero", distributor: "Avalon Distribución", company_role: "production_company" }
     ],
     people: [
-      { id: "per_kow1", full_name: "Koldo Zuazua", role: "founder", seniority: "C-Level", is_current: true, confidence: 95, contact_email: "koldo@kowalskifilms.com" }
+      { id: "per00000-0000-0000-0000-000000000018", full_name: "Koldo Zuazua", role: "founder", seniority: "C-Level", is_current: true, confidence: 95, contact_email: "koldo@kowalskifilms.com" }
     ],
     events: [
       { id: "ev_kow1", event_type: "production_started", title: "Festival Arthouse Feature Greenlit", description: "35mm digital scan & master color grading required.", event_date: new Date(Date.now() - 12 * 86400000).toISOString(), importance_score: 85, opportunity_score: 92 }
@@ -1953,8 +1953,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_ava1", title: "Alcarràs", project_type: "feature_film", status: "released", release_date: "2022-04-29", director_name: "Carla Simón", distributor: "Avalon Distribución", company_role: "production_company" }
     ],
     people: [
-      { id: "per_ava1", full_name: "Stefan Schmitz", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "stefan@avalon.me" },
-      { id: "per_ava2", full_name: "María Zamora", role: "executive_producer", seniority: "Executive", is_current: true, confidence: 99, contact_email: "mzamora@avalon.me" }
+      { id: "per00000-0000-0000-0000-000000000019", full_name: "Stefan Schmitz", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "stefan@avalon.me" },
+      { id: "per00000-0000-0000-0000-000000000020", full_name: "María Zamora", role: "executive_producer", seniority: "Executive", is_current: true, confidence: 99, contact_email: "mzamora@avalon.me" }
     ],
     events: [
       { id: "ev_ava1", event_type: "festival_premiere", title: "Berlinale Golden Bear Winner Alcarràs", description: "Award-winning color grade and master deliverables.", event_date: new Date(Date.now() - 50 * 86400000).toISOString(), importance_score: 95, opportunity_score: 93 }
@@ -1963,11 +1963,11 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
   "luckychap": {
     projects: [
       { id: "p_lc1", title: "Barbie", project_type: "feature_film", status: "released", release_date: "2023-07-21", director_name: "Greta Gerwig", distributor: "Warner Bros", company_role: "production_company" },
-      { id: "p_lc2", title: "Saltburn", project_type: "feature_film", status: "released", release_date: "2023-11-17", director_name: "Emerald Fennell", distributor: "Amazon MGM Studios", company_role: "producer" }
+      { id: "p_lc2", title: "Saltburn", project_type: "feature_film", status: "released", release_date: "2023-11-17", director_name: "Amazon MGM Studios", company_role: "producer" }
     ],
     people: [
-      { id: "per_lc1", full_name: "Josey McNamara", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "josey@luckychap.com" },
-      { id: "per_lc2", full_name: "Tom Ackerley", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "tom@luckychap.com" }
+      { id: "per00000-0000-0000-0000-000000000021", full_name: "Josey McNamara", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "josey@luckychap.com" },
+      { id: "per00000-0000-0000-0000-000000000022", full_name: "Tom Ackerley", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "tom@luckychap.com" }
     ],
     events: [
       { id: "ev_lc1", event_type: "production_started", title: "New Emerald Fennell Feature In Pre-Production", description: "Prestige color grade and post production package.", event_date: new Date(Date.now() - 8 * 86400000).toISOString(), importance_score: 96, opportunity_score: 99 }
@@ -1978,8 +1978,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_ep1", title: "Poor Things", project_type: "feature_film", status: "released", release_date: "2023-12-08", director_name: "Yorgos Lanthimos", distributor: "Searchlight Pictures", company_role: "production_company" }
     ],
     people: [
-      { id: "per_ep1", full_name: "Ed Guiney", role: "founder", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "ed.guiney@elementpictures.ie" },
-      { id: "per_ep2", full_name: "Andrew Lowe", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "andrew.lowe@elementpictures.ie" }
+      { id: "per00000-0000-0000-0000-000000000023", full_name: "Ed Guiney", role: "founder", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "ed.guiney@elementpictures.ie" },
+      { id: "per00000-0000-0000-0000-000000000024", full_name: "Andrew Lowe", role: "founder", seniority: "C-Level", is_current: true, confidence: 98, contact_email: "andrew.lowe@elementpictures.ie" }
     ],
     events: [
       { id: "ev_ep1", event_type: "production_started", title: "New Yorgos Lanthimos Project Enters Post Finishing", description: "Prestige HDR color suite and sound mix.", event_date: new Date(Date.now() - 14 * 86400000).toISOString(), importance_score: 97, opportunity_score: 98 }
@@ -1990,8 +1990,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_sueno_1", title: "El Hombre del Saco", project_type: "feature_film", status: "released", release_date: "2023-08-11", director_name: "Ángel Gómez Hernández", distributor: "Prime Video", company_role: "production_company" }
     ],
     people: [
-      { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "enrique@elsuenoeternopictures.com" },
-      { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "patricia.roldan@elsuenoeternopictures.com" }
+      { id: "per00000-0000-0000-0000-000000000028", full_name: "Enrique Cerezo", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "enrique@elsuenoeternopictures.com" },
+      { id: "per00000-0000-0000-0000-000000000029", full_name: "Patricia Roldán", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "patricia.roldan@elsuenoeternopictures.com" }
     ],
     events: [
       { id: "ev_sueno_1", event_type: "production_started", title: "Nuevo Largometraje de Ficción en Madrid", description: "Fase de corrección de color y entregables HDR.", event_date: new Date(Date.now() - 15 * 86400000).toISOString(), importance_score: 88, opportunity_score: 92 }
@@ -2002,8 +2002,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_sueno_1", title: "El Hombre del Saco", project_type: "feature_film", status: "released", release_date: "2023-08-11", director_name: "Ángel Gómez Hernández", distributor: "Prime Video", company_role: "production_company" }
     ],
     people: [
-      { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "enrique@elsuenoeternopictures.com" },
-      { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "patricia.roldan@elsuenoeternopictures.com" }
+      { id: "per00000-0000-0000-0000-000000000028", full_name: "Enrique Cerezo", role: "founder", seniority: "C-Level", is_current: true, confidence: 96, contact_email: "enrique@elsuenoeternopictures.com" },
+      { id: "per00000-0000-0000-0000-000000000029", full_name: "Patricia Roldán", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 95, contact_email: "patricia.roldan@elsuenoeternopictures.com" }
     ],
     events: [
       { id: "ev_sueno_1", event_type: "production_started", title: "Nuevo Largometraje de Ficción en Madrid", description: "Fase de corrección de color y entregables HDR.", event_date: new Date(Date.now() - 15 * 86400000).toISOString(), importance_score: 88, opportunity_score: 92 }
@@ -2014,7 +2014,7 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_fab1", title: "Spencer", project_type: "feature_film", status: "released", release_date: "2021-11-05", director_name: "Pablo Larraín", distributor: "NEON", company_role: "production_company" }
     ],
     people: [
-      { id: "per_fab1", full_name: "Juan de Dios Larraín", role: "ceo", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "juandedios@fabula.cl" }
+      { id: "per00000-0000-0000-0000-000000000025", full_name: "Juan de Dios Larraín", role: "ceo", seniority: "C-Level", is_current: true, confidence: 99, contact_email: "juandedios@fabula.cl" }
     ],
     events: [
       { id: "ev_fab1", event_type: "production_started", title: "Pablo Larraín Feature Entering Color Mastering", description: "Bespoke color grading pipeline.", event_date: new Date(Date.now() - 22 * 86400000).toISOString(), importance_score: 93, opportunity_score: 95 }
@@ -2025,7 +2025,7 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_ff1", title: "La voluntaria", project_type: "feature_film", status: "released", release_date: "2022-06-10", director_name: "Nely Reguera", distributor: "BTeam Pictures", company_role: "production_company" }
     ],
     people: [
-      { id: "per_ff1", full_name: "Adrià Monés", role: "founder", seniority: "C-Level", is_current: true, confidence: 94, contact_email: "adria@fastenfilms.com" }
+      { id: "per00000-0000-0000-0000-000000000026", full_name: "Adrià Monés", role: "founder", seniority: "C-Level", is_current: true, confidence: 94, contact_email: "adria@fastenfilms.com" }
     ],
     events: [
       { id: "ev_ff1", event_type: "production_started", title: "European Indie Co-Production Principal Photography", description: "Finishing & color suite setup.", event_date: new Date(Date.now() - 19 * 86400000).toISOString(), importance_score: 84, opportunity_score: 90 }
@@ -2036,7 +2036,7 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "p_pec1", title: "Cerrar los ojos (Close Your Eyes)", project_type: "feature_film", status: "released", release_date: "2023-09-29", director_name: "Víctor Erice", distributor: "Nouveau Pictures", company_role: "production_company" }
     ],
     people: [
-      { id: "per_pec1", full_name: "José Alba", role: "founder", seniority: "C-Level", is_current: true, confidence: 95, contact_email: "jose.alba@pecadofilms.com" }
+      { id: "per00000-0000-0000-0000-000000000027", full_name: "José Alba", role: "founder", seniority: "C-Level", is_current: true, confidence: 95, contact_email: "jose.alba@pecadofilms.com" }
     ],
     events: [
       { id: "ev_pec1", event_type: "festival_premiere", title: "Cannes Premiere for Cerrar Los Ojos", description: "Acclaimed color master and picture finishing.", event_date: new Date(Date.now() - 45 * 86400000).toISOString(), importance_score: 94, opportunity_score: 91 }
@@ -2058,7 +2058,7 @@ function normalizeCompanySlug(slug: string): string {
   }
 }
 
-function getFallbackCompanyBySlug(slug: string) {
+export function getFallbackCompanyBySlug(slug: string) {
   const normSlug = normalizeCompanySlug(slug);
   let company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === normSlug || c.slug === slug);
   if (!company) {
@@ -2097,7 +2097,7 @@ function getFallbackCompanyBySlug(slug: string) {
       score_confidence: 90,
       ai_summary: `Productora boutique con sede en Madrid.`,
       ai_opportunity_summary: `Proyectos activos de ficción con necesidades de etalonaje y acabado de color.`,
-      provenance_type: "verified",
+      provenance_type: "synthetic",
       data_classification: "public",
       last_verified_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -2107,195 +2107,9 @@ function getFallbackCompanyBySlug(slug: string) {
   }
   const custom = SPECIFIC_COMPANY_DATA[normSlug] || SPECIFIC_COMPANY_DATA[slug];
 
-  const domain = company.website_url ? company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0] : `${company.slug}.com`;
-  const cleanEmail = company.contact_email || `contact@${domain}`;
-
-const ALL_COMPANY_EXECUTIVES_MAP: Record<string, { id?: string; full_name: string; role: string; contact_email?: string }[]> = {
-  "morena-films": [
-    { id: "per_c1_1", full_name: "Pedro Uriol", role: "head_of_production", contact_email: "pedro.uriol@morenafilms.com" },
-    { id: "per_c1_2", full_name: "Álvaro Longoria", role: "founder", contact_email: "alvaro.longoria@morenafilms.com" },
-    { id: "per_c1_3", full_name: "Pilar Benito", role: "managing_director", contact_email: "pilar.benito@morenafilms.com" }
-  ],
-  "a24": [
-    { id: "per_c2_1", full_name: "Daniel Katz", role: "founder", contact_email: "dkatz@a24films.com" },
-    { id: "per_c2_2", full_name: "Emma Cahusac", role: "head_of_post", contact_email: "emma.cahusac@a24films.com" },
-    { id: "per_c2_3", full_name: "Noah Sacco", role: "head_of_acquisitions", contact_email: "nsacco@a24films.com" }
-  ],
-  "see-saw-films": [
-    { id: "per_c3_1", full_name: "Iain Canning", role: "founder", contact_email: "iain.canning@see-saw-films.com" },
-    { id: "per_c3_2", full_name: "Emile Sherman", role: "founder", contact_email: "emile.sherman@see-saw-films.com" },
-    { id: "per_c3_3", full_name: "Helen Gregory", role: "head_of_content", contact_email: "helen.gregory@see-saw-films.com" }
-  ],
-  "fremantle": [
-    { id: "per_c4_1", full_name: "Jennifer Mullin", role: "ceo", contact_email: "jennifer.mullin@fremantle.com" },
-    { id: "per_c4_2", full_name: "Andrea Scrosati", role: "group_coo", contact_email: "andrea.scrosati@fremantle.com" }
-  ],
-  "gaumont": [
-    { id: "per_c5_1", full_name: "Sidonie Dumas", role: "ceo", contact_email: "sdumas@gaumont.com" },
-    { id: "per_c5_2", full_name: "Christophe Riandee", role: "vice_ceo", contact_email: "criandee@gaumont.com" }
-  ],
-  "wildside": [
-    { id: "per_c6_1", full_name: "Mario Gianani", role: "founder", contact_email: "mgianani@wildside.it" },
-    { id: "per_c6_2", full_name: "Lorenzo Gangarossa", role: "executive_producer", contact_email: "lgangarossa@wildside.it" }
-  ],
-  "bavaria-fiction": [
-    { id: "per_c7_1", full_name: "Marcus Ammon", role: "managing_director", contact_email: "marcus.ammon@bavaria-fiction.de" },
-    { id: "per_c7_2", full_name: "Jan S. Kaiser", role: "managing_director", contact_email: "jan.kaiser@bavaria-fiction.de" }
-  ],
-  "elephant-content": [
-    { id: "per_c8_1", full_name: "Gaël Bossange", role: "founder", contact_email: "gbossange@elephant-groupe.com" },
-    { id: "per_c8_2", full_name: "Guillaume Renouil", role: "head_of_fiction", contact_email: "grenouil@elephant-groupe.com" }
-  ],
-  "btf-media": [
-    { id: "per_c9_1", full_name: "Francisco Cordero", role: "founder", contact_email: "fcordero@btfmedia.com" },
-    { id: "per_c9_2", full_name: "Ricardo Coeto", role: "co_founder", contact_email: "rcoeto@btfmedia.com" }
-  ],
-  "blumhouse": [
-    { id: "per_c10_1", full_name: "Jason Blum", role: "founder", contact_email: "jason@blumhouse.com" },
-    { id: "per_c10_2", full_name: "Couper Samuelson", role: "head_of_feature_films", contact_email: "couper@blumhouse.com" }
-  ],
-  "microscope": [
-    { id: "per_c11_1", full_name: "Oliver Kassman", role: "founder", contact_email: "oliver@microscopefilms.com" }
-  ],
-  "zeta-studios": [
-    { id: "per_c12_1", full_name: "Antonio Asensio", role: "ceo", contact_email: "aasensio@zetastudios.com" },
-    { id: "per_c12_2", full_name: "Paloma Molina", role: "head_of_production", contact_email: "pmolina@zetastudios.com" }
-  ],
-  "les-films-du-losange": [
-    { id: "per_c13_1", full_name: "Alexis Dantec", role: "managing_director", contact_email: "adantec@filmsdulosange.com" }
-  ],
-  "luckychap": [
-    { id: "per_c14_1", full_name: "Margot Robbie", role: "founder", contact_email: "margot@luckychap.com" },
-    { id: "per_c14_2", full_name: "Josey McNamara", role: "co_founder", contact_email: "josey@luckychap.com" },
-    { id: "per_c14_3", full_name: "Tom Ackerley", role: "co_founder", contact_email: "tom@luckychap.com" }
-  ],
-  "warp-films": [
-    { id: "per_c15_1", full_name: "Mark Herbert", role: "joint_ceo", contact_email: "mark@warpfilms.com" },
-    { id: "per_c15_2", full_name: "Peter Carlton", role: "joint_ceo", contact_email: "peter@warpfilms.com" }
-  ],
-  "kino-produzioni": [
-    { id: "per_c16_1", full_name: "Giovanni Pompili", role: "founder", contact_email: "giovanni@kinoproduzioni.com" }
-  ],
-  "comite-cine": [
-    { id: "per_c17_1", full_name: "François Larpin", role: "executive_producer", contact_email: "f.larpin@comitecine.fr" }
-  ],
-  "k5-international": [
-    { id: "per_c18_1", full_name: "Oliver Simon", role: "founder", contact_email: "oliver@k5films.com" },
-    { id: "per_c18_2", full_name: "Daniel Baur", role: "co_founder", contact_email: "daniel@k5films.com" }
-  ],
-  "neon": [
-    { id: "per_c19_1", full_name: "Tom Quinn", role: "founder", contact_email: "tquinn@neonrated.com" },
-    { id: "per_c19_2", full_name: "Elissa Federoff", role: "president_distribution", contact_email: "elissa@neonrated.com" }
-  ],
-  "diagonal-tv": [
-    { id: "per_c20_1", full_name: "Jaume Banacolocha", role: "ceo", contact_email: "jbanacolocha@diagonaltv.es" },
-    { id: "per_c20_2", full_name: "Montse García", role: "head_of_fiction", contact_email: "mgarcia@diagonaltv.es" }
-  ],
-  "sundance-prod": [
-    { id: "per_c21_1", full_name: "Laura Michalchyshyn", role: "president", contact_email: "laura@sundanceproductions.com" }
-  ],
-  "kominami-films": [
-    { id: "per_c22_1", full_name: "Kenji Kominami", role: "founder", contact_email: "kenji@kominamifilms.com" }
-  ],
-  "cineflix-media": [
-    { id: "per_c23_1", full_name: "Glen Salzman", role: "co_founder", contact_email: "gsalzman@cineflix.com" },
-    { id: "per_c23_2", full_name: "Carol Torrence", role: "head_of_production", contact_email: "ctorrence@cineflix.com" }
-  ],
-  "filmnation": [
-    { id: "per_c24_1", full_name: "Glen Basner", role: "founder_ceo", contact_email: "gbasner@filmnation.com" },
-    { id: "per_c24_2", full_name: "Alison Cohen", role: "president_production", contact_email: "acohen@filmnation.com" }
-  ],
-  "nostromo-pictures": [
-    { id: "per_c4_1", full_name: "Adrián Guerra", role: "founder", contact_email: "aguerra@nostromopictures.com" },
-    { id: "per_c4_2", full_name: "Núria Valls", role: "head_of_production", contact_email: "nvalls@nostromopictures.com" }
-  ],
-  "el-deseo": [
-    { id: "per_c5_1", full_name: "Agustín Almodóvar", role: "founder", contact_email: "agustin@eldeseo.es" },
-    { id: "per_c5_2", full_name: "Esther García", role: "head_of_production", contact_email: "esther@eldeseo.es" }
-  ],
-  "vaca-films": [
-    { id: "per_c43_1", full_name: "Emma Lustres", role: "founder", contact_email: "emma@vacafilms.com" },
-    { id: "per_c43_2", full_name: "Borja Pena", role: "managing_director", contact_email: "borja@vacafilms.com" }
-  ],
-  "irusoin": [
-    { id: "per_c39_1", full_name: "Xabier Berzosa", role: "executive_producer", contact_email: "xberzosa@irusoin.com" },
-    { id: "per_c39_2", full_name: "Iñigo Obeso", role: "head_of_post", contact_email: "iobeso@irusoin.com" }
-  ],
-  "kowalski-films": [
-    { id: "per_c38_1", full_name: "Koldo Zuazua", role: "founder", contact_email: "koldo@kowalskifilms.com" }
-  ],
-  "avalon-pc": [
-    { id: "per_c50_1", full_name: "Stefan Schmitz", role: "founder", contact_email: "stefan@avalon.me" },
-    { id: "per_c50_2", full_name: "María Zamora", role: "executive_producer", contact_email: "mzamora@avalon.me" }
-  ],
-  "fasten-films": [
-    { id: "per_c51_1", full_name: "Adrià Monés", role: "founder", contact_email: "adria@fastenfilms.com" }
-  ],
-  "pecado-films": [
-    { id: "per_c52_1", full_name: "José Alba", role: "founder", contact_email: "jose.alba@pecadofilms.com" }
-  ],
-  "el-sueno-eterno": [
-    { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", contact_email: "enrique@elsuenoeternopictures.com" },
-    { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", contact_email: "patricia.roldan@elsuenoeternopictures.com" }
-  ],
-  "el-sue-o-eterno": [
-    { id: "per_sueno_1", full_name: "Enrique Cerezo", role: "founder", contact_email: "enrique@elsuenoeternopictures.com" },
-    { id: "per_sueno_2", full_name: "Patricia Roldán", role: "head_of_production", contact_email: "patricia.roldan@elsuenoeternopictures.com" }
-  ]
-};
-
-  const mappedExecs = ALL_COMPANY_EXECUTIVES_MAP[company.slug] || ALL_COMPANY_EXECUTIVES_MAP[slug];
-
-  const peopleList = mappedExecs || getRegisteredExecutivesForCompany(company.slug, company.name, domain);
-
-  const defaultPeople = peopleList.map((exec: any, idx: number) => ({
-    id: exec.id || `per_${company.slug}_${idx + 1}`,
-    full_name: exec.full_name,
-    role: exec.role,
-    seniority: exec.role.includes("founder") || exec.role.includes("ceo") ? "C-Level" : "Executive",
-    is_current: true,
-    confidence: 96,
-    contact_email: exec.contact_email || exec.email || cleanEmail,
-  }));
-
-  const defaultProjects = [
-    {
-      id: `p_${company.id}_1`,
-      title: `${company.name} Feature Film Slate`,
-      project_type: "feature_film",
-      status: "production",
-      release_date: "2025-11-15",
-      director_name: "Auteur Director",
-      distributor: "International Distributor",
-      company_role: "production_company",
-    },
-    {
-      id: `p_${company.id}_2`,
-      title: `${company.name} Original Series`,
-      project_type: "tv_series",
-      status: "post_production",
-      release_date: "2025-08-20",
-      director_name: "Showrunner Lead",
-      distributor: "Global Streaming Partner",
-      company_role: "producer",
-    },
-  ];
-
-  const defaultEvents = [
-    {
-      id: `ev_${company.id}_1`,
-      event_type: "production_started",
-      title: `Principal Photography Commenced for ${company.name} Production`,
-      description: `Feature production entering post-production and color grading staging in ${company.city || company.country_name}.`,
-      event_date: new Date(Date.now() - 30 * 86400000).toISOString(),
-      importance_score: 88,
-      opportunity_score: 95,
-    },
-  ];
-
-  const people = custom?.people && custom.people.length > 0 ? custom.people : defaultPeople;
-  const projects = custom?.projects && custom.projects.length > 0 ? custom.projects : defaultProjects;
-  const events = custom?.events && custom.events.length > 0 ? custom.events : defaultEvents;
+  const people = custom?.people || [];
+  const projects = custom?.projects || [];
+  const events = custom?.events || [];
 
   return {
     company,
@@ -2324,7 +2138,7 @@ const ALL_COMPANY_EXECUTIVES_MAP: Record<string, { id?: string; full_name: strin
         id: `s_${company.id}_1`,
         source_type: "company_website",
         source_name: "Official Portal",
-        url: company.website_url || `https://${domain}`,
+        url: company.website_url || `https://${company.slug}.com`,
         title: `${company.name} Official Portal`,
         publisher: company.name,
         credibility_score: 98,

@@ -1,7 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { PersonRow } from "@/types/person";
+import { createClient } from "../supabase/server";
+import { PersonRow } from "../../types/person";
 import { PaginatedResponse } from "./company-service";
-import { resolvePersonById } from "./entity-registry";
 
 export interface PersonFilterOptions {
   search?: string;
@@ -145,7 +144,7 @@ export async function getPersonById(id: string): Promise<PersonWithGraph | null>
 }
 
 // Fallback People Data
-const MOCK_PEOPLE: (PersonWithGraph & { email?: string; phone?: string })[] = [
+export const MOCK_PEOPLE: (PersonWithGraph & { email?: string; phone?: string })[] = [
   // Morena Films
   {
     id: "per00000-0000-0000-0000-000000000001",
@@ -715,13 +714,128 @@ const MOCK_PEOPLE: (PersonWithGraph & { email?: string; phone?: string })[] = [
     updated_at: new Date().toISOString(),
     positions: [{ company_id: "c52", company_name: "Pecado Films", company_slug: "pecado-films", role: "founder", seniority: "C-Level", is_current: true, confidence: 95 }],
   },
+
+  // El Sueño Eterno Pictures
+  {
+    id: "per00000-0000-0000-0000-000000000028",
+    full_name: "Enrique Cerezo",
+    first_name: "Enrique",
+    last_name: "Cerezo",
+    job_title: "Founder & President",
+    email: "enrique@elsuenoeternopictures.com",
+    phone: "+34 91 510 0401",
+    linkedin_url: "https://linkedin.com/company/el-sueno-eterno-pictures",
+    website_url: "https://elsuenoeternopictures.com",
+    country_code: "ES",
+    city: "Madrid",
+    bio: "Founder of El Sueño Eterno Pictures.",
+    profile_confidence: 90,
+    ai_summary: "El Sueño Eterno Founder.",
+    provenance_type: "seed",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    positions: [{ company_id: "c48", company_name: "El Sueño Eterno Pictures", company_slug: "el-sueno-eterno", role: "founder", seniority: "C-Level", is_current: true, confidence: 90 }],
+  },
+  {
+    id: "per00000-0000-0000-0000-000000000029",
+    full_name: "Patricia Roldán",
+    first_name: "Patricia",
+    last_name: "Roldán",
+    job_title: "Head of Production",
+    email: "patricia.roldan@elsuenoeternopictures.com",
+    phone: "+34 91 510 0402",
+    linkedin_url: "https://linkedin.com/in/patricia-roldan-sueno",
+    website_url: "https://elsuenoeternopictures.com",
+    country_code: "ES",
+    city: "Madrid",
+    bio: "Head of Production at El Sueño Eterno Pictures.",
+    profile_confidence: 90,
+    ai_summary: "El Sueño Eterno Head of Production.",
+    provenance_type: "seed",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    positions: [{ company_id: "c48", company_name: "El Sueño Eterno Pictures", company_slug: "el-sueno-eterno", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 90 }],
+  },
 ];
+
+/**
+ * CANONICAL PERSON ID ALIAS MAP
+ * Maps ALL legacy/alternate IDs from SPECIFIC_COMPANY_DATA, ALL_COMPANY_EXECUTIVES_MAP,
+ * and entity-registry to the single canonical UUID in MOCK_PEOPLE.
+ * This ensures backward compatibility and prevents identity mismatches.
+ */
+export const PERSON_ID_ALIASES: Record<string, string> = {
+  // Morena Films
+  "per_mf1": "per00000-0000-0000-0000-000000000001",   // Pedro Uriol
+  "per_mf2": "per00000-0000-0000-0000-000000000002",   // Álvaro Longoria
+  "per_mf3": "per00000-0000-0000-0000-000000000003",   // Pilar Benito
+  "per_c1_1": "per00000-0000-0000-0000-000000000001",
+  "per_c1_2": "per00000-0000-0000-0000-000000000002",
+  "per_c1_3": "per00000-0000-0000-0000-000000000003",
+  // Nostromo Pictures
+  "per_nos1": "per00000-0000-0000-0000-000000000004",   // Adrián Guerra
+  "per_nos2": "per00000-0000-0000-0000-000000000005",   // Núria Valls
+  // El Deseo
+  "per_des1": "per00000-0000-0000-0000-000000000006",   // Agustín Almodóvar
+  "per_des2": "per00000-0000-0000-0000-000000000007",   // Esther García
+  // See-Saw Films
+  "per_ss1": "per00000-0000-0000-0000-000000000008",    // Iain Canning
+  "per_ss2": "per00000-0000-0000-0000-000000000009",    // Emile Sherman
+  "per_c3_1": "per00000-0000-0000-0000-000000000008",
+  "per_c3_2": "per00000-0000-0000-0000-000000000009",
+  "per_c3_3": "per00000-0000-0000-0000-000000000010",   // Helen Gregory
+  // A24
+  "per_a24_1": "per00000-0000-0000-0000-000000000012",  // Daniel Katz
+  "per_a24_2": "per00000-0000-0000-0000-000000000011",  // Emma Cahusac
+  "per_c2_1": "per00000-0000-0000-0000-000000000012",
+  "per_c2_2": "per00000-0000-0000-0000-000000000011",
+  // Zeta Studios
+  "per_zet1": "per00000-0000-0000-0000-000000000014",   // Antonio Asensio
+  "per_zet2": "per00000-0000-0000-0000-000000000013",   // Paloma Molina
+  "per_zeta-studios_1": "per00000-0000-0000-0000-000000000013",
+  "per_zeta-studios_2": "per00000-0000-0000-0000-000000000014",
+  // Vaca Films
+  "per_vaca1": "per00000-0000-0000-0000-000000000015",  // Emma Lustres
+  "per_vaca2": "per00000-0000-0000-0000-000000000016",  // Borja Pena
+  "per_c43_1": "per00000-0000-0000-0000-000000000015",
+  "per_c43_2": "per00000-0000-0000-0000-000000000016",
+  // Irusoin
+  "per_iru1": "per00000-0000-0000-0000-000000000017",   // Xabier Berzosa
+  "per_c39_1": "per00000-0000-0000-0000-000000000017",
+  // Kowalski Films
+  "per_kow1": "per00000-0000-0000-0000-000000000018",   // Koldo Zuazua
+  "per_c38_1": "per00000-0000-0000-0000-000000000018",
+  // Avalon
+  "per_ava1": "per00000-0000-0000-0000-000000000019",   // Stefan Schmitz
+  "per_ava2": "per00000-0000-0000-0000-000000000020",   // María Zamora
+  "per_c50_1": "per00000-0000-0000-0000-000000000019",
+  "per_c50_2": "per00000-0000-0000-0000-000000000020",
+  // LuckyChap
+  "per_lc1": "per00000-0000-0000-0000-000000000021",    // Josey McNamara
+  "per_lc2": "per00000-0000-0000-0000-000000000022",    // Tom Ackerley
+  "per_c14_2": "per00000-0000-0000-0000-000000000021",
+  "per_c14_3": "per00000-0000-0000-0000-000000000022",
+  // Element Pictures
+  "per_ep1": "per00000-0000-0000-0000-000000000023",    // Ed Guiney
+  "per_ep2": "per00000-0000-0000-0000-000000000024",    // Andrew Lowe
+  // Fabula
+  "per_fab1": "per00000-0000-0000-0000-000000000025",   // Juan de Dios Larraín
+  // Fasten Films
+  "per_ff1": "per00000-0000-0000-0000-000000000026",    // Adrià Monés
+  "per_c51_1": "per00000-0000-0000-0000-000000000026",
+  // Pecado Films
+  "per_pec1": "per00000-0000-0000-0000-000000000027",   // José Alba
+  "per_c52_1": "per00000-0000-0000-0000-000000000027",
+  // El Sueño Eterno
+  "per_sueno_1": "per00000-0000-0000-0000-000000000028", // Enrique Cerezo
+  "per_sueno_2": "per00000-0000-0000-0000-000000000029", // Patricia Roldán
+};
 
 function normalizeStr(str: string): string {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-function getFallbackPeople(options: PersonFilterOptions, page: number, limit: number): PaginatedResponse<PersonWithGraph> {
+export function getFallbackPeople(options: PersonFilterOptions, page: number, limit: number): PaginatedResponse<PersonWithGraph> {
   let filtered = [...MOCK_PEOPLE];
 
   if (options.country) {
@@ -741,97 +855,10 @@ function getFallbackPeople(options: PersonFilterOptions, page: number, limit: nu
         (p.city && normalizeStr(p.city).includes(s)) ||
         p.positions?.some((pos) => normalizeStr(pos.company_name).includes(s))
     );
-
-    if (filtered.length === 0) {
-      const searchName = options.search.trim().split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-      const nameParts = searchName.split(" ");
-      const fn = nameParts[0];
-      const ln = nameParts.slice(1).join(" ") || "Executive";
-      const cleanLn = ln.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-      const dynPerson: PersonWithGraph = {
-        id: `per_dyn_${options.search.toLowerCase().replace(/[^a-z0-9]/g, "_")}`,
-        full_name: searchName,
-        first_name: fn,
-        last_name: ln,
-        job_title: "Head of Production & Executive Producer",
-        email: `${fn.charAt(0).toLowerCase()}.${cleanLn}@productionhouse.com`,
-        phone: "+34 91 555 0199",
-        linkedin_url: `https://linkedin.com/in/${fn.toLowerCase()}-${cleanLn}`,
-        website_url: "https://productionhouse.com",
-        country_code: "ES",
-        city: "Madrid",
-        bio: `Senior production decision maker overseeing film and television slates.`,
-        profile_confidence: 96,
-        ai_summary: `Key decision maker for film production slates.`,
-        provenance_type: "verified",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        positions: [
-          { company_id: "c_dyn", company_name: "Independent Studio", company_slug: "independent-studio", role: "head_of_production", seniority: "Executive", is_current: true, confidence: 96 },
-        ],
-      };
-      filtered = [dynPerson];
-    }
   }
 
-  // Calculate total key decision makers across the active graph (184 verified decision makers)
-  const total = Math.max(184, filtered.length);
+  const total = filtered.length;
   const paged = filtered.slice((page - 1) * limit, page * limit);
-
-  // If page exceeds filtered array length, dynamically generate realistic decision makers for pagination
-  if (paged.length < limit && filtered.length > 0) {
-    const needed = limit - paged.length;
-    const firstNames = ["Carlos", "Beatriz", "Mateo", "Sofía", "Elena", "Javier", "Lucía", "Gonzalo", "Valeria", "Ignacio", "Carmen", "Hugo", "Patricia", "Marcos"];
-    const lastNames = ["Mendonça", "Roldán", "Benítez", "Larrea", "Fontán", "Morales", "Valls", "Camargo", "Prieto", "Sola", "Navarro", "Guerra", "García", "Alba"];
-    const companyList = [
-      { name: "Morena Films", slug: "morena-films", country: "ES", domain: "morenafilms.com" },
-      { name: "A24", slug: "a24", country: "US", domain: "a24films.com" },
-      { name: "See-Saw Films", slug: "see-saw-films", country: "UK", domain: "see-saw-films.com" },
-      { name: "Nostromo Pictures", slug: "nostromopictures.com", country: "ES", domain: "nostromopictures.com" },
-      { name: "El Deseo", slug: "el-deseo", country: "ES", domain: "eldeseo.es" },
-      { name: "Vaca Films", slug: "vaca-films", country: "ES", domain: "vacafilms.com" },
-      { name: "Fremantle", slug: "fremantle", country: "UK", domain: "fremantle.com" },
-      { name: "Zeta Studios", slug: "zeta-studios", country: "ES", domain: "zetastudios.com" },
-      { name: "El Sueño Eterno Pictures", slug: "el-sueno-eterno", country: "ES", domain: "elsuenoeternopictures.com" },
-      { name: "LuckyChap Entertainment", slug: "luckychap", country: "US", domain: "luckychap.com" },
-    ];
-
-    const extraPeople: PersonWithGraph[] = Array.from({ length: needed }).map((_, i) => {
-      const idx = (page - 1) * limit + paged.length + i + 1;
-      const fn = firstNames[idx % firstNames.length];
-      const ln = lastNames[idx % lastNames.length];
-      const comp = companyList[idx % companyList.length];
-      const fnInit = fn.charAt(0).toLowerCase();
-      const cleanLn = ln.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const isLead = idx % 2 === 0;
-      const title = isLead ? "Head of Production & Line Producer" : "Founder & Executive Producer";
-
-      return {
-        id: `per_gen_${idx}`,
-        full_name: `${fn} ${ln}`,
-        first_name: fn,
-        last_name: ln,
-        job_title: title,
-        email: `${fnInit}.${cleanLn}@${comp.domain}`,
-        phone: "+34 91 555 0199",
-        linkedin_url: `https://linkedin.com/in/${fnInit}-${cleanLn}`,
-        website_url: `https://${comp.domain}`,
-        country_code: comp.country,
-        city: comp.country === "ES" ? "Madrid" : comp.country === "US" ? "New York" : "London",
-        bio: `Key decision maker at ${comp.name} supervising feature film post-production workflows.`,
-        profile_confidence: 96,
-        ai_summary: `Executive decision maker for ${comp.name}.`,
-        provenance_type: "verified",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        positions: [
-          { company_id: comp.slug, company_name: comp.name, company_slug: comp.slug, role: isLead ? "head_of_production" : "founder", seniority: "Executive", is_current: true, confidence: 96 },
-        ],
-      };
-    });
-    paged.push(...extraPeople);
-  }
 
   return {
     data: paged,
@@ -842,131 +869,85 @@ function getFallbackPeople(options: PersonFilterOptions, page: number, limit: nu
   };
 }
 
-function getFallbackPersonById(id: string): PersonWithGraph {
-  // 1. Try exact match in MOCK_PEOPLE
-  const found = MOCK_PEOPLE.find((p) => p.id === id);
-  if (found) {
-    const compSlug = found.positions?.[0]?.company_slug || "morena-films";
-    const compName = found.positions?.[0]?.company_name || "Production House";
-    
-    // Match real project IDs based on company slug
-    const realProjectsMap: Record<string, any[]> = {
-      "morena-films": [
-        { id: "p_mf1", title: "La Infiltrada", role: found.job_title || "Producer", company: "Morena Films" },
-        { id: "p_mf2", title: "Cerdita (Piggy)", role: found.job_title || "Producer", company: "Morena Films" },
-      ],
-      "vaca-films": [
-        { id: "p_vaca1", title: "Celda 211 (Cell 211)", role: found.job_title || "Executive Producer", company: "Vaca Films" },
-        { id: "p_vaca2", title: "El Desconocido (Retribution)", role: found.job_title || "Executive Producer", company: "Vaca Films" },
-        { id: "p_vaca3", title: "Hasta el cielo (Sky High)", role: found.job_title || "Producer", company: "Vaca Films" },
-      ],
-      "a24": [
-        { id: "p_a24_1", title: "Civil War", role: found.job_title || "Producer", company: "A24" },
-        { id: "p_a24_2", title: "Everything Everywhere All at Once", role: found.job_title || "Producer", company: "A24" },
-      ],
-      "see-saw-films": [
-        { id: "p_ss1", title: "Slow Horses Season 4", role: found.job_title || "Executive Producer", company: "See-Saw Films" },
-        { id: "p_ss2", title: "Lion", role: found.job_title || "Producer", company: "See-Saw Films" },
-      ],
-      "nostromo-pictures": [
-        { id: "p_nos1", title: "A través de mi ventana (Through My Window)", role: found.job_title || "Producer", company: "Nostromo Pictures" },
-        { id: "p_nos2", title: "Buried", role: found.job_title || "Producer", company: "Nostromo Pictures" },
-      ],
-      "el-deseo": [
-        { id: "p_des1", title: "The Room Next Door", role: found.job_title || "Executive Producer", company: "El Deseo" },
-        { id: "p_des2", title: "Dolor y Gloria (Pain and Glory)", role: found.job_title || "Executive Producer", company: "El Deseo" },
-      ],
-      "luckychap": [
-        { id: "p_lc1", title: "Barbie", role: found.job_title || "Producer", company: "LuckyChap Entertainment" },
-        { id: "p_lc2", title: "Saltburn", role: found.job_title || "Producer", company: "LuckyChap Entertainment" },
-      ],
-      "element-pictures": [
-        { id: "p_ep1", title: "Poor Things", role: found.job_title || "Executive Producer", company: "Element Pictures" },
-        { id: "p_ep2", title: "Normal People", role: found.job_title || "Executive Producer", company: "Element Pictures" },
-      ],
-      "fabula": [
-        { id: "p_fab1", title: "Spencer", role: found.job_title || "Executive Producer", company: "Fabula" },
-        { id: "p_fab2", title: "El Conde", role: found.job_title || "Producer", company: "Fabula" },
-      ],
-      "filmnation": [
-        { id: "p_fn1", title: "Arrival", role: found.job_title || "Executive Producer", company: "FilmNation Entertainment" },
-        { id: "p_fn2", title: "The Imitation Game", role: found.job_title || "Executive Producer", company: "FilmNation Entertainment" },
-      ],
-      "avalon-pc": [
-        { id: "p_ava1", title: "Alcarràs", role: found.job_title || "Executive Producer", company: "Avalon PR" },
-        { id: "p_ava2", title: "Verano 1993 (Summer 1993)", role: found.job_title || "Producer", company: "Avalon PR" },
-      ],
-      "irusoin": [
-        { id: "p_iru1", title: "La trinchera infinita", role: found.job_title || "Executive Producer", company: "Irusoin" },
-        { id: "p_iru2", title: "Handia", role: found.job_title || "Producer", company: "Irusoin" },
-      ],
-      "kowalski-films": [
-        { id: "p_kow1", title: "Akelarre", role: found.job_title || "Producer", company: "Kowalski Films" },
-      ],
-      "pecado-films": [
-        { id: "p_pec1", title: "Cerrar los ojos (Close Your Eyes)", role: found.job_title || "Producer", company: "Pecado Films" },
-      ],
-      "fasten-films": [
-        { id: "p_ff1", title: "La voluntaria", role: found.job_title || "Producer", company: "Fasten Films" },
-      ],
-    };
+export function getFallbackPersonById(id: string): PersonWithGraph | null {
+  // 1. Resolve alias to canonical UUID if this is a legacy ID
+  const canonicalId = PERSON_ID_ALIASES[id] || id;
 
-    const resolvedProjects = realProjectsMap[compSlug] || [
-      { id: `p_${compSlug}_1`, title: `${compName} Feature Slate`, role: found.job_title || "Producer", company: compName }
-    ];
-
-    return {
-      ...found,
-      projects: resolvedProjects,
-      awards: found.awards || [
-        { id: `a_${found.id}_1`, name: "Goya / BAFTA / Oscar Nominee", category: "Best Feature Film", year: 2024, result: "winner" },
-      ],
-      sources: found.sources || [
-        { id: `src_${found.id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
-      ],
-    };
+  // 2. Look up in canonical MOCK_PEOPLE registry
+  const found = MOCK_PEOPLE.find((p) => p.id === canonicalId);
+  if (!found) {
+    // ZERO FABRICATION: If we cannot find the person, return null.
+    // Never generate a fictional person to fill the gap.
+    return null;
   }
 
-  // 2. Resolve using Entity Registry to guarantee 100% identity fidelity
-  const regPerson = resolvePersonById(id);
+  const compSlug = found.positions?.[0]?.company_slug || "";
+  const compName = found.positions?.[0]?.company_name || "";
+
+  // Map known projects per company slug (real data only)
+  const realProjectsMap: Record<string, any[]> = {
+    "morena-films": [
+      { id: "p_mf1", title: "La Infiltrada", role: found.job_title || "Producer", company: "Morena Films" },
+      { id: "p_mf2", title: "Cerdita (Piggy)", role: found.job_title || "Producer", company: "Morena Films" },
+    ],
+    "vaca-films": [
+      { id: "p_vaca1", title: "Celda 211 (Cell 211)", role: found.job_title || "Executive Producer", company: "Vaca Films" },
+      { id: "p_vaca2", title: "El Desconocido (Retribution)", role: found.job_title || "Executive Producer", company: "Vaca Films" },
+    ],
+    "a24": [
+      { id: "p_a24_1", title: "Civil War", role: found.job_title || "Producer", company: "A24" },
+      { id: "p_a24_2", title: "Everything Everywhere All at Once", role: found.job_title || "Producer", company: "A24" },
+    ],
+    "see-saw-films": [
+      { id: "p_ss1", title: "Slow Horses Season 4", role: found.job_title || "Executive Producer", company: "See-Saw Films" },
+    ],
+    "nostromo-pictures": [
+      { id: "p_nos1", title: "A través de mi ventana (Through My Window)", role: found.job_title || "Producer", company: "Nostromo Pictures" },
+    ],
+    "el-deseo": [
+      { id: "p_des1", title: "The Room Next Door", role: found.job_title || "Executive Producer", company: "El Deseo" },
+    ],
+    "zeta-studios": [
+      { id: "p_zet1", title: "Élite", role: found.job_title || "Executive Producer", company: "Zeta Studios" },
+    ],
+    "luckychap": [
+      { id: "p_lc1", title: "Barbie", role: found.job_title || "Producer", company: "LuckyChap Entertainment" },
+      { id: "p_lc2", title: "Saltburn", role: found.job_title || "Producer", company: "LuckyChap Entertainment" },
+    ],
+    "element-pictures": [
+      { id: "p_ep1", title: "Poor Things", role: found.job_title || "Executive Producer", company: "Element Pictures" },
+    ],
+    "fabula": [
+      { id: "p_fab1", title: "Spencer", role: found.job_title || "Executive Producer", company: "Fabula" },
+    ],
+    "avalon-pc": [
+      { id: "p_ava1", title: "Alcarràs", role: found.job_title || "Executive Producer", company: "Avalon PR" },
+    ],
+    "irusoin": [
+      { id: "p_iru1", title: "La trinchera infinita", role: found.job_title || "Executive Producer", company: "Irusoin" },
+    ],
+    "kowalski-films": [
+      { id: "p_kow1", title: "Akelarre", role: found.job_title || "Producer", company: "Kowalski Films" },
+    ],
+    "pecado-films": [
+      { id: "p_pec1", title: "Cerrar los ojos (Close Your Eyes)", role: found.job_title || "Producer", company: "Pecado Films" },
+    ],
+    "fasten-films": [
+      { id: "p_ff1", title: "La voluntaria", role: found.job_title || "Producer", company: "Fasten Films" },
+    ],
+    "el-sueno-eterno": [
+      { id: "p_sueno_1", title: "El Hombre del Saco", role: found.job_title || "Executive Producer", company: "El Sueño Eterno Pictures" },
+    ],
+  };
+
+  const resolvedProjects = realProjectsMap[compSlug] || [];
 
   return {
-    id,
-    full_name: regPerson.full_name,
-    first_name: regPerson.first_name,
-    last_name: regPerson.last_name,
-    job_title: regPerson.job_title,
-    email: regPerson.email,
-    phone: regPerson.phone,
-    linkedin_url: regPerson.linkedin_url,
-    website_url: regPerson.website_url,
-    country_code: regPerson.country_code,
-    city: regPerson.city,
-    bio: regPerson.bio,
-    profile_confidence: 96,
-    ai_summary: `Executive decision maker for ${regPerson.company_name}.`,
-    provenance_type: "verified",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    positions: [
-      {
-        company_id: regPerson.company_id,
-        company_name: regPerson.company_name,
-        company_slug: regPerson.company_slug,
-        role: regPerson.role,
-        seniority: regPerson.seniority,
-        is_current: true,
-        confidence: 96,
-      },
-    ],
-    projects: [
-      { id: `p_${regPerson.company_slug}_1`, title: `${regPerson.company_name} Feature Slate`, role: regPerson.job_title, company: regPerson.company_name },
-    ],
-    awards: [
-      { id: `a_${id}_1`, name: "Goya / Festival Selection", category: "Best Production", year: 2024, result: "winner" },
-    ],
-    sources: [
-      { id: `src_${id}_1`, source_name: "IMDbPro Executive Listing", source_type: "imdb", credibility_score: 98 },
+    ...found,
+    projects: resolvedProjects,
+    awards: found.awards || [],
+    sources: found.sources || [
+      { id: `src_${found.id}_1`, source_name: "Seed Data — Pending Independent Verification", source_type: "seed", credibility_score: 80 },
     ],
   };
 }
