@@ -12,9 +12,9 @@
 | Contenido Rechazado (`FETCHED_BUT_NOT_EVIDENCE`) | 3 | 🟢 FILTRADO |
 | Claims Extraídos (`CLAIM_EXTRACTED`) | 5 | 🟢 ATÓMICO |
 | Claims Verificados (`CLAIM_VERIFIED`) | 5 | 🟢 SÓLIDO |
-| Eventos Aceptados (`EVENT_ACCEPTED`) | 5 | 🟢 INTEGRADO |
+| Eventos Aceptados (`EVENT_ACCEPTED`) | 4 | 🟢 INTEGRADO |
 | Eventos Rechazados (`EVENT_REJECTED`) | 0 | 🟢 RECHAZADO |
-| Entidades No Resueltas (`ENTITY_UNRESOLVED`) | 0 | 🟢 BLOQUEADO |
+| Entidades No Resueltas (`ENTITY_UNRESOLVED`) | 1 | 🟢 BLOQUEADO |
 | Señales Obsoletas (`SUPERSEDED`) | 0 | 🟢 SUPERSEDED |
 | Cambios de Sales Readiness | 0 | 🟢 CONTROLADO |
 
@@ -26,7 +26,7 @@
 |---|---|---|---|---|---|
 | src_official_morena | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 1 | N/A |
 | src_official_luckychap | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 2 | N/A |
-| src_trade_variety | **TIER_2_TRADE_PRESS** | CONNECTED | **HEALTHY** | 1 | N/A |
+| src_trade_variety | **TIER_2_TRADE_PRESS** | DEGRADED | **DEGRADED** | 1 | N/A |
 | src_trade_hollywoodreporter | **TIER_2_TRADE_PRESS** | DEGRADED | **CONTENT_INVALID** | 1 | N/A |
 | src_trade_cineuropa | **TIER_2_TRADE_PRESS** | DEGRADED | **CONTENT_INVALID** | 2 | N/A |
 | src_official_nostromo | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 2 | N/A |

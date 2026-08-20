@@ -308,6 +308,93 @@ export interface WhatChangedEntry {
   priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 }
 
+export type ScanStageErrorCode =
+  | "NETWORK_ERROR"
+  | "TIMEOUT"
+  | "HTTP_ERROR"
+  | "CONTENT_INVALID"
+  | "SOURCE_INVALID"
+  | "PARKED_DOMAIN"
+  | "AUTHENTICITY_REJECTED"
+  | "CLAIM_EXTRACTION_FAILED"
+  | "ENTITY_UNRESOLVED"
+  | "CLAIM_UNVERIFIED"
+  | "EVENT_REJECTED"
+  | "PERSISTENCE_FAILED"
+  | "UNKNOWN";
+
+export type PersistenceMode = "SUPABASE_DATABASE" | "IN_MEMORY_FALLBACK";
+
+export interface ScanStageError {
+  stage: string;
+  sourceId: string;
+  errorCode: ScanStageErrorCode;
+  message: string;
+  timestamp: string;
+}
+
+export interface ScanStageRejection {
+  stage: string;
+  sourceId: string;
+  reason: string;
+  itemTitle?: string;
+  timestamp: string;
+}
+
+export interface SourceDiagnosticResult {
+  sourceId: string;
+  sourceName: string;
+  requestedUrl: string;
+  resolvedUrl?: string;
+  httpStatus?: number;
+  responseTimeMs?: number;
+  contentLength?: number;
+  contentType?: string;
+  authenticityStatus: SourceAuthenticityStatus;
+  contentValidationStatus: "VALID" | "INVALID" | "PARKED_DOMAIN" | "FETCHED_BUT_NOT_EVIDENCE";
+  sourceHealthStatus: SourceHealthStatus;
+  documentsFound: number;
+  claimsFound: number;
+  eventsFound: number;
+  eventsAccepted: number;
+  rejectionReasons: string[];
+  error?: string;
+}
+
+export interface MarketScanTrace {
+  scanId: string;
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  sourcesConfigured: number;
+  sourcesAttempted: number;
+  sourcesFetched: number;
+  sourcesHttpSuccess: number;
+  sourcesContentValid: number;
+  sourcesEvidenceEligible: number;
+  sourcesBlocked: number;
+  sourcesUnavailable: number;
+  sourcesParked: number;
+  documentsFetched: number;
+  documentsValid: number;
+  documentsRejected: number;
+  claimsExtracted: number;
+  claimsVerified: number;
+  claimsRejected: number;
+  entitiesResolved: number;
+  entitiesUnresolved: number;
+  eventsDetected: number;
+  eventsAccepted: number;
+  eventsRejected: number;
+  eventsPersisted: number;
+  whatChangedCreated: number;
+  readinessRecalculated: boolean;
+  persistenceMode: PersistenceMode;
+  sourceDiagnostics: SourceDiagnosticResult[];
+  errors: ScanStageError[];
+  rejections: ScanStageRejection[];
+}
+
 export interface MarketScanResult {
   scanId: string;
   startedAt: string;
@@ -323,7 +410,8 @@ export interface MarketScanResult {
   conflictsDetected: number;
   opportunitiesChanged: number;
   changesGenerated: WhatChangedEntry[];
-  errors: { sourceId: string; message: string; timestamp: string }[];
+  errors: ScanStageError[];
+  trace?: MarketScanTrace;
 }
 
 export interface EvidenceQualityAuditMetrics {

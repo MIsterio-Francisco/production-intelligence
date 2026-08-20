@@ -6,7 +6,7 @@
 ## 1. RESUMEN DE AUDITORÍA DE INGESTIÓN Y FUENTES
 
 - **Fuentes de Mercado Declaradas**: 8
-- **Fuentes Conectadas y Habilitadas**: 5
+- **Fuentes Conectadas y Habilitadas**: 4
 - **Prueba de Deduplicación por Fingerprint SHA-256**: 🟢 PASSED (100% Sin Ingesta Duplicada)
 - **Detección de Eventos de Proyecto**: 🟢 PASSED (POST_PRODUCTION_STARTED Detectado)
 - **Detección de Eventos de Personas**: 🟢 PASSED (PERSON_JOINED Detectado)
@@ -20,7 +20,7 @@
 |---|---|---|---|---|---|---|
 | src_official_morena | Morena Films Official Press & Slate Catalog | [Link](https://morenafilms.com/news) | **TIER_1_OFFICIAL** | HIGH_PRIORITY | 30/min | CONNECTED |
 | src_official_luckychap | LuckyChap Entertainment Official Portal | [Link](https://luckychapentertainment.com) | **TIER_1_OFFICIAL** | HIGH_PRIORITY | 30/min | CONNECTED |
-| src_trade_variety | Variety International Film & TV Production News | [Link](https://variety.com/v/film/news) | **TIER_2_TRADE_PRESS** | STANDARD | 60/min | CONNECTED |
+| src_trade_variety | Variety International Film & TV Production News | [Link](https://variety.com/v/film/news) | **TIER_2_TRADE_PRESS** | STANDARD | 60/min | DEGRADED |
 | src_trade_hollywoodreporter | The Hollywood Reporter Film Production Feed | [Link](https://hollywoodreporter.com/c/movies) | **TIER_2_TRADE_PRESS** | STANDARD | 60/min | DEGRADED |
 | src_trade_cineuropa | Cineuropa European Production Monitor | [Link](https://cineuropa.org/en/news) | **TIER_2_TRADE_PRESS** | STANDARD | 60/min | DEGRADED |
 | src_official_nostromo | Nostromo Pictures Official Portal | [Link](https://nostromopictures.com) | **TIER_1_OFFICIAL** | HIGH_PRIORITY | 30/min | CONNECTED |

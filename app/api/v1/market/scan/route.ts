@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const scanResult = await MarketScanner.runMarketScan({ isManual: true });
+    const scanResult = await MarketScanner.runMarketScan({ isManual: true, forceRealFetch: true });
 
     return NextResponse.json({
       data: scanResult,

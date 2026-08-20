@@ -131,6 +131,109 @@ export class IngestionEngine {
   }
 
   /**
+   * Parses raw HTML or RSS body text into structured candidate items/payloads.
+   */
+  public static parseRawBodyToPayloads(
+    source: MarketSource,
+    bodyText: string,
+    url: string,
+    httpStatus: number
+  ): {
+    title: string;
+    contentSummary?: string;
+    publishedAt: string;
+    url: string;
+    contentLength?: number;
+    httpStatus?: number;
+    entityName?: string;
+  }[] {
+    const payloads: {
+      title: string;
+      contentSummary?: string;
+      publishedAt: string;
+      url: string;
+      contentLength?: number;
+      httpStatus?: number;
+      entityName?: string;
+    }[] = [];
+
+    // 1. RSS / Atom Feed Parsing
+    if (bodyText.includes("<item>") || bodyText.includes("<entry>")) {
+      const itemRegex = /<(?:item|entry)[^>]*>([\s\S]*?)<\/(?:item|entry)>/gi;
+      let match;
+      while ((match = itemRegex.exec(bodyText)) !== null && payloads.length < 5) {
+        const itemContent = match[1];
+        const titleMatch = itemContent.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+        const descMatch = itemContent.match(/<(?:description|summary|content)[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:description|summary|content)>/i);
+        const linkMatch = itemContent.match(/<link[^>]*>(?:href=["']([^"']+)["']|([^<]+))<\/link>/i) || itemContent.match(/href=["']([^"']+)["']/i);
+        const dateMatch = itemContent.match(/<(?:pubDate|published|updated)[^>]*>([^<]+)<\/(?:pubDate|published|updated)>/i);
+
+        if (titleMatch && titleMatch[1].trim()) {
+          const rawTitle = titleMatch[1].replace(/<[^>]+>/g, "").trim();
+          const rawDesc = descMatch ? descMatch[1].replace(/<[^>]+>/g, "").trim().slice(0, 400) : rawTitle;
+          const itemUrl = linkMatch ? (linkMatch[1] || linkMatch[2] || url).trim() : url;
+          const pubDate = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
+
+          payloads.push({
+            title: rawTitle,
+            contentSummary: rawDesc,
+            publishedAt: pubDate,
+            url: itemUrl,
+            contentLength: rawDesc.length,
+            httpStatus,
+            entityName: source.entityScope,
+          });
+        }
+      }
+    }
+
+    // 2. HTML Article / News Headline Parsing
+    if (payloads.length === 0) {
+      const articleRegex = /<(?:article|div)[^>]*class=["'][^"']*(?:news|post|item|entry|press|article)[^"']*["'][^>]*>([\s\S]*?)<\/(?:article|div)>/gi;
+      let match;
+      while ((match = articleRegex.exec(bodyText)) !== null && payloads.length < 5) {
+        const artText = match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        const headlineMatch = match[1].match(/<h[1-4][^>]*>(?:<a[^>]*>)?([^<]+)(?:<\/a>)?<\/h[1-4]>/i);
+        if (headlineMatch && headlineMatch[1].trim().length > 10) {
+          const title = headlineMatch[1].trim();
+          payloads.push({
+            title,
+            contentSummary: artText.slice(0, 400),
+            publishedAt: new Date().toISOString(),
+            url,
+            contentLength: artText.length,
+            httpStatus,
+            entityName: source.entityScope,
+          });
+        }
+      }
+    }
+
+    // 3. Clean Page Title Fallback
+    if (payloads.length === 0) {
+      const titleMatch = bodyText.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const cleanTitle = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : source.name;
+      const cleanBody = bodyText.replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      payloads.push({
+        title: cleanTitle,
+        contentSummary: cleanBody.slice(0, 500),
+        publishedAt: new Date().toISOString(),
+        url,
+        contentLength: cleanBody.length,
+        httpStatus,
+        entityName: source.entityScope,
+      });
+    }
+
+    return payloads;
+  }
+
+  /**
    * Processes incoming raw payload through strict V1.5.2 pipeline stages.
    */
   public static processRawPayload(
@@ -227,9 +330,19 @@ export class IngestionEngine {
 
     // 3. Stage 3: ENTITY RESOLUTION CHECK
     let entityResStatus: EntityResolutionStatus = "MATCH";
-    if (payload.entityName) {
-      const companyRes = resolveCompanyEntity(payload.entityName);
-      if (companyRes.status === "UNMATCHED" && !payload.projectTitle) {
+    let resolvedEntityName = payload.entityName;
+
+    const candidateEntityName = payload.entityName || payload.title || source.entityScope;
+    if (candidateEntityName) {
+      const companyRes = resolveCompanyEntity(candidateEntityName);
+      if (companyRes.status === "MATCHED" || companyRes.status === "POSSIBLE_MATCH") {
+        entityResStatus = "MATCH";
+        resolvedEntityName = companyRes.matchedName || candidateEntityName;
+      } else if (source.entityScope) {
+        // Fallback to configured entity scope for Tier 1 official sources
+        entityResStatus = "MATCH";
+        resolvedEntityName = source.entityScope;
+      } else if (!payload.projectTitle) {
         entityResStatus = "ENTITY_UNRESOLVED";
       }
     }

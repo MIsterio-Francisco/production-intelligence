@@ -79,25 +79,66 @@ export function MarketPulseWidget({
         </div>
       )}
 
-      {/* METRICS SUMMARY */}
+      {/* METRICS & TRACE DIAGNOSTICS */}
       {lastResult && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-          <div className="bg-background/80 p-2 rounded border border-border">
-            <span className="text-[10px] text-muted-foreground uppercase block">Fuentes Scanned</span>
-            <span className="font-bold text-foreground">{lastResult.sourcesScanned}</span>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+            <div className="bg-background/80 p-2 rounded border border-border">
+              <span className="text-[10px] text-muted-foreground uppercase block">Fuentes Scanned</span>
+              <span className="font-bold text-foreground">{lastResult.sourcesScanned}</span>
+            </div>
+            <div className="bg-background/80 p-2 rounded border border-border">
+              <span className="text-[10px] text-muted-foreground uppercase block">Nuevas Señales</span>
+              <span className="font-bold text-emerald-600">{lastResult.newSignals}</span>
+            </div>
+            <div className="bg-background/80 p-2 rounded border border-border">
+              <span className="text-[10px] text-muted-foreground uppercase block">Eventos Verificados</span>
+              <span className="font-bold text-accent">{lastResult.eventsDetected}</span>
+            </div>
+            <div className="bg-background/80 p-2 rounded border border-border">
+              <span className="text-[10px] text-muted-foreground uppercase block">Cambios Venta</span>
+              <span className="font-bold text-amber-600">{lastResult.opportunitiesChanged}</span>
+            </div>
           </div>
-          <div className="bg-background/80 p-2 rounded border border-border">
-            <span className="text-[10px] text-muted-foreground uppercase block">Nuevas Señales</span>
-            <span className="font-bold text-emerald-600">{lastResult.newSignals}</span>
-          </div>
-          <div className="bg-background/80 p-2 rounded border border-border">
-            <span className="text-[10px] text-muted-foreground uppercase block">Eventos Verificados</span>
-            <span className="font-bold text-accent">{lastResult.eventsDetected}</span>
-          </div>
-          <div className="bg-background/80 p-2 rounded border border-border">
-            <span className="text-[10px] text-muted-foreground uppercase block">Cambios Venta</span>
-            <span className="font-bold text-amber-600">{lastResult.opportunitiesChanged}</span>
-          </div>
+
+          {lastResult.trace && (
+            <div className="bg-background/90 p-3 rounded border border-border text-[11px] font-mono space-y-2">
+              <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
+                <span className="font-bold text-foreground uppercase tracking-tight flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+                  SCAN TRACE DIAGNOSTICS ({lastResult.trace.durationMs}ms)
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Persistence: <strong className="text-foreground">{lastResult.trace.persistenceMode}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground text-[10px]">
+                <div>Sources Attempted/Reachable: <strong className="text-foreground">{lastResult.trace.sourcesAttempted} / {lastResult.trace.sourcesHttpSuccess}</strong></div>
+                <div>Documents Fetched/Valid: <strong className="text-foreground">{lastResult.trace.documentsFetched} / {lastResult.trace.documentsValid}</strong></div>
+                <div>Claims Extracted/Verified: <strong className="text-foreground">{lastResult.trace.claimsExtracted} / {lastResult.trace.claimsVerified}</strong></div>
+                <div>Events Detected/Accepted: <strong className="text-foreground">{lastResult.trace.eventsDetected} / {lastResult.trace.eventsAccepted}</strong></div>
+              </div>
+
+              {lastResult.trace.rejections && lastResult.trace.rejections.length > 0 && (
+                <div className="pt-1.5 border-t border-border/40 space-y-1">
+                  <span className="text-[10px] text-amber-600 font-bold block uppercase">
+                    Motivos de Descarte Registrados ({lastResult.trace.rejections.length})
+                  </span>
+                  <div className="max-h-24 overflow-y-auto space-y-1 pr-1">
+                    {lastResult.trace.rejections.slice(0, 4).map((rej, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-muted/30 px-2 py-1 rounded text-[10px]">
+                        <span className="text-foreground font-semibold truncate max-w-[200px]">{rej.itemTitle || rej.sourceId}</span>
+                        <Badge variant="outline" className="text-[9px] font-mono border-amber-500/40 text-amber-600 uppercase">
+                          [{rej.stage}] {rej.reason}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
