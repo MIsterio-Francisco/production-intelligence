@@ -1,21 +1,163 @@
 {
-  "deploymentEnvironment": "Local / Sandbox Environment",
+  "deploymentEnvironment": "Netlify Production Cloud",
   "deploymentCommit": "8d6b63d",
-  "dataMode": "IN_MEMORY_FALLBACK",
-  "supabaseConnected": false,
-  "lastScanId": "scan_1787213584293",
-  "scanExecutionId": "scan_1787213584293",
-  "lastScanStartedAt": "2026-08-20T08:13:04.293Z",
-  "lastScanFinishedAt": "2026-08-20T08:13:04.300Z",
-  "lastScanDurationMs": 7,
+  "dataMode": "PARTIAL_LIVE_DATA",
+  "supabaseConnected": true,
+  "lastScanId": "scan_1787213903573",
+  "scanExecutionId": "scan_1787213903573",
+  "lastScanStartedAt": "2026-08-20T08:18:23.573Z",
+  "lastScanFinishedAt": "2026-08-20T08:18:26.575Z",
+  "lastScanDurationMs": 3002,
   "lastScanSources": 8,
-  "lastScanRealFetches": 0,
-  "lastScanFallbacks": 8,
+  "lastScanRealFetches": 6,
+  "lastScanFallbacks": 2,
   "lastScanEvents": 0,
   "lastScanEventsAccepted": 0,
   "lastScanEventsPersisted": 0,
   "lastScanChanges": 0,
   "marketEventsCreated": 0,
   "commercialReadinessChanges": 0,
-  "persistenceMode": "IN_MEMORY_FALLBACK"
+  "persistenceMode": "SUPABASE_DATABASE",
+  "sourceForensics": [
+    {
+      "sourceId": "src_official_morena",
+      "sourceName": "Morena Films Official Press & Slate Catalog",
+      "fetchMode": "REAL_HTTP",
+      "httpStatus": 200,
+      "contentLength": 42248,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: Morena Films Official Press & Slate Catalog"
+      ]
+    },
+    {
+      "sourceId": "src_official_luckychap",
+      "sourceName": "LuckyChap Entertainment Official Portal",
+      "fetchMode": "REAL_HTTP",
+      "httpStatus": 200,
+      "contentLength": 114,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: LuckyChap Entertainment Official Portal"
+      ]
+    },
+    {
+      "sourceId": "src_trade_variety",
+      "sourceName": "Variety International Film & TV Production News",
+      "fetchMode": "REAL_HTTP",
+      "httpStatus": 200,
+      "contentLength": 527479,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: Latest News",
+        "DUPLICATE_FINGERPRINT: Most Popular",
+        "DUPLICATE_FINGERPRINT: Sign Up for Variety Newsletters",
+        "DUPLICATE_FINGERPRINT: More From Our Brands",
+        "DUPLICATE_FINGERPRINT: Alerts and Newsletters"
+      ]
+    },
+    {
+      "sourceId": "src_trade_hollywoodreporter",
+      "sourceName": "The Hollywood Reporter Film Production Feed",
+      "fetchMode": "REAL_HTTP",
+      "httpStatus": 200,
+      "contentLength": 560186,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: Movies | Hollywood Reporter",
+        "DUPLICATE_FINGERPRINT: site categories",
+        "DUPLICATE_FINGERPRINT: site categories",
+        "DUPLICATE_FINGERPRINT: Latest Movies",
+        "DUPLICATE_FINGERPRINT: You may also like",
+        "DUPLICATE_FINGERPRINT: Subscriber Support",
+        "DUPLICATE_FINGERPRINT: Newsletter Sign Up",
+        "DUPLICATE_FINGERPRINT: Alerts &amp; Newsletters"
+      ]
+    },
+    {
+      "sourceId": "src_trade_cineuropa",
+      "sourceName": "Cineuropa European Production Monitor",
+      "fetchMode": "FALLBACK",
+      "httpStatus": 403,
+      "contentLength": 0,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: Catálogo de Producción: Cineuropa European Production Monitor"
+      ]
+    },
+    {
+      "sourceId": "src_official_nostromo",
+      "sourceName": "Nostromo Pictures Official Portal",
+      "fetchMode": "REAL_HTTP",
+      "httpStatus": 200,
+      "contentLength": 26091,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: Nostromo Pictures"
+      ]
+    },
+    {
+      "sourceId": "src_official_zeta",
+      "sourceName": "Zeta Studios Official Portal",
+      "fetchMode": "REAL_HTTP",
+      "httpStatus": 200,
+      "contentLength": 11663,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: inicio",
+        "DUPLICATE_FINGERPRINT: Lorem impsum"
+      ]
+    },
+    {
+      "sourceId": "src_official_icaa",
+      "sourceName": "ICAA Official Spanish Film Grants & Registries",
+      "fetchMode": "FALLBACK",
+      "httpStatus": 200,
+      "contentLength": 0,
+      "contentValid": true,
+      "claimsExtracted": 0,
+      "claimsVerified": 0,
+      "entityResolved": 0,
+      "eventsDetected": 0,
+      "eventsAccepted": 0,
+      "rejectionReasons": [
+        "DUPLICATE_FINGERPRINT: Catálogo de Producción: ICAA Official Spanish Film Grants & Registries"
+      ]
+    }
+  ]
 }
