@@ -4,7 +4,7 @@
  * 
  * Central coordinator for background market scanning, continuous ingestion,
  * event detection, claim verification, and change tracking.
- * Safe, idempotent, rate-limited, and protected against concurrent execution.
+ * Performs real HTTP fetches with rate limits, timeouts, and fallback handling.
  */
 
 import { MarketScanResult, WhatChangedEntry, MarketDataSourceMode } from "../../types/commercial";
@@ -33,9 +33,9 @@ export class MarketScanner {
   }
 
   /**
-   * Executes a full market scan cycle across enabled market sources.
+   * Executes a full market scan cycle across enabled market sources using real HTTP fetches where available.
    */
-  public static async runMarketScan(options: { isManual?: boolean } = {}): Promise<MarketScanResult> {
+  public static async runMarketScan(options: { isManual?: boolean; forceRealFetch?: boolean } = {}): Promise<MarketScanResult> {
     if (this.isScanRunning) {
       throw new Error("SCAN_ALREADY_RUNNING: Un escaneo de mercado ya está en ejecución.");
     }
@@ -53,6 +53,8 @@ export class MarketScanner {
     let eventsDetected = 0;
     let conflictsDetected = 0;
     let opportunitiesChanged = 0;
+    let liveSourcesCount = 0;
+
     const allChanges: WhatChangedEntry[] = [];
     const errors: { sourceId: string; message: string; timestamp: string }[] = [];
 
@@ -63,19 +65,78 @@ export class MarketScanner {
     try {
       for (const source of sources) {
         try {
-          // Simulate fetching raw payloads from active sources with rate limiting
-          const mockPayloads = [
-            {
-              title: `Actualización de Producción: ${source.name}`,
-              contentSummary: `Revisión de slate activo y avances en fase de posproducción.`,
+          let payloads: { title: string; contentSummary?: string; publishedAt: string; url: string }[] = [];
+          let isRealLive = false;
+
+          if (options.forceRealFetch || typeof fetch !== "undefined") {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+
+              const res = await fetch(source.url, {
+                method: "GET",
+                headers: {
+                  "User-Agent": "Mozilla/5.0 (compatible; MisterioColorLabProductionBot/1.5; +https://misteriocolorlab.com)",
+                  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                },
+                signal: controller.signal,
+              });
+
+              clearTimeout(timeoutId);
+
+              if (res.ok) {
+                const etag = res.headers.get("etag") || undefined;
+                const lastModified = res.headers.get("last-modified") || undefined;
+                const bodyText = await res.text();
+
+                isRealLive = true;
+                liveSourcesCount++;
+
+                // Extract basic title or meta tags if available
+                const titleMatch = bodyText.match(/<title[^>]*>([^<]+)<\/title>/i);
+                const pageTitle = titleMatch ? titleMatch[1].trim() : `${source.name} Live Feed`;
+
+                payloads.push({
+                  title: pageTitle,
+                  contentSummary: `Live HTTP Response 200 OK (${bodyText.length} bytes). ETag: ${etag || "N/A"}`,
+                  publishedAt: lastModified ? new Date(lastModified).toISOString() : new Date().toISOString(),
+                  url: source.url,
+                });
+
+                SourceRegistry.updateSourceStatus(source.id, "CONNECTED", new Date().toISOString());
+                if (etag) source.lastEtag = etag;
+                if (lastModified) source.lastModified = lastModified;
+              } else {
+                errors.push({
+                  sourceId: source.id,
+                  message: `HTTP ${res.status} ${res.statusText}`,
+                  timestamp: new Date().toISOString(),
+                });
+                SourceRegistry.updateSourceStatus(source.id, "DEGRADED");
+              }
+            } catch (fetchErr: any) {
+              errors.push({
+                sourceId: source.id,
+                message: fetchErr.name === "AbortError" ? "HTTP Request Timeout (4s limit)" : fetchErr.message || "Fetch network error",
+                timestamp: new Date().toISOString(),
+              });
+              SourceRegistry.updateSourceStatus(source.id, "DEGRADED");
+            }
+          }
+
+          // Fallback if real fetch produced no payloads
+          if (payloads.length === 0) {
+            payloads.push({
+              title: `Monitor Data: ${source.name}`,
+              contentSummary: `Procesamiento de catálogo y noticias públicas.`,
               publishedAt: new Date().toISOString(),
               url: source.url,
-            },
-          ];
+            });
+          }
 
-          documentsFound += mockPayloads.length;
+          documentsFound += payloads.length;
 
-          for (const payload of mockPayloads) {
+          for (const payload of payloads) {
             const { signal, isDuplicate } = IngestionEngine.processRawPayload(source, payload);
 
             if (isDuplicate) {
@@ -101,15 +162,12 @@ export class MarketScanner {
               }
             }
           }
-
-          SourceRegistry.updateSourceStatus(source.id, "CONNECTED", new Date().toISOString());
         } catch (err: any) {
           errors.push({
             sourceId: source.id,
-            message: err.message || "Error al consultar fuente.",
+            message: err.message || "Error al procesar fuente.",
             timestamp: new Date().toISOString(),
           });
-          SourceRegistry.updateSourceStatus(source.id, "DEGRADED");
         }
       }
 
@@ -135,7 +193,14 @@ export class MarketScanner {
       this.globalChangesHistory = [...allChanges, ...this.globalChangesHistory].slice(0, 100);
 
       const completedAt = new Date().toISOString();
-      const mode: MarketDataSourceMode = options.isManual ? "LIVE_DATA" : "RECENTLY_SCANNED";
+
+      // Determine transparent Mode: LIVE_DATA only if real HTTP fetches succeeded
+      let mode: MarketDataSourceMode = "IN_MEMORY_FALLBACK";
+      if (liveSourcesCount > 0) {
+        mode = liveSourcesCount === sources.length ? "LIVE_DATA" : "RECENTLY_SCANNED";
+      } else if (errors.length > 0) {
+        mode = "SOURCE_ERROR";
+      }
 
       const scanResult: MarketScanResult = {
         scanId,
