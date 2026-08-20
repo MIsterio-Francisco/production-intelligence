@@ -1,8 +1,10 @@
 /**
- * CANONICAL COMMERCIAL INTELLIGENCE DATA MODEL — PRODUCTION INTELLIGENCE V1.5
+ * CANONICAL COMMERCIAL INTELLIGENCE DATA MODEL — PRODUCTION INTELLIGENCE V1.5.1
  * Misterio Color Lab
  * 
- * V1.5 Market Scanner + Ingestion Engine + Event Detection + Change Detection
+ * V1.5.1 Evidence Quality & Source Hardening
+ * Adds atomic ExtractedClaims, SignalProcessingStage pipeline, SourceHealth metrics,
+ * and strict temporal event date separation.
  */
 
 export type DataFreshness = "CURRENT" | "RECENT" | "STALE" | "UNKNOWN";
@@ -66,6 +68,19 @@ export type ScanFrequency = "HIGH_PRIORITY" | "STANDARD" | "DAILY" | "WEEKLY";
 
 export type MarketDataSourceMode = "LIVE_DATA" | "RECENTLY_SCANNED" | "IN_MEMORY_FALLBACK" | "SOURCE_ERROR";
 
+export type SourceHealthStatus = "HEALTHY" | "DEGRADED" | "BLOCKED" | "UNAVAILABLE";
+
+export type SignalProcessingStage =
+  | "FETCH_SUCCESS"
+  | "CONTENT_VALID"
+  | "CLAIM_EXTRACTED"
+  | "CLAIM_VERIFIED"
+  | "EVENT_ACCEPTED"
+  | "EVENT_REJECTED"
+  | "FETCHED_BUT_NOT_EVIDENCE";
+
+export type EntityResolutionStatus = "MATCH" | "POSSIBLE_MATCH" | "NEW_ENTITY_CANDIDATE" | "ENTITY_UNRESOLVED";
+
 export type ChangeType =
   | "NEW_PROJECT_ANNOUNCED"
   | "PROJECT_ENTERED_PRODUCTION"
@@ -78,6 +93,27 @@ export type ChangeType =
   | "SIGNAL_SUPERSEDED"
   | "DATA_CONFLICT_DETECTED"
   | "SALES_READINESS_CHANGED";
+
+export interface ExtractedClaim {
+  id: string;
+  claimType:
+    | "PROJECT_STATUS"
+    | "PROJECT_RELEASE_DATE"
+    | "PROJECT_POST_PRODUCTION"
+    | "PROJECT_PRODUCTION_START"
+    | "PERSON_CURRENT_ROLE"
+    | "PERSON_DEPARTURE";
+  subject: string;       // e.g. "Morena Films" or "La Infiltrada"
+  predicate: string;     // e.g. "entered_phase"
+  object: string;        // e.g. "POST_PRODUCTION"
+  eventDate?: string;    // Actual real-world event timestamp
+  publishedAt: string;   // Article publication timestamp
+  source: string;
+  sourceTier: SourceTier;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  evidenceSnippet: string;
+  verificationStatus: "VERIFIED" | "CONTRADICTED" | "UNVERIFIED" | "REJECTED";
+}
 
 export interface MarketSource {
   id: string;
@@ -94,15 +130,25 @@ export interface MarketSource {
   lastEtag?: string;
   lastModified?: string;
   status: "CONNECTED" | "DEGRADED" | "CONFIG_REQUIRED" | "DISABLED";
+  healthStatus: SourceHealthStatus;
+  lastSuccessfulFetch?: string;
+  lastContentValidFetch?: string;
+  lastEvidenceAccepted?: string;
+  consecutiveFailures: number;
 }
 
 export interface RawSignal {
   id: string;
   sourceId: string;
   url?: string;
+  finalUrl?: string;
+  httpStatus?: number;
+  contentType?: string;
+  contentLength?: number;
   title: string;
   contentSummary?: string;
   publishedAt: string;
+  eventDate?: string;
   extractedAt: string;
   fingerprint: string;
   sourceTier: SourceTier;
@@ -112,7 +158,11 @@ export interface RawSignal {
   roleTitle?: string;
   proposedStatus?: string;
   status: "NEW" | "PROCESSED" | "DUPLICATE" | "REJECTED" | "ERROR";
+  processingStage: SignalProcessingStage;
+  entityResolutionStatus: EntityResolutionStatus;
+  evidenceSnippet?: string;
   errorReason?: string;
+  extractedClaims?: ExtractedClaim[];
 }
 
 export interface ProjectEvent {
@@ -135,8 +185,8 @@ export interface ProjectEvent {
     | "PROJECT_DELAYED"
     | "PROJECT_REACTIVATED"
     | "UNKNOWN_STATUS";
-  eventDate: string;
-  publishedAt?: string;
+  eventDate: string;     // Real-world occurrence date
+  publishedAt?: string;  // Publication date
   extractedAt?: string;
   source: string;
   url?: string;
@@ -203,6 +253,21 @@ export interface MarketScanResult {
   errors: { sourceId: string; message: string; timestamp: string }[];
 }
 
+export interface EvidenceQualityAuditMetrics {
+  sourcesFetched: number;
+  validContentCount: number;
+  invalidContentCount: number;
+  claimsExtractedCount: number;
+  claimsVerifiedCount: number;
+  claimsRejectedCount: number;
+  eventsAcceptedCount: number;
+  eventsRejectedCount: number;
+  conflictsCount: number;
+  unresolvedEntitiesCount: number;
+  signalsSupersededCount: number;
+  salesReadinessChangesCount: number;
+}
+
 export interface MCLServiceDefinition {
   serviceId: string;
   serviceName: string;
@@ -222,7 +287,7 @@ export interface ScoreComponent {
 }
 
 export interface TargetScoreBreakdown {
-  totalScore: number; // 0-100
+  totalScore: number;
   components: ScoreComponent[];
   explanation: string;
 }
@@ -244,7 +309,7 @@ export interface CommercialEvidence {
   expiresAt?: string;
   temporalStatus?: EvidenceTemporalStatus;
   confidence: "HIGH" | "MEDIUM" | "LOW";
-  isEvidenceBased: boolean; // false for AI suggestions
+  isEvidenceBased: boolean;
 }
 
 export interface DataConflictEntry {
@@ -266,7 +331,7 @@ export interface CommercialNeedRecommendation {
   fitLevel: ServiceFitLevel;
   needType: ServiceNeedType;
   reasoning: string;
-  isFact: boolean; // false if inferred/potential
+  isFact: boolean;
 }
 
 export interface CommercialDecisionMakerContact {
@@ -280,9 +345,9 @@ export interface CommercialDecisionMakerContact {
   linkedinUrl?: string;
   source: string;
   freshness: DataFreshness;
-  identityConfidence: number;      // 0-100 (Person exists)
-  currentRoleConfidence: number;   // 0-100 (Role is currently active)
-  commercialRelevance: CommercialRelevanceLevel; // HIGH for Head of Post, LOW for CEO without prod role
+  identityConfidence: number;
+  currentRoleConfidence: number;
+  commercialRelevance: CommercialRelevanceLevel;
   relevanceReasoning: string;
   isContactableNow: boolean;
 }
@@ -296,7 +361,7 @@ export interface CommercialWhyNowTrigger {
   url?: string;
   freshness: DataFreshness;
   hasTemporalEvidence: boolean;
-  signalStatus?: SignalStatus; // ACTIVE vs SUPERSEDED
+  signalStatus?: SignalStatus;
 }
 
 export interface HistoricalSignal {
@@ -306,7 +371,7 @@ export interface HistoricalSignal {
   discoveredAt: string;
   supersededByEvent?: string;
   supersededAt?: string;
-  status: SignalStatus; // SUPERSEDED, STALE, HISTORICAL
+  status: SignalStatus;
 }
 
 export interface AuditLogEntry {
@@ -320,9 +385,9 @@ export interface AuditLogEntry {
 }
 
 export interface TopCommercialTarget {
-  id: string; // companyId
+  id: string;
   category: CommercialTargetCategory;
-  salesReadiness: SalesReadiness; // Independent V1.5 Sales Readiness Dimension
+  salesReadiness: SalesReadiness;
   salesReadinessReasoning: string;
   company: {
     id: string;
@@ -334,13 +399,13 @@ export interface TopCommercialTarget {
   targetScore: TargetScoreBreakdown;
   confidence: {
     level: "HIGH" | "MEDIUM" | "LOW";
-    score: number; // 0-100
+    score: number;
     reasoning: string;
   };
   relevantProject?: {
     id: string;
     title: string;
-    status: string; // e.g. "production", "post_production", "released"
+    status: string;
     currentLifecycleState: ProjectLifecycleState;
     projectType: string;
     releaseDate?: string;
@@ -355,7 +420,7 @@ export interface TopCommercialTarget {
   evidences: CommercialEvidence[];
   recommendedAction: {
     actionText: string;
-    isEvidenceBased: boolean; // true if derived from facts, false if AI suggestion
+    isEvidenceBased: boolean;
     actionType: "CONTACT_PRODUCER" | "OFFER_SHOW_LUT" | "PROPOSE_POST_SUPERVISION" | "SUBMIT_MASTERING_QUOTE" | "GENERAL_INTRO";
     label: "EVIDENCE FACT" | "AI SUGGESTION";
   };
@@ -369,8 +434,8 @@ export interface TopCommercialTarget {
   };
   freshness: DataFreshness;
   hasInsufficientData: boolean;
-  dataConflict?: DataConflictEntry | null; // OPEN conflict blocks CALL_NOW
-  disclaimer: string; // "NO SE CONTACTAN PERSONAS SIN EVIDENCIA SUFICIENTE"
+  dataConflict?: DataConflictEntry | null;
+  disclaimer: string;
   lastVerifiedAt: string;
   nextVerificationAt: string;
   auditLog: AuditLogEntry[];

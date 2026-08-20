@@ -1,6 +1,6 @@
 {
   "name": "production-intelligence",
-  "version": "1.4.0",
+  "version": "1.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -25,6 +25,7 @@
     "audit:stale": "tsc scripts/audit-stale-opportunities.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-stale-opportunities.js",
     "scan:market": "tsc scripts/audit-market-scanner.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-market-scanner.js",
     "audit:market": "tsc scripts/audit-market-scanner.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-market-scanner.js",
+    "audit:evidence": "./node_modules/.bin/tsc scripts/audit-evidence-quality.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-evidence-quality.js",
     "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js"
   },
   "dependencies": {

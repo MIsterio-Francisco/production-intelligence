@@ -51,6 +51,8 @@ async function runMarketScannerAudit() {
     fingerprint: res1.signal?.fingerprint || "fp1",
     sourceTier: source1.sourceTier,
     status: "NEW" as const,
+    processingStage: "CONTENT_VALID" as const,
+    entityResolutionStatus: "MATCH" as const,
   };
 
   const detectedEvent = ProjectEventDetector.detectProjectEvent(mockSignal);
@@ -70,6 +72,8 @@ async function runMarketScannerAudit() {
     personName: "Pedro Uriol",
     entityName: "Morena Films",
     status: "NEW" as const,
+    processingStage: "CONTENT_VALID" as const,
+    entityResolutionStatus: "MATCH" as const,
   };
 
   const detectedPersonEvent = PersonEventDetector.detectPersonEvent(mockPersonSignal);
