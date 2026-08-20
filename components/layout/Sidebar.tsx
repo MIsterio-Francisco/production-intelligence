@@ -87,7 +87,7 @@ export function Sidebar() {
         <div className="text-[10px] text-emerald-800 font-mono font-bold bg-emerald-50 p-1.5 rounded border border-emerald-200">
           🟢 Auto-Scanner Active (12 Countries)
         </div>
-        <div className="text-[10px] text-muted-foreground">V1.1 Post-Production & Color Mode</div>
+        <div className="text-[10px] text-muted-foreground">V1.3 Real-World Sales Execution</div>
       </div>
     </aside>
   );

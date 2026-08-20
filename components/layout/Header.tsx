@@ -29,7 +29,7 @@ export function Header() {
           </span>
         </Link>
         <span className="text-xs bg-accent/10 text-accent font-mono font-semibold px-2 py-0.5 rounded border border-accent/20">
-          V1.1
+          V1.3
         </span>
       </div>
 

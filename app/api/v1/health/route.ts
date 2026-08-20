@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   return NextResponse.json({
     status: "online",
-    version: "1.1.0",
+    version: "1.3.0",
     service: "Production Intelligence Platform API",
     timestamp: new Date().toISOString(),
   });
