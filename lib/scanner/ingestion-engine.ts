@@ -109,6 +109,9 @@ export class IngestionEngine {
           sourceTier: signal.sourceTier,
           confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
           evidenceSnippet: signal.title,
+          documentUrl: signal.url || signal.finalUrl,
+          documentTitle: signal.title,
+          quotedEvidence: signal.contentSummary ? signal.contentSummary.slice(0, 300) : signal.title,
           verificationStatus: "VERIFIED",
         });
         break;
@@ -146,6 +149,9 @@ export class IngestionEngine {
           sourceTier: signal.sourceTier,
           confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
           evidenceSnippet: signal.title,
+          documentUrl: signal.url || signal.finalUrl,
+          documentTitle: signal.title,
+          quotedEvidence: signal.contentSummary ? signal.contentSummary.slice(0, 300) : signal.title,
           verificationStatus: "VERIFIED",
         });
         break;
@@ -182,6 +188,9 @@ export class IngestionEngine {
           sourceTier: signal.sourceTier,
           confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "HIGH",
           evidenceSnippet: signal.title,
+          documentUrl: signal.url || signal.finalUrl,
+          documentTitle: signal.title,
+          quotedEvidence: signal.contentSummary ? signal.contentSummary.slice(0, 300) : signal.title,
           verificationStatus: "VERIFIED",
         });
         break;
@@ -216,6 +225,9 @@ export class IngestionEngine {
           sourceTier: signal.sourceTier,
           confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
           evidenceSnippet: signal.title,
+          documentUrl: signal.url || signal.finalUrl,
+          documentTitle: signal.title,
+          quotedEvidence: signal.contentSummary ? signal.contentSummary.slice(0, 300) : signal.title,
           verificationStatus: "VERIFIED",
         });
         break;
