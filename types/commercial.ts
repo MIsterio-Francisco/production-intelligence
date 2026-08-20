@@ -288,6 +288,15 @@ export interface PersonEvent {
   status: "VERIFIED" | "INFERRED" | "UNVERIFIED";
 }
 
+export type MarketDataMode =
+  | "LIVE_EXTERNAL_DATA"
+  | "PARTIAL_LIVE_DATA"
+  | "SUPABASE_DATABASE"
+  | "IN_MEMORY_FALLBACK"
+  | "MIXED";
+
+export type FetchMode = "REAL_HTTP" | "FALLBACK";
+
 export interface WhatChangedEntry {
   id: string;
   changeType: ChangeType;
@@ -306,6 +315,7 @@ export interface WhatChangedEntry {
   salesReadinessAfter?: SalesReadiness;
   isEvidenceBased: boolean;
   priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  marketCategory?: "MARKET_EVENT" | "COMMERCIAL_IMPACT";
 }
 
 export type ScanStageErrorCode =
@@ -350,6 +360,8 @@ export interface SourceDiagnosticResult {
   responseTimeMs?: number;
   contentLength?: number;
   contentType?: string;
+  contentHash?: string;
+  fetchMode: FetchMode;
   authenticityStatus: SourceAuthenticityStatus;
   contentValidationStatus: "VALID" | "INVALID" | "PARKED_DOMAIN" | "FETCHED_BUT_NOT_EVIDENCE";
   sourceHealthStatus: SourceHealthStatus;
@@ -363,12 +375,15 @@ export interface SourceDiagnosticResult {
 
 export interface MarketScanTrace {
   scanId: string;
+  dataMode: MarketDataMode;
   startedAt: string;
   finishedAt: string;
   durationMs: number;
   sourcesConfigured: number;
   sourcesAttempted: number;
   sourcesFetched: number;
+  sourcesRealFetch: number;
+  sourcesFallback: number;
   sourcesHttpSuccess: number;
   sourcesContentValid: number;
   sourcesEvidenceEligible: number;
@@ -400,13 +415,18 @@ export interface MarketScanResult {
   startedAt: string;
   completedAt: string;
   mode: MarketDataSourceMode;
+  dataMode: MarketDataMode;
   sourcesScanned: number;
+  sourcesRealFetch: number;
+  sourcesFallback: number;
   documentsFound: number;
   newSignals: number;
   duplicateSignals: number;
   claimsExtracted: number;
   claimsVerified: number;
   eventsDetected: number;
+  eventsAccepted: number;
+  eventsPersisted: number;
   conflictsDetected: number;
   opportunitiesChanged: number;
   changesGenerated: WhatChangedEntry[];

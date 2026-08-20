@@ -9,14 +9,14 @@ export async function POST(request: Request) {
     // Validate authorization secret for scheduled background tasks
     if (authHeader && !authHeader.endsWith(cronSecret)) {
       return NextResponse.json(
-        { data: null, error: { code: "UNAUTHORIZED", message: "Invalid authorization secret." } },
+        { success: false, data: null, error: { code: "UNAUTHORIZED", message: "Invalid authorization secret." } },
         { status: 401 }
       );
     }
 
     if (MarketScanner.isRunning()) {
       return NextResponse.json(
-        { data: null, error: { code: "SCAN_RUNNING", message: "Market scan is currently running." } },
+        { success: false, data: null, error: { code: "SCAN_RUNNING", message: "Market scan is currently running." } },
         { status: 409 }
       );
     }
@@ -24,12 +24,23 @@ export async function POST(request: Request) {
     const scanResult = await MarketScanner.runMarketScan({ isManual: true, forceRealFetch: true });
 
     return NextResponse.json({
+      success: true,
+      scanId: scanResult.scanId,
+      dataMode: scanResult.dataMode || "IN_MEMORY_FALLBACK",
+      sources: scanResult.sourcesScanned,
+      realFetches: scanResult.sourcesRealFetch,
+      fallbacks: scanResult.sourcesFallback,
+      eventsDetected: scanResult.eventsDetected,
+      eventsAccepted: scanResult.eventsAccepted,
+      eventsPersisted: scanResult.eventsPersisted,
+      whatChangedCreated: scanResult.changesGenerated.length,
+      changes: scanResult.changesGenerated,
       data: scanResult,
       error: null,
     });
   } catch (err: any) {
     return NextResponse.json(
-      { data: null, error: { code: "INTERNAL_ERROR", message: err.message || "Market scan execution failed." } },
+      { success: false, data: null, error: { code: "INTERNAL_ERROR", message: err.message || "Market scan execution failed." } },
       { status: 500 }
     );
   }
@@ -40,6 +51,7 @@ export async function GET() {
   const isRunning = MarketScanner.isRunning();
 
   return NextResponse.json({
+    success: true,
     data: {
       isRunning,
       lastResult,

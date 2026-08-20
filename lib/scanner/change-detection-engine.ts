@@ -126,4 +126,59 @@ export class ChangeDetectionEngine {
 
     return changes;
   }
+
+  /**
+   * Generates a WhatChangedEntry directly from a verified Market Event (FASE 6).
+   */
+  public static generateMarketEventChange(
+    companyName: string,
+    projectName: string,
+    eventType: string,
+    sourceName: string,
+    sourceTier: import("../../types/commercial").SourceTier,
+    isSalesReadinessShifted: boolean = false,
+    salesReadinessReason?: string
+  ): WhatChangedEntry {
+    const now = new Date().toISOString();
+    let priority: WhatChangedEntry["priority"] = "MEDIUM";
+    let factSummary = `EVENTO DE MERCADO: "${projectName}" en ${companyName} registró ${eventType}.`;
+
+    if (eventType.includes("POST_PRODUCTION")) {
+      priority = "CRITICAL";
+      factSummary = `INICIO DE POSPRODUCCIÓN: "${projectName}" (${companyName}) ha entrado en fase de posproducción.`;
+    } else if (eventType.includes("PRODUCTION")) {
+      priority = "HIGH";
+      factSummary = `INICIO DE RODAJE: "${projectName}" (${companyName}) ha comenzado el rodaje principal.`;
+    } else if (eventType.includes("RELEASE")) {
+      priority = "HIGH";
+      factSummary = `ESTRENO REGISTRADO: "${projectName}" (${companyName}) ha completado su lanzamiento.`;
+    }
+
+    const commercialImpact = isSalesReadinessShifted
+      ? `Impacto Comercial Factual: ${salesReadinessReason || "Estado de venta actualizado."}`
+      : `Sin cambio en Sales Readiness (Evento de Mercado Registrado).`;
+
+    return {
+      id: `mkt_chg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      changeType: eventType.includes("POST_PRODUCTION")
+        ? "PROJECT_ENTERED_POST"
+        : eventType.includes("PRODUCTION")
+        ? "PROJECT_ENTERED_PRODUCTION"
+        : eventType.includes("RELEASE")
+        ? "PROJECT_RELEASED"
+        : "NEW_PROJECT_ANNOUNCED",
+      entityId: `ent_${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+      entityType: "project",
+      entityName: projectName,
+      companyName,
+      detectedAt: now,
+      sourceName,
+      sourceTier,
+      factSummary,
+      commercialImpact,
+      isEvidenceBased: true,
+      priority,
+      marketCategory: isSalesReadinessShifted ? "COMMERCIAL_IMPACT" : "MARKET_EVENT",
+    };
+  }
 }

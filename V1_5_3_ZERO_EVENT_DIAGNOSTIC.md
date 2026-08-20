@@ -38,8 +38,8 @@ Resultado: 🟢 PASSED (PIPELINE INTERNO VERIFICADO)
 
 ```json
 {
-  "scanId": "scan_1787212304661",
-  "durationMs": 44,
+  "scanId": "scan_1787212862077",
+  "durationMs": 39,
   "sourcesAttempted": 8,
   "sourcesHttpSuccess": 0,
   "documentsFetched": 8,
@@ -48,7 +48,7 @@ Resultado: 🟢 PASSED (PIPELINE INTERNO VERIFICADO)
   "claimsVerified": 5,
   "eventsDetected": 4,
   "eventsAccepted": 4,
-  "whatChangedCreated": 0,
+  "whatChangedCreated": 4,
   "persistenceMode": "IN_MEMORY_FALLBACK"
 }
 ```

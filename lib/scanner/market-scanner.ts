@@ -153,6 +153,8 @@ export class MarketScanner {
           entityName?: string;
         }[] = [];
 
+        let sourceFetchMode: "REAL_HTTP" | "FALLBACK" = "FALLBACK";
+
         const isRealFetchActive = options.forceRealFetch || typeof fetch !== "undefined";
 
         if (isRealFetchActive) {
@@ -177,6 +179,7 @@ export class MarketScanner {
             if (res.ok) {
               sourcesHttpSuccess++;
               liveSourcesCount++;
+              sourceFetchMode = "REAL_HTTP";
 
               const bodyText = await res.text();
               sourceContentLength = bodyText.length;
@@ -229,6 +232,7 @@ export class MarketScanner {
 
         // Fallback payload if fetch returned empty or unconfigured
         if (payloads.length === 0) {
+          sourceFetchMode = "FALLBACK";
           payloads.push({
             title: `Catálogo de Producción: ${source.name}`,
             contentSummary: `Revisión de proyectos activos y entregas de posproducción.`,
@@ -347,6 +351,17 @@ export class MarketScanner {
                 SourceRegistry.updateSourceStatus(source.id, "CONNECTED", "HEALTHY", {
                   lastEvidenceAccepted: new Date().toISOString(),
                 });
+
+                // Generate Market Event entry for WhatChanged (FASE 6)
+                const marketChange = ChangeDetectionEngine.generateMarketEventChange(
+                  signal.entityName || source.entityScope || "Productora",
+                  signal.projectTitle || signal.title,
+                  projEvent.eventType,
+                  source.name,
+                  source.sourceTier,
+                  false
+                );
+                allChanges.push(marketChange);
               } else {
                 eventsRejected++;
                 this.auditMetrics.eventsRejectedCount++;
@@ -374,6 +389,16 @@ export class MarketScanner {
               sourceEventsAccepted++;
               eventsPersisted++;
               this.auditMetrics.eventsAcceptedCount++;
+
+              const marketChange = ChangeDetectionEngine.generateMarketEventChange(
+                signal.entityName || source.entityScope || "Productora",
+                signal.personName || signal.title,
+                perEvent.eventType,
+                source.name,
+                source.sourceTier,
+                false
+              );
+              allChanges.push(marketChange);
             }
           }
         }
@@ -386,6 +411,7 @@ export class MarketScanner {
           httpStatus: sourceHttpStatus,
           responseTimeMs: sourceResponseTimeMs,
           contentLength: sourceContentLength,
+          fetchMode: sourceFetchMode,
           authenticityStatus: lastAuthStatus,
           contentValidationStatus: lastContentValStatus,
           sourceHealthStatus: source.healthStatus,
@@ -401,7 +427,7 @@ export class MarketScanner {
       // Recalculate Top Commercial Targets after scan
       const afterTargets = getTopCommercialTargets(50);
 
-      // Detect state diffs and generate WhatChanged entries
+      // Detect state diffs and generate WhatChanged entries for Sales Readiness shifts
       for (const afterT of afterTargets) {
         const beforeT = beforeMap.get(afterT.id);
         const diffs = ChangeDetectionEngine.detectTargetChanges(beforeT, afterT, "Market Scanner Ingestion");
@@ -425,22 +451,35 @@ export class MarketScanner {
       const completedAt = new Date(finishMs).toISOString();
 
       let mode: MarketDataSourceMode = "IN_MEMORY_FALLBACK";
-      if (liveSourcesCount > 0) {
-        mode = liveSourcesCount === sources.length ? "LIVE_DATA" : "RECENTLY_SCANNED";
+      let dataMode: import("../../types/commercial").MarketDataMode = "IN_MEMORY_FALLBACK";
+
+      const realCount = sourceDiagnostics.filter((d) => d.fetchMode === "REAL_HTTP").length;
+      const fallbackCount = sourceDiagnostics.filter((d) => d.fetchMode === "FALLBACK").length;
+
+      if (realCount > 0 && fallbackCount === 0) {
+        mode = "LIVE_DATA";
+        dataMode = "LIVE_EXTERNAL_DATA";
+      } else if (realCount > 0 && fallbackCount > 0) {
+        mode = "RECENTLY_SCANNED";
+        dataMode = "PARTIAL_LIVE_DATA";
       } else if (errors.length > 0) {
         mode = "SOURCE_ERROR";
+        dataMode = "IN_MEMORY_FALLBACK";
       }
 
       const persistenceMode: PersistenceMode = process.env.NEXT_PUBLIC_SUPABASE_URL ? "SUPABASE_DATABASE" : "IN_MEMORY_FALLBACK";
 
       const trace: MarketScanTrace = {
         scanId,
+        dataMode,
         startedAt,
         finishedAt: completedAt,
         durationMs: finishMs - startMs,
         sourcesConfigured: sources.length,
         sourcesAttempted,
         sourcesFetched,
+        sourcesRealFetch: realCount,
+        sourcesFallback: fallbackCount,
         sourcesHttpSuccess,
         sourcesContentValid,
         sourcesEvidenceEligible,
@@ -472,13 +511,18 @@ export class MarketScanner {
         startedAt,
         completedAt,
         mode,
+        dataMode,
         sourcesScanned: sources.length,
+        sourcesRealFetch: realCount,
+        sourcesFallback: fallbackCount,
         documentsFound,
         newSignals,
         duplicateSignals,
         claimsExtracted,
         claimsVerified,
         eventsDetected,
+        eventsAccepted,
+        eventsPersisted,
         conflictsDetected,
         opportunitiesChanged,
         changesGenerated: allChanges,

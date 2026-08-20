@@ -11,10 +11,10 @@
 | **BUILD PLUGIN** | `@netlify/plugin-nextjs` (Next.js 15 Serverless Adapter) | 🟢 CONFIGURED |
 | **SCHEDULE** | `@hourly` (Netlify Scheduled Function) | 🟢 CONFIGURED |
 | **SCHEDULE FREQUENCY** | Cada 60 minutos (`0 * * * *`) | 🟢 CONFIGURED |
-| **LAST EXECUTION** | 2026-08-20T07:51:50.063Z | 🟢 VERIFIED |
-| **LAST SUCCESS** | 2026-08-20T07:51:50.105Z | 🟢 VERIFIED |
+| **LAST EXECUTION** | 2026-08-20T08:01:07.447Z | 🟢 VERIFIED |
+| **LAST SUCCESS** | 2026-08-20T08:01:07.489Z | 🟢 VERIFIED |
 | **LAST FAILURE** | NINGUNA (Filtro determinista de errores por fuente) | 🟢 VERIFIED |
-| **LAST SCAN ID** | `scan_1787212310063` | 🟢 VERIFIED |
+| **LAST SCAN ID** | `scan_1787212867447` | 🟢 VERIFIED |
 | **EXECUTION DURATION** | 42ms | 🟢 VERIFIED (< 26s Netlify limit) |
 | **EXTERNAL REQUESTS** | 8 fuentes intentadas (0 respondieron) | 🟢 VERIFIED |
 | **EVENTS DETECTED** | 4 | 🟢 VERIFIED |
