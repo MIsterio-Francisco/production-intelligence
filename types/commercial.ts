@@ -1,5 +1,5 @@
 /**
- * CANONICAL COMMERCIAL INTELLIGENCE DATA MODEL — PRODUCTION INTELLIGENCE V1.3
+ * CANONICAL COMMERCIAL INTELLIGENCE DATA MODEL — PRODUCTION INTELLIGENCE V1.4
  * Misterio Color Lab
  */
 
@@ -33,6 +33,65 @@ export type DecisionMakerCategory =
 export type CommercialRelevanceLevel = "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
 
 export type SourceTier = "TIER_1_OFFICIAL" | "TIER_2_TRADE_PRESS" | "TIER_3_SECONDARY" | "UNKNOWN";
+
+export type ProjectLifecycleState =
+  | "ANNOUNCED"
+  | "PRE_PRODUCTION"
+  | "IN_PRODUCTION"
+  | "POST_PRODUCTION"
+  | "COMPLETED"
+  | "RELEASED"
+  | "CANCELLED"
+  | "SHELVED"
+  | "UNKNOWN";
+
+export type SignalStatus =
+  | "ACTIVE"
+  | "HISTORICAL"
+  | "SUPERSEDED"
+  | "STALE"
+  | "CONFLICT"
+  | "INVALID";
+
+export type EvidenceTemporalStatus =
+  | "CURRENT"
+  | "HISTORICAL"
+  | "STALE"
+  | "CONFLICT"
+  | "UNKNOWN";
+
+export interface ProjectEvent {
+  id: string;
+  projectId: string;
+  eventType:
+    | "PROJECT_ANNOUNCED"
+    | "PRE_PRODUCTION_STARTED"
+    | "PRODUCTION_STARTED"
+    | "PRODUCTION_COMPLETED"
+    | "POST_PRODUCTION_STARTED"
+    | "POST_PRODUCTION_COMPLETED"
+    | "FESTIVAL_PREMIERE"
+    | "THEATRICAL_PREMIERE"
+    | "THEATRICAL_RELEASE"
+    | "STREAMING_RELEASE"
+    | "PROJECT_COMPLETED"
+    | "PROJECT_CANCELLED"
+    | "PROJECT_SHELVED"
+    | "PROJECT_DELAYED"
+    | "PROJECT_REACTIVATED"
+    | "UNKNOWN_STATUS";
+  eventDate: string;
+  publishedAt?: string;
+  extractedAt?: string;
+  source: string;
+  url?: string;
+  sourceTier: SourceTier;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  isEvidenceBased: boolean;
+  claim: string;
+  previousState?: ProjectLifecycleState;
+  resultingState?: ProjectLifecycleState;
+}
 
 export interface MCLServiceDefinition {
   serviceId: string;
@@ -73,6 +132,7 @@ export interface CommercialEvidence {
   publishedAt?: string;
   extractedAt?: string;
   expiresAt?: string;
+  temporalStatus?: EvidenceTemporalStatus;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   isEvidenceBased: boolean; // false for AI suggestions
 }
@@ -126,6 +186,17 @@ export interface CommercialWhyNowTrigger {
   url?: string;
   freshness: DataFreshness;
   hasTemporalEvidence: boolean;
+  signalStatus?: SignalStatus; // ACTIVE vs SUPERSEDED
+}
+
+export interface HistoricalSignal {
+  id: string;
+  title: string;
+  originalPhase: string;
+  discoveredAt: string;
+  supersededByEvent?: string;
+  supersededAt?: string;
+  status: SignalStatus; // SUPERSEDED, STALE, HISTORICAL
 }
 
 export interface AuditLogEntry {
@@ -140,7 +211,7 @@ export interface AuditLogEntry {
 export interface TopCommercialTarget {
   id: string; // companyId
   category: CommercialTargetCategory;
-  salesReadiness: SalesReadiness; // Independent V1.3 Sales Readiness Dimension
+  salesReadiness: SalesReadiness; // Independent V1.4 Sales Readiness Dimension
   salesReadinessReasoning: string;
   company: {
     id: string;
@@ -158,12 +229,15 @@ export interface TopCommercialTarget {
   relevantProject?: {
     id: string;
     title: string;
-    status: string; // e.g. "production", "post_production"
+    status: string; // e.g. "production", "post_production", "released"
+    currentLifecycleState: ProjectLifecycleState;
     projectType: string;
     releaseDate?: string;
     directorName?: string;
     freshness: DataFreshness;
+    events?: ProjectEvent[];
   };
+  historicalSignals?: HistoricalSignal[];
   potentialService?: CommercialNeedRecommendation;
   recommendedContact?: CommercialDecisionMakerContact;
   whyNow?: CommercialWhyNowTrigger;

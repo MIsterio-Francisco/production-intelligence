@@ -1962,6 +1962,7 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
   },
   "luckychap": {
     projects: [
+      { id: "p0000000-0000-0000-0000-000000000099", title: "Wuthering Heights", project_type: "feature_film", status: "released", release_date: "2026-02-13", director_name: "Emerald Fennell", distributor: "Warner Bros / MRC", company_role: "production_company" },
       { id: "p_lc1", title: "Barbie", project_type: "feature_film", status: "released", release_date: "2023-07-21", director_name: "Greta Gerwig", distributor: "Warner Bros", company_role: "production_company" },
       { id: "p_lc2", title: "Saltburn", project_type: "feature_film", status: "released", release_date: "2023-11-17", director_name: "Amazon MGM Studios", company_role: "producer" }
     ],
@@ -1970,7 +1971,8 @@ const SPECIFIC_COMPANY_DATA: Record<string, { projects: any[]; people: any[]; ev
       { id: "per00000-0000-0000-0000-000000000022", full_name: "Tom Ackerley", role: "founder", seniority: "C-Level", is_current: true, confidence: 97, contact_email: "tom@luckychap.com" }
     ],
     events: [
-      { id: "ev_lc1", event_type: "production_started", title: "New Emerald Fennell Feature In Pre-Production", description: "Prestige color grade and post production package.", event_date: new Date(Date.now() - 8 * 86400000).toISOString(), importance_score: 96, opportunity_score: 99 }
+      { id: "ev_lc1", event_type: "production_started", title: "New Emerald Fennell Feature In Pre-Production", description: "Prestige color grade and post production package.", event_date: "2024-05-10T00:00:00.000Z", importance_score: 96, opportunity_score: 99 },
+      { id: "ev_lc2", event_type: "theatrical_release", title: "Wuthering Heights Theatrical Release", description: "Official theatrical release of Emerald Fennell's feature.", event_date: "2026-02-13T00:00:00.000Z", importance_score: 98, opportunity_score: 20 }
     ]
   },
   "element-pictures": {

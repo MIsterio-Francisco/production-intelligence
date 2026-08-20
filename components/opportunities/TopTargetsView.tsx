@@ -304,8 +304,22 @@ export function TopTargetsView({ targets }: TopTargetsViewProps) {
 
                   {/* RELEVANT PROJECT */}
                   <div className="bg-background/80 p-3 rounded border border-border space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                      <Clapperboard className="h-3 w-3 text-accent" /> Proyecto Justificador
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Clapperboard className="h-3 w-3 text-accent" /> Proyecto Justificador
+                      </span>
+                      {target.relevantProject?.currentLifecycleState && (
+                        <Badge
+                          variant={
+                            target.relevantProject.currentLifecycleState === "RELEASED" || target.relevantProject.currentLifecycleState === "COMPLETED"
+                              ? "danger"
+                              : "success"
+                          }
+                          className="text-[9px] font-mono"
+                        >
+                          {target.relevantProject.currentLifecycleState}
+                        </Badge>
+                      )}
                     </span>
                     {target.relevantProject ? (
                       <div>
@@ -316,11 +330,26 @@ export function TopTargetsView({ targets }: TopTargetsViewProps) {
                           {target.relevantProject.title}
                         </Link>
                         <p className="text-[11px] text-muted-foreground capitalize">
-                          Fase: <span className="font-semibold text-foreground">{target.relevantProject.status.replace("_", " ")}</span>
+                          Estado Actual: <span className="font-semibold text-foreground">{target.relevantProject.currentLifecycleState || target.relevantProject.status.replace("_", " ")}</span>
                         </p>
                       </div>
                     ) : (
                       <p className="text-muted-foreground italic">Sin proyecto activo específico</p>
+                    )}
+
+                    {/* HISTORICAL SIGNALS SECTION V1.4 */}
+                    {target.historicalSignals && target.historicalSignals.length > 0 && (
+                      <div className="mt-2 pt-1 border-t border-border/50 text-[10px]">
+                        <span className="text-muted-foreground font-semibold uppercase block">Señales Históricas:</span>
+                        {target.historicalSignals.map((sig) => (
+                          <div key={sig.id} className="flex items-center justify-between text-muted-foreground mt-0.5">
+                            <span className="truncate max-w-[140px]">{sig.title}</span>
+                            <Badge variant="outline" className="text-[8px] uppercase">
+                              {sig.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
 
