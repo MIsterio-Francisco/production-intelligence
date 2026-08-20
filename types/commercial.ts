@@ -158,6 +158,17 @@ export interface DiscoveredSourceEntry {
   verifiedAt?: string;
 }
 
+export type SourceEvidenceQuality =
+  | "HIGH_VALUE"
+  | "EVENT_CAPABLE"
+  | "MEDIUM_VALUE"
+  | "LOW_VALUE"
+  | "CATALOG_ONLY"
+  | "NAVIGATION_ONLY"
+  | "PARKED_DOMAIN"
+  | "BLOCKED"
+  | "NOT_EVIDENCE";
+
 export interface ExtractedClaim {
   id: string;
   claimType:
@@ -176,6 +187,9 @@ export interface ExtractedClaim {
   sourceTier: SourceTier;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   evidenceSnippet: string;
+  documentUrl?: string;
+  documentTitle?: string;
+  quotedEvidence?: string;
   verificationStatus: "VERIFIED" | "CONTRADICTED" | "UNVERIFIED" | "REJECTED";
 }
 
@@ -185,7 +199,7 @@ export interface MarketSource {
   url: string;
   expectedDomain?: string;
   sourceTier: SourceTier;
-  sourceType: "OFFICIAL_PRODUCTION_COMPANY" | "TRADE_PRESS" | "INDUSTRY_DATABASE" | "FESTIVAL" | "GOVERNMENT" | "GENERAL_NEWS";
+  sourceType: "OFFICIAL_PRODUCTION_COMPANY" | "TRADE_PRESS" | "INDUSTRY_DATABASE" | "FESTIVAL" | "GOVERNMENT" | "GENERAL_NEWS" | "OFFICIAL_PRESS_RELEASE" | "RSS" | "ATOM";
   enabled: boolean;
   scanFrequency: ScanFrequency;
   lastScannedAt?: string;
@@ -196,6 +210,10 @@ export interface MarketSource {
   lastModified?: string;
   status: "CONNECTED" | "DEGRADED" | "CONFIG_REQUIRED" | "DISABLED";
   healthStatus: SourceHealthStatus;
+  evidenceQuality?: SourceEvidenceQuality;
+  feedDiscovered?: boolean;
+  feedUrl?: string;
+  feedType?: "RSS" | "ATOM" | "JSON";
   authenticityStatus?: SourceAuthenticityStatus;
   lastSuccessfulFetch?: string;
   lastContentValidFetch?: string;
@@ -365,6 +383,9 @@ export interface SourceDiagnosticResult {
   authenticityStatus: SourceAuthenticityStatus;
   contentValidationStatus: "VALID" | "INVALID" | "PARKED_DOMAIN" | "FETCHED_BUT_NOT_EVIDENCE";
   sourceHealthStatus: SourceHealthStatus;
+  evidenceQuality?: SourceEvidenceQuality;
+  feedDiscovered?: boolean;
+  feedUrl?: string;
   contentValid: boolean;
   documentsFound: number;
   claimsFound: number;

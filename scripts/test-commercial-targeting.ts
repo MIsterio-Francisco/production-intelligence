@@ -1016,8 +1016,63 @@ function runCommercialTargetingTestsV1_3() {
     "168. Parked LuckyChap domain cannot produce accepted event"
   );
 
+  // 169. Corporate homepage catalog yields 0 claims
+  const catalogPayload = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_official_zeta")!, {
+    url: "https://zetastudios.com",
+    title: "zeta studios · productora audiovisual",
+    contentSummary: "zeta studios · productora audiovisual de Élite, Red Flags, La vida breve.",
+    httpStatus: 200,
+  });
+  assert((catalogPayload.signal?.extractedClaims || []).length === 0, "169. Corporate homepage catalog yields 0 claims");
+
+  // 170. Real article with quoted evidence yields claim & event
+  const realArticlePayload = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_official_morena")!, {
+    url: "https://morenafilms.com/news/la-infiltrada-posproduccion-2026",
+    title: "Morena Films anuncia inicio de posproducción de La Infiltrada",
+    contentSummary: "Morena Films confirma que el largometraje ha finalizado rodaje y entra en posproducción.",
+    publishedAt: new Date().toISOString(),
+    httpStatus: 200,
+  });
+  assert(realArticlePayload.signal !== undefined && (realArticlePayload.signal.extractedClaims || []).length > 0, "170. Real article with quoted evidence yields claim & event");
+
+  // 171. RSS Feed parsing parses items cleanly
+  const rssXml = `<rss><channel><title>Feed</title><item><title>Morena Films inicia posproducción</title><description>Largometraje entra en etalonaje</description></item></channel></rss>`;
+  const rssParsed = IngestionEngine.parseRawBodyToPayloads(SourceRegistry.getSourceById("src_official_morena")!, rssXml, "https://morenafilms.com/feed", 200);
+  assert(rssParsed.length > 0 && rssParsed[0].title.includes("posproducción"), "171. RSS Feed parsing parses items cleanly");
+
+  // 172. LuckyChap PARKED_DOMAIN forces 0 claims & 0 events
+  assert(parkedLuckyChapPayload.processingStage === "PARKED_DOMAIN_REJECTED", "172. LuckyChap PARKED_DOMAIN forces 0 claims & 0 events");
+
+  // 173. Unresolved entity forces 0 accepted events
+  const unresolvedPayload = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_trade_variety")!, {
+    url: "https://variety.com/news/unknown-entity",
+    title: "Unknown Studio enters post-production on mysterious project",
+    contentSummary: "An unlisted production house begins editing.",
+    entityName: "Unknown Studio XYZ 999",
+    httpStatus: 200,
+  });
+  assert(unresolvedPayload.signal?.entityResolutionStatus === "ENTITY_UNRESOLVED", "173. Unresolved entity forces 0 accepted events");
+
+  // 174. Generic keyword text yields 0 claims
+  const genericTextPayload = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_official_morena")!, {
+    url: "https://morenafilms.com/about",
+    title: "About our film production company and post services",
+    contentSummary: "We specialize in feature film production, movie development and post services.",
+    httpStatus: 200,
+  });
+  assert((genericTextPayload.signal?.extractedClaims || []).length === 0, "174. Generic keyword text yields 0 claims");
+
+  // 175. Second scan produces duplicate=true
+  const dupSignalCheck = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_official_morena")!, {
+    url: "https://morenafilms.com/news/la-infiltrada-posproduccion-2026",
+    title: "Morena Films anuncia inicio de posproducción de La Infiltrada",
+    publishedAt: realArticlePayload.signal?.publishedAt,
+    httpStatus: 200,
+  });
+  assert(dupSignalCheck.isDuplicate === true, "175. Second scan produces duplicate=true");
+
   console.log("\n=========================================================================");
-  console.log(`V1.5.4 168 SCENARIOS & DIAGNOSTICS SUMMARY: ${passed} Passed, ${failed} Failed`);
+  console.log(`V1.5.5 175 SCENARIOS & DIAGNOSTICS SUMMARY: ${passed} Passed, ${failed} Failed`);
   console.log("=========================================================================");
 
   if (failed > 0) {

@@ -22,6 +22,7 @@ import { IngestionEngine } from "./ingestion-engine";
 import { ProjectEventDetector } from "./project-event-detector";
 import { PersonEventDetector } from "./person-event-detector";
 import { ChangeDetectionEngine } from "./change-detection-engine";
+import { SourceDiscoveryEngine } from "./source-discovery-engine";
 import { getTopCommercialTargets } from "../services/opportunity-engine";
 
 export class MarketScanner {
@@ -408,6 +409,14 @@ export class MarketScanner {
           }
         }
 
+        const evidenceQuality = SourceDiscoveryEngine.evaluateSourceEvidenceQuality({
+          authenticityStatus: lastAuthStatus,
+          isParked: lastContentValStatus === "PARKED_DOMAIN",
+          httpStatus: sourceHttpStatus,
+          url: source.url,
+          hasArticles: sourceDocsFound > 0,
+        });
+
         sourceDiagnostics.push({
           sourceId: source.id,
           sourceName: source.name,
@@ -420,6 +429,7 @@ export class MarketScanner {
           authenticityStatus: lastAuthStatus,
           contentValidationStatus: lastContentValStatus,
           sourceHealthStatus: source.healthStatus,
+          evidenceQuality,
           contentValid: lastContentValStatus === "VALID",
           documentsFound: sourceDocsFound,
           claimsFound: sourceClaimsFound,
