@@ -60,6 +60,10 @@ import { ProjectEventDetector } from "../lib/scanner/project-event-detector";
 import { PersonEventDetector } from "../lib/scanner/person-event-detector";
 import { ChangeDetectionEngine } from "../lib/scanner/change-detection-engine";
 import { MarketScanner } from "../lib/scanner/market-scanner";
+import { SourceAuthenticityEngine } from "../lib/scanner/source-authenticity-engine";
+import { ContentValidationEngine } from "../lib/scanner/content-validation-engine";
+import { SourceRecoveryEngine } from "../lib/scanner/source-recovery-engine";
+import { SourceDiscoveryEngine } from "../lib/scanner/source-discovery-engine";
 
 function runCommercialTargetingTestsV1_3() {
   console.log("=========================================================================");
@@ -583,8 +587,140 @@ function runCommercialTargetingTestsV1_3() {
   const luckyChapTargetV151 = targets.find(t => t.company.id === "luckychap" || t.company.name.toLowerCase().includes("luckychap"));
   assert(luckyChapTargetV151 !== undefined || targets.length > 0, "80. Commercial targets inventory audited and verified");
 
+  // =========================================================================
+  // V1.5.2 SOURCE AUTHENTICITY, HEALTH & RECOVERY TESTS (81-105)
+  // =========================================================================
+
+  // 81. HTTP 200 valid corporate page
+  const auth1 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s1", url: "https://morenafilms.com/news", httpStatus: 200, title: "Morena Films News & Slate", body: "Morena Films productora de cine en posproducción.", expectedDomain: "morenafilms.com"
+  });
+  assert(auth1.authenticityStatus === "AUTHENTIC_CORPORATE" && auth1.evidenceEligible === true, "81. HTTP 200 valid corporate page verified");
+
+  // 82. HTTP 404 failure
+  const auth2 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s2", url: "https://morenafilms.com/missing", httpStatus: 404, title: "404 Not Found"
+  });
+  assert(auth2.authenticityStatus === "CONTENT_INVALID" && auth2.evidenceEligible === false, "82. HTTP 404 returns CONTENT_INVALID");
+
+  // 83. HTTP 403 failure
+  const auth3 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s3", url: "https://morenafilms.com/secret", httpStatus: 403, title: "Forbidden"
+  });
+  assert(auth3.authenticityStatus === "CONTENT_INVALID" && auth3.evidenceEligible === false, "83. HTTP 403 returns CONTENT_INVALID");
+
+  // 84. Timeout simulation
+  const auth4 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s4", url: "https://timeout.com", httpStatus: 504, title: "Gateway Timeout"
+  });
+  assert(auth4.authenticityStatus === "CONTENT_INVALID", "84. Timeout returns CONTENT_INVALID");
+
+  // 85. TLS failure simulation
+  const auth5 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s5", url: "https://badtls.com", httpStatus: 525, title: "SSL Handshake Failed"
+  });
+  assert(auth5.authenticityStatus === "CONTENT_INVALID", "85. TLS failure returns CONTENT_INVALID");
+
+  // 86. GoDaddy parked domain
+  const auth6 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "src_official_luckychap", url: "https://luckychapentertainment.com", finalUrl: "https://luckychapentertainment.com/godaddy-parked", httpStatus: 200, title: "Domain Parked Free with GoDaddy", body: "This domain is parked free with GoDaddy. Buy this domain.", expectedDomain: "luckychapentertainment.com"
+  });
+  assert((auth6.authenticityStatus === "PARKED_DOMAIN" || auth6.authenticityStatus === "DOMAIN_FOR_SALE") && auth6.evidenceEligible === false, "86. GoDaddy parked domain identified and evidence blocked");
+
+  // 87. Sedo parked domain
+  const auth7 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s7", url: "https://sedodomain.com", finalUrl: "https://sedoparking.com", httpStatus: 200, title: "Sedo Parking", body: "Inquire about this domain at Sedo. Buy this domain.", expectedDomain: "sedodomain.com"
+  });
+  assert(auth7.authenticityStatus === "DOMAIN_FOR_SALE" || auth7.authenticityStatus === "PARKED_DOMAIN", "87. Sedo parked domain identified");
+
+  // 88. Afternic domain for sale
+  const auth8 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s8", url: "https://afternicdomain.com", httpStatus: 200, title: "Domain for sale", body: "This domain is for sale. Purchase this domain today.", expectedDomain: "afternicdomain.com"
+  });
+  assert(auth8.authenticityStatus === "DOMAIN_FOR_SALE" && auth8.evidenceEligible === false, "88. Afternic domain for sale identified");
+
+  // 89. Domain for sale text marker
+  assert(auth8.domainForSaleDetected === true, "89. Domain for sale text marker detected");
+
+  // 90. Empty HTML (<100b)
+  const auth10 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s10", url: "https://empty.com", httpStatus: 200, title: "Empty", body: "Short body", contentLength: 50
+  });
+  assert(auth10.authenticityStatus === "EMPTY_CONTENT" && auth10.evidenceEligible === false, "90. Empty HTML (<100b) returns EMPTY_CONTENT");
+
+  // 91. Short HTML body
+  assert(auth10.reasons[0].includes("threshold"), "91. Short HTML body reason documented");
+
+  // 92. Login wall prompt
+  const auth12 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s12", url: "https://loginwall.com", httpStatus: 200, title: "Sign in to continue", body: "Log in or register your account to continue.", expectedDomain: "loginwall.com"
+  });
+  assert(auth12.authenticityStatus === "LOGIN_WALL" && auth12.evidenceEligible === false, "92. Login wall prompt identified");
+
+  // 93. CAPTCHA challenge
+  const auth13 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s13", url: "https://captcha.com", httpStatus: 200, title: "Just a moment...", body: "Captcha challenge required.", expectedDomain: "captcha.com"
+  });
+  assert(auth13.authenticityStatus === "CAPTCHA" && auth13.evidenceEligible === false, "93. CAPTCHA challenge identified");
+
+  // 94. Cookie consent wall
+  const auth14 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s14", url: "https://cookiewall.com", httpStatus: 200, title: "Cookie Consent", body: "Cookie consent wall blocking content access.", expectedDomain: "cookiewall.com"
+  });
+  assert(auth14.authenticityStatus === "COOKIE_WALL", "94. Cookie consent wall identified");
+
+  // 95. Unrelated domain redirect
+  const auth15 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s15", url: "https://company.com", finalUrl: "https://unrelateddomain.com/landing", httpStatus: 200, title: "Unrelated Landing Page", body: "General portal", expectedDomain: "company.com"
+  });
+  assert(auth15.authenticityStatus === "REDIRECTED_EXTERNAL" || auth15.redirectedExternal === true, "95. Unrelated domain redirect identified");
+
+  // 96. External redirect to parking provider
+  assert(auth6.redirectedExternal === true || auth6.authenticityStatus === "PARKED_DOMAIN" || auth6.authenticityStatus === "DOMAIN_FOR_SALE", "96. External redirect to parking provider detected");
+
+  // 97. Valid corporate redirect
+  const auth17 = SourceAuthenticityEngine.evaluateSourceAuthenticity({
+    sourceId: "s17", url: "https://morenafilms.es", finalUrl: "https://morenafilms.com", httpStatus: 200, title: "Morena Films", body: "Morena Films productora de cine posproducción.", expectedDomain: "morenafilms.com"
+  });
+  assert(auth17.evidenceEligible === true, "97. Valid corporate redirect verified");
+
+  // 98. Valid official page
+  assert(auth17.authenticityStatus === "AUTHENTIC_CORPORATE", "98. Valid official page marked AUTHENTIC_CORPORATE");
+
+  // 99. Valid Tier 2 fallback recovery
+  const recoverySignal = {
+    id: "sig_trade_1", sourceId: "src_trade_variety", title: "LuckyChap feature in post-production", publishedAt: "2026-08-20", extractedAt: "2026-08-20", fingerprint: "fp_tr1", sourceTier: "TIER_2_TRADE_PRESS" as const, status: "NEW" as const, processingStage: "CLAIM_EXTRACTED" as const, entityResolutionStatus: "MATCH" as const, entityName: "LuckyChap Entertainment", extractedClaims: [{ id: "c1", claimType: "PROJECT_POST_PRODUCTION" as const, subject: "LuckyChap", predicate: "phase", object: "POST_PRODUCTION", publishedAt: "2026-08-20", source: "src_trade_variety", sourceTier: "TIER_2_TRADE_PRESS" as const, confidence: "MEDIUM" as const, evidenceSnippet: "Snippet", verificationStatus: "VERIFIED" as const }]
+  };
+  const recoveryRes = SourceRecoveryEngine.evaluateSourceRecovery("LuckyChap Entertainment", "src_official_luckychap", [recoverySignal]);
+  assert(recoveryRes.recoveredFromFallback === true && recoveryRes.fallbackSourceId === "src_trade_variety", "99. Valid Tier 2 fallback recovers market evidence when official source is down");
+
+  // 100. Invalid fallback returns recoveredFromFallback false
+  const emptyRecovery = SourceRecoveryEngine.evaluateSourceRecovery("LuckyChap Entertainment", "src_official_luckychap", []);
+  assert(emptyRecovery.recoveredFromFallback === false, "100. Invalid/empty fallback returns recoveredFromFallback false");
+
+  // 101. Source degradation metric tracking
+  SourceRegistry.updateSourceStatus("src_official_luckychap", "DEGRADED", "PARKED_DOMAIN", { authenticityStatus: "PARKED_DOMAIN", incrementInvalidContent: true, lastError: "GoDaddy Parked Domain" });
+  const luckychapReg = SourceRegistry.getSourceById("src_official_luckychap");
+  assert(luckychapReg?.healthStatus === "PARKED_DOMAIN", "101. Source health status updated to PARKED_DOMAIN");
+
+  // 102. Source recovery evaluation preserves official source unavailable
+  assert(recoveryRes.officialSourceAvailable === false, "102. Source recovery preserves officialSourceAvailable=false");
+
+  // 103. Repeated failed scans consecutive counter
+  assert(luckychapReg?.consecutiveInvalidContent! > 0, "103. Consecutive invalid content counter increments");
+
+  // 104. Source Discovery Engine registers new discovered source as DISCOVERED_SOURCE
+  const disc = SourceDiscoveryEngine.discoverSource({ entityName: "New Studio", url: "https://newstudio.com", discoveryReason: "Scan candidate" });
+  assert(disc.status === "DISCOVERED_SOURCE", "104. Source Discovery Engine registers discovered candidate as DISCOVERED_SOURCE");
+
+  // 105. Evidence blocked after HTTP 200 when parked domain detected
+  const luckyChapIngest = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_official_luckychap")!, {
+    url: "https://luckychapentertainment.com", finalUrl: "https://luckychapentertainment.com/godaddy", httpStatus: 200, title: "LuckyChap - GoDaddy Parked Domain", contentSummary: "This domain is parked free with GoDaddy."
+  });
+  assert(luckyChapIngest.processingStage === "PARKED_DOMAIN_REJECTED" && luckyChapIngest.signal?.status === "REJECTED", "105. Evidence blocked after HTTP 200 when parked domain detected");
+
   console.log("\n=========================================================================");
-  console.log(`V1.5.1 80 SCENARIOS & EVIDENCE QUALITY SUMMARY: ${passed} Passed, ${failed} Failed`);
+  console.log(`V1.5.2 105 SCENARIOS & SOURCE AUTHENTICITY SUMMARY: ${passed} Passed, ${failed} Failed`);
   console.log("=========================================================================");
 
   if (failed > 0) {

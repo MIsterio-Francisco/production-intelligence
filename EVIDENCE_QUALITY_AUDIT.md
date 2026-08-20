@@ -7,12 +7,12 @@
 
 | Métrica de Ingestión y Verificación | Valor Auditado | Estado |
 |---|---|---|
-| Sources Fetched | 7 | 🟢 COMPLETO |
-| Contenido Válido (`CONTENT_VALID`) | 7 | 🟢 VERIFICADO |
-| Contenido Rechazado (`FETCHED_BUT_NOT_EVIDENCE`) | 0 | 🟢 FILTRADO |
-| Claims Extraídos (`CLAIM_EXTRACTED`) | 7 | 🟢 ATÓMICO |
-| Claims Verificados (`CLAIM_VERIFIED`) | 7 | 🟢 SÓLIDO |
-| Eventos Aceptados (`EVENT_ACCEPTED`) | 7 | 🟢 INTEGRADO |
+| Sources Fetched | 8 | 🟢 COMPLETO |
+| Contenido Válido (`CONTENT_VALID`) | 5 | 🟢 VERIFICADO |
+| Contenido Rechazado (`FETCHED_BUT_NOT_EVIDENCE`) | 3 | 🟢 FILTRADO |
+| Claims Extraídos (`CLAIM_EXTRACTED`) | 5 | 🟢 ATÓMICO |
+| Claims Verificados (`CLAIM_VERIFIED`) | 5 | 🟢 SÓLIDO |
+| Eventos Aceptados (`EVENT_ACCEPTED`) | 5 | 🟢 INTEGRADO |
 | Eventos Rechazados (`EVENT_REJECTED`) | 0 | 🟢 RECHAZADO |
 | Entidades No Resueltas (`ENTITY_UNRESOLVED`) | 0 | 🟢 BLOQUEADO |
 | Señales Obsoletas (`SUPERSEDED`) | 0 | 🟢 SUPERSEDED |
@@ -25,9 +25,10 @@
 | Source ID | Tier | Status | Health Status | Fallos Consecutivos | Último Fetch Exitoso |
 |---|---|---|---|---|---|
 | src_official_morena | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 1 | N/A |
+| src_official_luckychap | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 2 | N/A |
 | src_trade_variety | **TIER_2_TRADE_PRESS** | CONNECTED | **HEALTHY** | 1 | N/A |
-| src_trade_hollywoodreporter | **TIER_2_TRADE_PRESS** | CONNECTED | **HEALTHY** | 1 | N/A |
-| src_trade_cineuropa | **TIER_2_TRADE_PRESS** | CONNECTED | **HEALTHY** | 2 | N/A |
+| src_trade_hollywoodreporter | **TIER_2_TRADE_PRESS** | DEGRADED | **CONTENT_INVALID** | 1 | N/A |
+| src_trade_cineuropa | **TIER_2_TRADE_PRESS** | DEGRADED | **CONTENT_INVALID** | 2 | N/A |
 | src_official_nostromo | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 2 | N/A |
 | src_official_zeta | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 2 | N/A |
-| src_official_icaa | **TIER_1_OFFICIAL** | CONNECTED | **HEALTHY** | 2 | N/A |
+| src_official_icaa | **TIER_1_OFFICIAL** | DEGRADED | **CONTENT_INVALID** | 2 | N/A |

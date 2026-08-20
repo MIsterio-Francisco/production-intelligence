@@ -68,7 +68,27 @@ export type ScanFrequency = "HIGH_PRIORITY" | "STANDARD" | "DAILY" | "WEEKLY";
 
 export type MarketDataSourceMode = "LIVE_DATA" | "RECENTLY_SCANNED" | "IN_MEMORY_FALLBACK" | "SOURCE_ERROR";
 
-export type SourceHealthStatus = "HEALTHY" | "DEGRADED" | "BLOCKED" | "UNAVAILABLE";
+export type SourceHealthStatus =
+  | "HEALTHY"
+  | "DEGRADED"
+  | "BLOCKED"
+  | "UNAVAILABLE"
+  | "PARKED_DOMAIN"
+  | "REDIRECTED"
+  | "CONTENT_INVALID";
+
+export type SourceAuthenticityStatus =
+  | "AUTHENTIC_CORPORATE"
+  | "PARKED_DOMAIN"
+  | "DOMAIN_FOR_SALE"
+  | "NON_CORPORATE_CONTENT"
+  | "REDIRECTED_EXTERNAL"
+  | "CONTENT_INVALID"
+  | "LOGIN_WALL"
+  | "CAPTCHA"
+  | "COOKIE_WALL"
+  | "EMPTY_CONTENT"
+  | "UNKNOWN";
 
 export type SignalProcessingStage =
   | "FETCH_SUCCESS"
@@ -77,7 +97,8 @@ export type SignalProcessingStage =
   | "CLAIM_VERIFIED"
   | "EVENT_ACCEPTED"
   | "EVENT_REJECTED"
-  | "FETCHED_BUT_NOT_EVIDENCE";
+  | "FETCHED_BUT_NOT_EVIDENCE"
+  | "PARKED_DOMAIN_REJECTED";
 
 export type EntityResolutionStatus = "MATCH" | "POSSIBLE_MATCH" | "NEW_ENTITY_CANDIDATE" | "ENTITY_UNRESOLVED";
 
@@ -92,7 +113,50 @@ export type ChangeType =
   | "PERSON_DEPARTURE"
   | "SIGNAL_SUPERSEDED"
   | "DATA_CONFLICT_DETECTED"
-  | "SALES_READINESS_CHANGED";
+  | "SALES_READINESS_CHANGED"
+  | "SOURCE_HEALTH_CHANGED"
+  | "SOURCE_BECAME_INVALID"
+  | "SOURCE_RECOVERED"
+  | "SOURCE_PARKED"
+  | "SOURCE_CONTENT_INVALID";
+
+export interface SourceAuthenticityResult {
+  sourceId: string;
+  url: string;
+  httpStatus: number;
+  finalUrl?: string;
+  domain: string;
+  authenticityStatus: SourceAuthenticityStatus;
+  domainMatchesExpectedEntity: boolean;
+  corporateContentDetected: boolean;
+  parkedDomainDetected: boolean;
+  domainForSaleDetected: boolean;
+  redirectedExternal: boolean;
+  contentValid: boolean;
+  evidenceEligible: boolean;
+  confidence: number;
+  reasons: string[];
+  checkedAt: string;
+}
+
+export type DiscoveredSourceStatus =
+  | "DISCOVERED_SOURCE"
+  | "VERIFIED_SOURCE"
+  | "REJECTED_SOURCE"
+  | "PENDING_REVIEW";
+
+export interface DiscoveredSourceEntry {
+  id: string;
+  entityId?: string;
+  entityName: string;
+  url: string;
+  domain: string;
+  suggestedTier: SourceTier;
+  discoveryReason: string;
+  status: DiscoveredSourceStatus;
+  discoveredAt: string;
+  verifiedAt?: string;
+}
 
 export interface ExtractedClaim {
   id: string;
@@ -119,6 +183,7 @@ export interface MarketSource {
   id: string;
   name: string;
   url: string;
+  expectedDomain?: string;
   sourceTier: SourceTier;
   sourceType: "OFFICIAL_PRODUCTION_COMPANY" | "TRADE_PRESS" | "INDUSTRY_DATABASE" | "FESTIVAL" | "GOVERNMENT" | "GENERAL_NEWS";
   enabled: boolean;
@@ -131,10 +196,17 @@ export interface MarketSource {
   lastModified?: string;
   status: "CONNECTED" | "DEGRADED" | "CONFIG_REQUIRED" | "DISABLED";
   healthStatus: SourceHealthStatus;
+  authenticityStatus?: SourceAuthenticityStatus;
   lastSuccessfulFetch?: string;
   lastContentValidFetch?: string;
   lastEvidenceAccepted?: string;
   consecutiveFailures: number;
+  consecutiveInvalidContent?: number;
+  fallbackSources?: string[];
+  entityScope?: string;
+  lastHttpStatus?: number;
+  lastError?: string;
+  lastCheckedAt?: string;
 }
 
 export interface RawSignal {
@@ -160,6 +232,7 @@ export interface RawSignal {
   status: "NEW" | "PROCESSED" | "DUPLICATE" | "REJECTED" | "ERROR";
   processingStage: SignalProcessingStage;
   entityResolutionStatus: EntityResolutionStatus;
+  authenticityResult?: SourceAuthenticityResult;
   evidenceSnippet?: string;
   errorReason?: string;
   extractedClaims?: ExtractedClaim[];

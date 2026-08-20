@@ -195,7 +195,7 @@ export class MarketScanner {
               continue;
             }
 
-            if (processingStage === "FETCHED_BUT_NOT_EVIDENCE") {
+            if (processingStage === "FETCHED_BUT_NOT_EVIDENCE" || processingStage === "PARKED_DOMAIN_REJECTED") {
               this.auditMetrics.invalidContentCount++;
               continue;
             }

@@ -58,6 +58,9 @@ export function MarketPulseWidget({
           >
             {mode === "LIVE_DATA" ? "🟢 LIVE DATA" : mode === "RECENTLY_SCANNED" ? "🟡 RECENTLY SCANNED" : "⚪ IN-MEMORY FALLBACK"}
           </Badge>
+          <Badge variant="outline" className="text-[10px] font-mono uppercase border-emerald-500/30 text-emerald-600 bg-emerald-50/50">
+            🛡️ SOURCE AUTHENTICITY ENFORCED
+          </Badge>
         </div>
 
         <button

@@ -38,7 +38,11 @@ export class SourceRegistry {
       lastSuccessfulFetch?: string;
       lastContentValidFetch?: string;
       lastEvidenceAccepted?: string;
+      authenticityStatus?: MarketSource["authenticityStatus"];
+      lastHttpStatus?: number;
+      lastError?: string;
       incrementFailure?: boolean;
+      incrementInvalidContent?: boolean;
       resetFailures?: boolean;
     }
   ): void {
@@ -46,13 +50,23 @@ export class SourceRegistry {
     if (s) {
       s.status = status;
       s.healthStatus = healthStatus;
+      if (metrics?.authenticityStatus) s.authenticityStatus = metrics.authenticityStatus;
+      if (metrics?.lastHttpStatus !== undefined) s.lastHttpStatus = metrics.lastHttpStatus;
+      if (metrics?.lastError !== undefined) s.lastError = metrics.lastError;
       if (metrics?.lastScannedAt) s.lastScannedAt = metrics.lastScannedAt;
       if (metrics?.lastSuccessfulFetch) s.lastSuccessfulFetch = metrics.lastSuccessfulFetch;
       if (metrics?.lastContentValidFetch) s.lastContentValidFetch = metrics.lastContentValidFetch;
       if (metrics?.lastEvidenceAccepted) s.lastEvidenceAccepted = metrics.lastEvidenceAccepted;
 
-      if (metrics?.resetFailures) s.consecutiveFailures = 0;
-      else if (metrics?.incrementFailure) s.consecutiveFailures = (s.consecutiveFailures || 0) + 1;
+      s.lastCheckedAt = new Date().toISOString();
+
+      if (metrics?.resetFailures) {
+        s.consecutiveFailures = 0;
+        s.consecutiveInvalidContent = 0;
+      } else {
+        if (metrics?.incrementFailure) s.consecutiveFailures = (s.consecutiveFailures || 0) + 1;
+        if (metrics?.incrementInvalidContent) s.consecutiveInvalidContent = (s.consecutiveInvalidContent || 0) + 1;
+      }
     }
   }
 
@@ -63,6 +77,7 @@ export class SourceRegistry {
           id: "src_official_morena",
           name: "Morena Films Official Press & Slate Catalog",
           url: "https://morenafilms.com/news",
+          expectedDomain: "morenafilms.com",
           sourceTier: "TIER_1_OFFICIAL",
           sourceType: "OFFICIAL_PRODUCTION_COMPANY",
           enabled: true,
@@ -71,12 +86,35 @@ export class SourceRegistry {
           rateLimitPerMin: 30,
           status: "CONNECTED",
           healthStatus: "HEALTHY",
+          authenticityStatus: "AUTHENTIC_CORPORATE",
           consecutiveFailures: 0,
+          entityScope: "Morena Films",
+          fallbackSources: ["src_trade_variety", "src_trade_cineuropa"],
+        },
+        {
+          id: "src_official_luckychap",
+          name: "LuckyChap Entertainment Official Portal",
+          url: "https://luckychapentertainment.com",
+          expectedDomain: "luckychapentertainment.com",
+          sourceTier: "TIER_1_OFFICIAL",
+          sourceType: "OFFICIAL_PRODUCTION_COMPANY",
+          enabled: true,
+          scanFrequency: "HIGH_PRIORITY",
+          reliabilityScore: 95,
+          rateLimitPerMin: 30,
+          status: "DEGRADED",
+          healthStatus: "PARKED_DOMAIN",
+          authenticityStatus: "PARKED_DOMAIN",
+          consecutiveFailures: 1,
+          entityScope: "LuckyChap Entertainment",
+          fallbackSources: ["src_trade_variety", "src_trade_hollywoodreporter"],
+          lastError: "GoDaddy Parked Domain detected on official URL.",
         },
         {
           id: "src_trade_variety",
           name: "Variety International Film & TV Production News",
           url: "https://variety.com/v/film/news",
+          expectedDomain: "variety.com",
           sourceTier: "TIER_2_TRADE_PRESS",
           sourceType: "TRADE_PRESS",
           enabled: true,
@@ -85,12 +123,14 @@ export class SourceRegistry {
           rateLimitPerMin: 60,
           status: "CONNECTED",
           healthStatus: "HEALTHY",
+          authenticityStatus: "AUTHENTIC_CORPORATE",
           consecutiveFailures: 0,
         },
         {
           id: "src_trade_hollywoodreporter",
           name: "The Hollywood Reporter Film Production Feed",
           url: "https://hollywoodreporter.com/c/movies",
+          expectedDomain: "hollywoodreporter.com",
           sourceTier: "TIER_2_TRADE_PRESS",
           sourceType: "TRADE_PRESS",
           enabled: true,
@@ -99,12 +139,14 @@ export class SourceRegistry {
           rateLimitPerMin: 60,
           status: "CONNECTED",
           healthStatus: "HEALTHY",
+          authenticityStatus: "AUTHENTIC_CORPORATE",
           consecutiveFailures: 0,
         },
         {
           id: "src_trade_cineuropa",
           name: "Cineuropa European Production Monitor",
           url: "https://cineuropa.org/en/news",
+          expectedDomain: "cineuropa.org",
           sourceTier: "TIER_2_TRADE_PRESS",
           sourceType: "TRADE_PRESS",
           enabled: true,
@@ -113,12 +155,14 @@ export class SourceRegistry {
           rateLimitPerMin: 60,
           status: "DEGRADED",
           healthStatus: "DEGRADED",
+          authenticityStatus: "AUTHENTIC_CORPORATE",
           consecutiveFailures: 1,
         },
         {
           id: "src_official_nostromo",
           name: "Nostromo Pictures Official Portal",
           url: "https://nostromopictures.com",
+          expectedDomain: "nostromopictures.com",
           sourceTier: "TIER_1_OFFICIAL",
           sourceType: "OFFICIAL_PRODUCTION_COMPANY",
           enabled: true,
@@ -127,12 +171,16 @@ export class SourceRegistry {
           rateLimitPerMin: 30,
           status: "CONFIG_REQUIRED",
           healthStatus: "UNAVAILABLE",
+          authenticityStatus: "UNKNOWN",
           consecutiveFailures: 1,
+          entityScope: "Nostromo Pictures",
+          fallbackSources: ["src_trade_cineuropa"],
         },
         {
           id: "src_official_zeta",
           name: "Zeta Studios Official Portal",
           url: "https://zetastudios.com",
+          expectedDomain: "zetastudios.com",
           sourceTier: "TIER_1_OFFICIAL",
           sourceType: "OFFICIAL_PRODUCTION_COMPANY",
           enabled: true,
@@ -141,12 +189,16 @@ export class SourceRegistry {
           rateLimitPerMin: 30,
           status: "CONFIG_REQUIRED",
           healthStatus: "UNAVAILABLE",
+          authenticityStatus: "UNKNOWN",
           consecutiveFailures: 1,
+          entityScope: "Zeta Studios",
+          fallbackSources: ["src_trade_variety"],
         },
         {
           id: "src_official_icaa",
           name: "ICAA Official Spanish Film Grants & Registries",
           url: "https://www.cultura.gob.es/cultura/areas/cine/ayudas.html",
+          expectedDomain: "cultura.gob.es",
           sourceTier: "TIER_1_OFFICIAL",
           sourceType: "GOVERNMENT",
           enabled: true,
@@ -155,6 +207,7 @@ export class SourceRegistry {
           rateLimitPerMin: 20,
           status: "DEGRADED",
           healthStatus: "DEGRADED",
+          authenticityStatus: "AUTHENTIC_CORPORATE",
           consecutiveFailures: 1,
         },
       ];

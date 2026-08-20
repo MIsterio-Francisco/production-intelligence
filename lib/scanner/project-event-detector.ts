@@ -13,8 +13,12 @@ export class ProjectEventDetector {
    * Analyzes a raw market signal and attempts to detect a verified project event.
    */
   public static detectProjectEvent(signal: RawSignal): ProjectEvent | null {
-    // 1. Hard Block: Reject signals marked FETCHED_BUT_NOT_EVIDENCE
-    if (signal.processingStage === "FETCHED_BUT_NOT_EVIDENCE") {
+    // 1. Hard Block: Reject signals marked FETCHED_BUT_NOT_EVIDENCE or PARKED_DOMAIN_REJECTED
+    if (
+      signal.processingStage === "FETCHED_BUT_NOT_EVIDENCE" ||
+      signal.processingStage === "PARKED_DOMAIN_REJECTED" ||
+      signal.authenticityResult?.evidenceEligible === false
+    ) {
       return null;
     }
 

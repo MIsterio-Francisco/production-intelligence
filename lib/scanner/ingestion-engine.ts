@@ -10,6 +10,8 @@
 import { RawSignal, MarketSource, ExtractedClaim, SignalProcessingStage, EntityResolutionStatus } from "../../types/commercial";
 import { calculateContentHash } from "../ingestion/normalizer";
 import { resolveCompanyEntity } from "../ingestion/entity-resolution";
+import { ContentValidationEngine } from "./content-validation-engine";
+import { SourceRegistry } from "./source-registry";
 
 export class IngestionEngine {
   private static processedFingerprints: Set<string> = new Set();
@@ -129,7 +131,7 @@ export class IngestionEngine {
   }
 
   /**
-   * Processes incoming raw payload through strict V1.5.1 pipeline stages.
+   * Processes incoming raw payload through strict V1.5.2 pipeline stages.
    */
   public static processRawPayload(
     source: MarketSource,
@@ -160,10 +162,35 @@ export class IngestionEngine {
     // 1. Stage 1: FETCH_SUCCESS
     let currentStage: SignalProcessingStage = "FETCH_SUCCESS";
 
-    // 2. Stage 2: CONTENT_VALIDATION
-    const isContentValid = this.validateContentPayload(payload.title, payload.contentSummary, payload.contentLength);
+    // 2. Stage 2: SOURCE AUTHENTICITY & CONTENT VALIDATION (V1.5.2 Engine)
+    const validationRes = ContentValidationEngine.validatePayload({
+      sourceId: source.id,
+      url: payload.url || source.url,
+      httpStatus: payload.httpStatus || 200,
+      finalUrl: payload.finalUrl || payload.url || source.url,
+      title: payload.title,
+      contentSummary: payload.contentSummary,
+      contentLength: payload.contentLength,
+      expectedDomain: source.expectedDomain,
+      expectedEntityName: source.entityScope || payload.entityName,
+    });
 
-    if (!isContentValid) {
+    if (!validationRes.isValid) {
+      const authStatus = validationRes.authenticityResult.authenticityStatus;
+      const isParked = authStatus === "PARKED_DOMAIN" || authStatus === "DOMAIN_FOR_SALE";
+
+      SourceRegistry.updateSourceStatus(
+        source.id,
+        isParked ? "DEGRADED" : "DEGRADED",
+        isParked ? "PARKED_DOMAIN" : "CONTENT_INVALID",
+        {
+          authenticityStatus: authStatus,
+          lastHttpStatus: payload.httpStatus || 200,
+          lastError: validationRes.reasons[0] || "Invalid source content",
+          incrementInvalidContent: true,
+        }
+      );
+
       const signal: RawSignal = {
         id: `sig_raw_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         sourceId: source.id,
@@ -185,14 +212,15 @@ export class IngestionEngine {
         roleTitle: payload.roleTitle,
         proposedStatus: payload.proposedStatus,
         status: "REJECTED",
-        processingStage: "FETCHED_BUT_NOT_EVIDENCE",
+        processingStage: validationRes.stage,
         entityResolutionStatus: "ENTITY_UNRESOLVED",
-        errorReason: "Contenido insuficiente, login, paywall o error 200 genérico.",
+        authenticityResult: validationRes.authenticityResult,
+        errorReason: validationRes.reasons.join(" | "),
       };
 
       this.processedFingerprints.add(fingerprint);
       this.rawSignalStore.push(signal);
-      return { signal, isDuplicate: false, processingStage: "FETCHED_BUT_NOT_EVIDENCE" };
+      return { signal, isDuplicate: false, processingStage: validationRes.stage };
     }
 
     currentStage = "CONTENT_VALID";
