@@ -11,6 +11,7 @@ import {
   Clapperboard,
   Users,
   Flame,
+  Activity,
   Bell,
   Settings,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const navigationItems = [
   { name: "Projects", href: "/projects", icon: Clapperboard },
   { name: "People", href: "/people", icon: Users },
   { name: "Opportunities", href: "/opportunities", icon: Flame, badge: "MCL" },
+  { name: "What Changed", href: "/changes", icon: Activity, badge: "RADAR" },
   { name: "Alerts", href: "/alerts", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -87,7 +89,7 @@ export function Sidebar() {
         <div className="text-[10px] text-emerald-800 font-mono font-bold bg-emerald-50 p-1.5 rounded border border-emerald-200">
           🟢 Auto-Scanner Active (12 Countries)
         </div>
-        <div className="text-[10px] text-muted-foreground">V1.3 Real-World Sales Execution</div>
+        <div className="text-[10px] text-muted-foreground">V1.5 Background Market Scanner</div>
       </div>
     </aside>
   );

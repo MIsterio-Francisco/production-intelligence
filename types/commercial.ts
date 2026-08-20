@@ -1,6 +1,8 @@
 /**
- * CANONICAL COMMERCIAL INTELLIGENCE DATA MODEL — PRODUCTION INTELLIGENCE V1.4
+ * CANONICAL COMMERCIAL INTELLIGENCE DATA MODEL — PRODUCTION INTELLIGENCE V1.5
  * Misterio Color Lab
+ * 
+ * V1.5 Market Scanner + Ingestion Engine + Event Detection + Change Detection
  */
 
 export type DataFreshness = "CURRENT" | "RECENT" | "STALE" | "UNKNOWN";
@@ -60,6 +62,59 @@ export type EvidenceTemporalStatus =
   | "CONFLICT"
   | "UNKNOWN";
 
+export type ScanFrequency = "HIGH_PRIORITY" | "STANDARD" | "DAILY" | "WEEKLY";
+
+export type MarketDataSourceMode = "LIVE_DATA" | "RECENTLY_SCANNED" | "IN_MEMORY_FALLBACK" | "SOURCE_ERROR";
+
+export type ChangeType =
+  | "NEW_PROJECT_ANNOUNCED"
+  | "PROJECT_ENTERED_PRODUCTION"
+  | "PROJECT_ENTERED_POST"
+  | "PROJECT_RELEASED"
+  | "PROJECT_CANCELLED"
+  | "NEW_DECISION_MAKER"
+  | "ROLE_CHANGED"
+  | "PERSON_DEPARTURE"
+  | "SIGNAL_SUPERSEDED"
+  | "DATA_CONFLICT_DETECTED"
+  | "SALES_READINESS_CHANGED";
+
+export interface MarketSource {
+  id: string;
+  name: string;
+  url: string;
+  sourceTier: SourceTier;
+  sourceType: "OFFICIAL_PRODUCTION_COMPANY" | "TRADE_PRESS" | "INDUSTRY_DATABASE" | "FESTIVAL" | "GOVERNMENT" | "GENERAL_NEWS";
+  enabled: boolean;
+  scanFrequency: ScanFrequency;
+  lastScannedAt?: string;
+  nextScanAt?: string;
+  reliabilityScore: number;
+  rateLimitPerMin: number;
+  lastEtag?: string;
+  lastModified?: string;
+  status: "CONNECTED" | "DEGRADED" | "CONFIG_REQUIRED" | "DISABLED";
+}
+
+export interface RawSignal {
+  id: string;
+  sourceId: string;
+  url?: string;
+  title: string;
+  contentSummary?: string;
+  publishedAt: string;
+  extractedAt: string;
+  fingerprint: string;
+  sourceTier: SourceTier;
+  entityName?: string;
+  projectTitle?: string;
+  personName?: string;
+  roleTitle?: string;
+  proposedStatus?: string;
+  status: "NEW" | "PROCESSED" | "DUPLICATE" | "REJECTED" | "ERROR";
+  errorReason?: string;
+}
+
 export interface ProjectEvent {
   id: string;
   projectId: string;
@@ -91,6 +146,61 @@ export interface ProjectEvent {
   claim: string;
   previousState?: ProjectLifecycleState;
   resultingState?: ProjectLifecycleState;
+  status?: "PROPOSED" | "VERIFIED" | "REJECTED" | "SUPERSEDED";
+}
+
+export interface PersonEvent {
+  id: string;
+  personId?: string;
+  personName: string;
+  companyName: string;
+  eventType: "PERSON_JOINED" | "PERSON_LEFT" | "ROLE_STARTED" | "ROLE_ENDED" | "ROLE_CHANGED";
+  previousRole?: string;
+  newRole?: string;
+  eventDate: string;
+  source: string;
+  sourceTier: SourceTier;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  isEvidenceBased: boolean;
+  status: "VERIFIED" | "INFERRED" | "UNVERIFIED";
+}
+
+export interface WhatChangedEntry {
+  id: string;
+  changeType: ChangeType;
+  entityId: string;
+  entityType: "project" | "company" | "person" | "signal" | "opportunity";
+  entityName: string;
+  companyName: string;
+  detectedAt: string;
+  sourceName: string;
+  sourceTier: SourceTier;
+  previousValue?: string;
+  newValue?: string;
+  factSummary: string; // EVIDENCE FACT (isEvidenceBased: true)
+  commercialImpact: string; // AI SUGGESTION (isEvidenceBased: false)
+  salesReadinessBefore?: SalesReadiness;
+  salesReadinessAfter?: SalesReadiness;
+  isEvidenceBased: boolean;
+  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+}
+
+export interface MarketScanResult {
+  scanId: string;
+  startedAt: string;
+  completedAt: string;
+  mode: MarketDataSourceMode;
+  sourcesScanned: number;
+  documentsFound: number;
+  newSignals: number;
+  duplicateSignals: number;
+  claimsExtracted: number;
+  claimsVerified: number;
+  eventsDetected: number;
+  conflictsDetected: number;
+  opportunitiesChanged: number;
+  changesGenerated: WhatChangedEntry[];
+  errors: { sourceId: string; message: string; timestamp: string }[];
 }
 
 export interface MCLServiceDefinition {
@@ -206,12 +316,13 @@ export interface AuditLogEntry {
   reason: string;
   timestamp: string;
   evidenceClaim?: string;
+  triggeredBy?: string;
 }
 
 export interface TopCommercialTarget {
   id: string; // companyId
   category: CommercialTargetCategory;
-  salesReadiness: SalesReadiness; // Independent V1.4 Sales Readiness Dimension
+  salesReadiness: SalesReadiness; // Independent V1.5 Sales Readiness Dimension
   salesReadinessReasoning: string;
   company: {
     id: string;

@@ -23,6 +23,8 @@
     "audit:contactability": "tsc scripts/test-e2e.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-e2e.js",
     "audit:lifecycle": "tsc scripts/audit-project-lifecycle.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-project-lifecycle.js",
     "audit:stale": "tsc scripts/audit-stale-opportunities.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-stale-opportunities.js",
+    "scan:market": "tsc scripts/audit-market-scanner.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-market-scanner.js",
+    "audit:market": "tsc scripts/audit-market-scanner.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-market-scanner.js",
     "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js"
   },
   "dependencies": {

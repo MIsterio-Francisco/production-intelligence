@@ -9,6 +9,8 @@ import { TopTargetsView } from "@/components/opportunities/TopTargetsView";
 import { Building2, Globe2, Clapperboard, Flame, ArrowUpRight, TrendingUp, Activity, Users, Award, Target } from "lucide-react";
 import Link from "next/link";
 
+import { MarketPulseWidget } from "@/components/scanner/MarketPulseWidget";
+
 export default async function DashboardPage() {
   const [data, peopleRes, topTargets] = await Promise.all([
     getDashboardOverview(),
@@ -32,10 +34,13 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Graph Active
+              Graph Active (V1.5 Radar)
             </span>
           </div>
         </div>
+
+        {/* V1.5 Market Pulse Radar Widget */}
+        <MarketPulseWidget lastResult={null} changes={[]} />
 
         {/* Section 24 PRD KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

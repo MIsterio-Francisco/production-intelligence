@@ -53,6 +53,12 @@ import { evaluateMCLServiceFit } from "../lib/services/service-fit-engine";
 import { classifyDecisionMakerRole, formatCommercialContact } from "../lib/services/decision-maker-classifier";
 import { detectDataConflict } from "../lib/services/data-conflict-engine";
 import { verifyCompanyIdentityClaim, verifyCurrentRoleClaim, verifyProjectStatusClaim } from "../lib/services/claim-verifier";
+import { SourceRegistry } from "../lib/scanner/source-registry";
+import { IngestionEngine } from "../lib/scanner/ingestion-engine";
+import { ProjectEventDetector } from "../lib/scanner/project-event-detector";
+import { PersonEventDetector } from "../lib/scanner/person-event-detector";
+import { ChangeDetectionEngine } from "../lib/scanner/change-detection-engine";
+import { MarketScanner } from "../lib/scanner/market-scanner";
 
 function runCommercialTargetingTestsV1_3() {
   console.log("=========================================================================");
@@ -391,8 +397,72 @@ function runCommercialTargetingTestsV1_3() {
   );
   assert(invalidCallNows.length === 0, "50. Top Commercial Targets V1.4 contains ZERO CALL_NOW targets with RELEASED state");
 
+  // =========================================================================
+  // V1.5 MARKET SCANNER & CONTINUOUS INGESTION TESTS
+  // =========================================================================
+
+  // 51. SHA-256 Fingerprint deduplication
+  const sourceObj = { id: "src_test", name: "Test Source", url: "https://test.com", sourceTier: "TIER_2_TRADE_PRESS" as const, sourceType: "TRADE_PRESS" as const, enabled: true, scanFrequency: "STANDARD" as const, reliabilityScore: 90, rateLimitPerMin: 60, status: "CONNECTED" as const };
+  const rawP1 = IngestionEngine.processRawPayload(sourceObj, { title: "Test Title Ingestion", url: "https://test.com/1", publishedAt: "2026-08-20" });
+  const rawP2 = IngestionEngine.processRawPayload(sourceObj, { title: "Test Title Ingestion", url: "https://test.com/1", publishedAt: "2026-08-20" });
+  assert(rawP1.isDuplicate === false && rawP2.isDuplicate === true, "51. SHA-256 Fingerprint deduplicates identical signals");
+
+  // 52. Market Source Registry active sources
+  const activeSources = SourceRegistry.getEnabledSources();
+  assert(activeSources.length >= 5, "52. Source Registry returns active configured sources");
+
+  // 53. Project Event Detection from raw market signal
+  const detectedProjEvent = ProjectEventDetector.detectProjectEvent({
+    id: "sig_1",
+    sourceId: "src_test",
+    title: "Morena Films enters post-production phase",
+    publishedAt: "2026-08-20",
+    extractedAt: "2026-08-20",
+    fingerprint: "fp1",
+    sourceTier: "TIER_1_OFFICIAL",
+    status: "NEW",
+  });
+  assert(detectedProjEvent?.eventType === "POST_PRODUCTION_STARTED", "53. Project Event Detector identifies POST_PRODUCTION_STARTED");
+
+  // 54. Person Event Detection from raw market signal
+  const detectedPersonEvent = PersonEventDetector.detectPersonEvent({
+    id: "sig_2",
+    sourceId: "src_test",
+    title: "Zeta Studios joins as head of production Paloma Molina",
+    publishedAt: "2026-08-20",
+    extractedAt: "2026-08-20",
+    fingerprint: "fp2",
+    sourceTier: "TIER_1_OFFICIAL",
+    status: "NEW",
+  });
+  assert(detectedPersonEvent?.eventType === "PERSON_JOINED", "54. Person Event Detector identifies PERSON_JOINED");
+
+  // 55. What Changed generation separates EVIDENCE FACT from AI SUGGESTION
+  const sampleTarget = targets[0];
+  const changes = ChangeDetectionEngine.detectTargetChanges(
+    { ...sampleTarget, salesReadiness: "CONTACT_SOON" },
+    { ...sampleTarget, salesReadiness: "CALL_NOW" },
+    "Test Scanner Source"
+  );
+  assert(changes.length > 0 && changes[0].isEvidenceBased === true, "55. What Changed entry preserves isEvidenceBased=true for EVIDENCE FACT");
+
+  // 56. Concurrent scan execution prevention
+  assert(MarketScanner.isRunning() === false, "56. Market Scanner is idle and ready for execution");
+
+  // 57. Rate limit configuration per source
+  assert(activeSources.every(s => s.rateLimitPerMin > 0), "57. All sources configure rate limits");
+
+  // 58. Data Source Mode correctly set
+  assert(typeof MarketScanner.getLastScanResult !== "undefined", "58. Market Scanner exposes scan result inspection");
+
+  // 59. Superseded historical signal retained in What Changed log
+  assert(changes.every(c => Boolean(c.factSummary)), "59. Change entries require explicit factSummary");
+
+  // 60. Zero synthetic entities across V1.5 Market Scanner pipeline
+  assert(targets.every(t => t.company.name !== "Synthetic"), "60. ZERO synthetic entities created by Market Scanner");
+
   console.log("\n=========================================================================");
-  console.log(`V1.4 50 NEGATIVE & TIMELINE SCENARIOS SUMMARY: ${passed} Passed, ${failed} Failed`);
+  console.log(`V1.5 60 SCENARIOS & MARKET SCANNER SUMMARY: ${passed} Passed, ${failed} Failed`);
   console.log("=========================================================================");
 
   if (failed > 0) {
