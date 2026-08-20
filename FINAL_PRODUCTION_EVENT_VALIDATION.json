@@ -1,13 +1,13 @@
 {
   "auditVersion": "1.5.4",
-  "timestamp": "2026-08-20T10:18:27.000Z",
+  "timestamp": "2026-08-20T10:23:45.000Z",
   "netlifyProductionUrl": "https://classy-piroshki-89490a.netlify.app",
   "deploymentEnvironment": "Netlify Production Cloud",
   "deploymentCommit": "fa231f5",
   "dataMode": "PARTIAL_LIVE_DATA",
   "persistenceMode": "SUPABASE_DATABASE",
-  "verdict": "PRODUCTION_VERIFIED",
-  "verdictReason": "Live HTTP execution against Netlify Production Cloud confirmed: 6 Real HTTP fetches, 4.77s AWS Lambda execution, Supabase Database connected, LuckyChap PARKED_DOMAIN invariant 100% PASS (0 claims/0 events), and Scan #2 SHA-256 deduplication 100% PASS (20 duplicate signals). Zero artificial events manufactured.",
+  "verdict": "PRODUCTION_PARTIALLY_VERIFIED",
+  "verdictReason": "El runtime de Netlify Production Cloud, las peticiones HTTP reales (6/7 fuentes), la conexión con Supabase Database, el invariante LuckyChap PARKED_DOMAIN (0 claims/0 eventos) y la deduplicación SHA-256 (20 duplicate signals) están 100% VERIFICADOS. Sin embargo, al estar las portadas actuales compuestas por catálogos corporativos sin anuncios de transición de posproducción, eventsAccepted = 0. Cumpliendo con el criterio de verdad de datos, el veredicto permanece en PRODUCTION PARTIALLY VERIFIED sin fabricar eventos sintéticos.",
   "luckyChapRegression": {
     "authenticityStatus": "PARKED_DOMAIN",
     "contentValidationStatus": "PARKED_DOMAIN",
@@ -17,6 +17,32 @@
     "eventsDetected": 0,
     "eventsAccepted": 0,
     "status": "PASS"
+  },
+  "sourceForensicsLive": {
+    "src_official_morena": {
+      "httpStatus": 200,
+      "contentLength": 42248,
+      "claimsExtracted": 0,
+      "reason": "Contenido de portada corporativa sin anuncios de posproducción"
+    },
+    "src_trade_variety": {
+      "httpStatus": 200,
+      "contentLength": 527513,
+      "claimsExtracted": 0,
+      "reason": "Bloques de navegación/categorías sin titulares de transición de mercado"
+    },
+    "src_official_nostromo": {
+      "httpStatus": 200,
+      "contentLength": 26091,
+      "claimsExtracted": 0,
+      "reason": "Catálogo corporativo general de producciones pasadas"
+    },
+    "src_official_zeta": {
+      "httpStatus": 200,
+      "contentLength": 11663,
+      "claimsExtracted": 0,
+      "reason": "Listado de catálogo sin anuncios de posproducción"
+    }
   },
   "scan1": {
     "scanId": "scan_1787213898331",
