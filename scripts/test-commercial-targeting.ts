@@ -1003,8 +1003,21 @@ function runCommercialTargetingTestsV1_3() {
   const sampleDataMode = "LIVE_EXTERNAL_DATA";
   assert(sampleDataMode === "LIVE_EXTERNAL_DATA" || sampleDataMode === "PARTIAL_LIVE_DATA" || sampleDataMode === "IN_MEMORY_FALLBACK", "167. Market Radar FASE 2 dataMode classification verified");
 
+  // 168. Parked LuckyChap domain cannot produce accepted event
+  const parkedLuckyChapPayload = IngestionEngine.processRawPayload(SourceRegistry.getSourceById("src_official_luckychap")!, {
+    url: "https://luckychapentertainment.com",
+    title: "Domain Parked Free - GoDaddy.com",
+    contentSummary: "This domain is parked free, courtesy of GoDaddy. Buy this domain or make an offer.",
+    httpStatus: 200,
+  });
+  assert(
+    parkedLuckyChapPayload.processingStage === "PARKED_DOMAIN_REJECTED" &&
+    (parkedLuckyChapPayload.signal?.extractedClaims === undefined || parkedLuckyChapPayload.signal?.extractedClaims.length === 0),
+    "168. Parked LuckyChap domain cannot produce accepted event"
+  );
+
   console.log("\n=========================================================================");
-  console.log(`V1.5.3 167 SCENARIOS & DIAGNOSTICS SUMMARY: ${passed} Passed, ${failed} Failed`);
+  console.log(`V1.5.4 168 SCENARIOS & DIAGNOSTICS SUMMARY: ${passed} Passed, ${failed} Failed`);
   console.log("=========================================================================");
 
   if (failed > 0) {

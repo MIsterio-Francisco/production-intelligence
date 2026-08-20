@@ -1,0 +1,21 @@
+{
+  "deploymentEnvironment": "Local / Sandbox Environment",
+  "deploymentCommit": "8d6b63d",
+  "dataMode": "IN_MEMORY_FALLBACK",
+  "supabaseConnected": false,
+  "lastScanId": "scan_1787213584249",
+  "scanExecutionId": "scan_1787213584249",
+  "lastScanStartedAt": "2026-08-20T08:13:04.249Z",
+  "lastScanFinishedAt": "2026-08-20T08:13:04.292Z",
+  "lastScanDurationMs": 43,
+  "lastScanSources": 8,
+  "lastScanRealFetches": 0,
+  "lastScanFallbacks": 8,
+  "lastScanEvents": 4,
+  "lastScanEventsAccepted": 4,
+  "lastScanEventsPersisted": 4,
+  "lastScanChanges": 4,
+  "marketEventsCreated": 4,
+  "commercialReadinessChanges": 0,
+  "persistenceMode": "IN_MEMORY_FALLBACK"
+}

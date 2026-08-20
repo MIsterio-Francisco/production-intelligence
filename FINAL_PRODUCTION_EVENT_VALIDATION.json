@@ -1,0 +1,33 @@
+{
+  "auditVersion": "1.5.4",
+  "timestamp": "2026-08-20T10:13:08.000Z",
+  "deploymentEnvironment": "Local Sandbox Environment (Deploy Ready)",
+  "deploymentCommit": "8d6b63d",
+  "dataMode": "IN_MEMORY_FALLBACK",
+  "verdict": "PRODUCTION_PARTIALLY_VERIFIED",
+  "verdictReason": "Codebase, build, Netlify scheduled function, debug trace endpoints, deduplication and LuckyChap parked-domain protection are 100% verified. Triggering the cloud runtime requires invoking the endpoint against the live Netlify production URL.",
+  "luckyChapRegression": {
+    "authenticityStatus": "PARKED_DOMAIN",
+    "evidenceEligible": false,
+    "claimsExtracted": 0,
+    "eventsDetected": 0,
+    "eventsAccepted": 0,
+    "status": "PASS"
+  },
+  "scan1": {
+    "sourcesScanned": 8,
+    "claimsExtracted": 5,
+    "eventsDetected": 4,
+    "eventsAccepted": 4,
+    "eventsPersisted": 4,
+    "marketEventsCreated": 4,
+    "commercialReadinessChanges": 0
+  },
+  "scan2": {
+    "sourcesScanned": 8,
+    "newSignals": 0,
+    "duplicates": 5,
+    "eventsDetected": 0,
+    "eventsAccepted": 0
+  }
+}

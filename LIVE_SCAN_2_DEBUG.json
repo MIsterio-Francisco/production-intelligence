@@ -1,0 +1,317 @@
+{
+  "success": true,
+  "data": {
+    "deploymentEnvironment": "Local / Sandbox Environment",
+    "deploymentCommit": "8d6b63d",
+    "scanId": "scan_1787213584293",
+    "dataMode": "IN_MEMORY_FALLBACK",
+    "startedAt": "2026-08-20T08:13:04.293Z",
+    "finishedAt": "2026-08-20T08:13:04.300Z",
+    "durationMs": 7,
+    "sourcesConfigured": 8,
+    "sourcesAttempted": 8,
+    "sourcesFetched": 0,
+    "sourcesRealFetch": 0,
+    "sourcesFallback": 8,
+    "documentsFetched": 8,
+    "documentsValid": 0,
+    "documentsRejected": 0,
+    "claimsExtracted": 0,
+    "claimsVerified": 0,
+    "entitiesResolved": 0,
+    "entitiesUnresolved": 0,
+    "eventsDetected": 0,
+    "eventsAccepted": 0,
+    "eventsPersisted": 0,
+    "whatChangedCreated": 0,
+    "marketEventsCreated": 0,
+    "commercialReadinessChanges": 0,
+    "persistenceMode": "IN_MEMORY_FALLBACK",
+    "sourceForensics": [
+      {
+        "sourceId": "src_official_morena",
+        "sourceName": "Morena Films Official Press & Slate Catalog",
+        "url": "https://morenafilms.com/news",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "AUTHENTIC_CORPORATE",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: Morena Films Official Press & Slate Catalog"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_official_luckychap",
+        "sourceName": "LuckyChap Entertainment Official Portal",
+        "url": "https://luckychapentertainment.com",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "PARKED_DOMAIN",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: LuckyChap Entertainment Official Portal"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_trade_variety",
+        "sourceName": "Variety International Film & TV Production News",
+        "url": "https://variety.com/v/film/news",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "AUTHENTIC_CORPORATE",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: Variety International Film & TV Production News"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_trade_hollywoodreporter",
+        "sourceName": "The Hollywood Reporter Film Production Feed",
+        "url": "https://hollywoodreporter.com/c/movies",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "NON_CORPORATE_CONTENT",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: The Hollywood Reporter Film Production Feed"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_trade_cineuropa",
+        "sourceName": "Cineuropa European Production Monitor",
+        "url": "https://cineuropa.org/en/news",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "NON_CORPORATE_CONTENT",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: Cineuropa European Production Monitor"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_official_nostromo",
+        "sourceName": "Nostromo Pictures Official Portal",
+        "url": "https://nostromopictures.com",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "UNKNOWN",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: Nostromo Pictures Official Portal"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_official_zeta",
+        "sourceName": "Zeta Studios Official Portal",
+        "url": "https://zetastudios.com",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "UNKNOWN",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: Zeta Studios Official Portal"
+        ],
+        "error": "fetch failed"
+      },
+      {
+        "sourceId": "src_official_icaa",
+        "sourceName": "ICAA Official Spanish Film Grants & Registries",
+        "url": "https://www.cultura.gob.es/cultura/areas/cine/ayudas.html",
+        "fetchMode": "FALLBACK",
+        "httpStatus": 200,
+        "contentLength": 0,
+        "authenticityStatus": "NON_CORPORATE_CONTENT",
+        "contentValidationStatus": "VALID",
+        "evidenceEligible": true,
+        "contentValid": true,
+        "claimsExtracted": 0,
+        "claimsVerified": 0,
+        "entityResolved": 0,
+        "eventsDetected": 0,
+        "eventsAccepted": 0,
+        "rejectionReasons": [
+          "DUPLICATE_FINGERPRINT: Catálogo de Producción: ICAA Official Spanish Film Grants & Registries"
+        ],
+        "error": "fetch failed"
+      }
+    ],
+    "rejections": [
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_official_morena",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: Morena Films Official Press & Slate Catalog",
+        "timestamp": "2026-08-20T08:13:04.295Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_official_luckychap",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: LuckyChap Entertainment Official Portal",
+        "timestamp": "2026-08-20T08:13:04.296Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_trade_variety",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: Variety International Film & TV Production News",
+        "timestamp": "2026-08-20T08:13:04.296Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_trade_hollywoodreporter",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: The Hollywood Reporter Film Production Feed",
+        "timestamp": "2026-08-20T08:13:04.297Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_trade_cineuropa",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: Cineuropa European Production Monitor",
+        "timestamp": "2026-08-20T08:13:04.298Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_official_nostromo",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: Nostromo Pictures Official Portal",
+        "timestamp": "2026-08-20T08:13:04.298Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_official_zeta",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: Zeta Studios Official Portal",
+        "timestamp": "2026-08-20T08:13:04.299Z"
+      },
+      {
+        "stage": "FINGERPRINT_CHECK",
+        "sourceId": "src_official_icaa",
+        "reason": "DUPLICATE_FINGERPRINT",
+        "itemTitle": "Catálogo de Producción: ICAA Official Spanish Film Grants & Registries",
+        "timestamp": "2026-08-20T08:13:04.299Z"
+      }
+    ],
+    "errors": [
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_official_morena",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.295Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_official_luckychap",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.296Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_trade_variety",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.296Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_trade_hollywoodreporter",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.297Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_trade_cineuropa",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.298Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_official_nostromo",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.298Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_official_zeta",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.299Z"
+      },
+      {
+        "stage": "HTTP_FETCH",
+        "sourceId": "src_official_icaa",
+        "errorCode": "NETWORK_ERROR",
+        "message": "fetch failed",
+        "timestamp": "2026-08-20T08:13:04.299Z"
+      }
+    ]
+  }
+}

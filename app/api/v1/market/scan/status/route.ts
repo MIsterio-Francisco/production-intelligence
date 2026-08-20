@@ -8,6 +8,7 @@ export async function GET() {
 
   const statusPayload = {
     deploymentEnvironment: isNetlify ? "Netlify Production Cloud" : "Local / Sandbox Environment",
+    deploymentCommit: process.env.COMMIT_REF || process.env.HEAD || "8d6b63d",
     dataMode: lastScan?.dataMode || "IN_MEMORY_FALLBACK",
     supabaseConnected: typeof process.env.NEXT_PUBLIC_SUPABASE_URL !== "undefined",
     lastScanId: lastScan?.scanId || "NO_SCAN_YET",
@@ -22,6 +23,8 @@ export async function GET() {
     lastScanEventsAccepted: lastScan?.eventsAccepted || 0,
     lastScanEventsPersisted: lastScan?.eventsPersisted || 0,
     lastScanChanges: lastScan?.changesGenerated.length || 0,
+    marketEventsCreated: lastScan?.changesGenerated.filter(c => c.marketCategory === "MARKET_EVENT").length || 0,
+    commercialReadinessChanges: lastScan?.changesGenerated.filter(c => c.marketCategory !== "MARKET_EVENT").length || 0,
     persistenceMode: trace?.persistenceMode || (process.env.NEXT_PUBLIC_SUPABASE_URL ? "SUPABASE_DATABASE" : "IN_MEMORY_FALLBACK"),
     sourceForensics: trace?.sourceDiagnostics.map((s) => ({
       sourceId: s.sourceId,
