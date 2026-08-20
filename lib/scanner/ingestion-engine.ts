@@ -68,63 +68,158 @@ export class IngestionEngine {
   }
 
   /**
-   * Extracts atomic claims from a validated raw signal.
+   * Extracts atomic claims from a validated raw signal using comprehensive industry terminology.
    */
   public static extractClaimsFromSignal(signal: RawSignal): ExtractedClaim[] {
     const claims: ExtractedClaim[] = [];
     const text = `${signal.title} ${signal.contentSummary || ""}`.toLowerCase();
 
-    const subject = signal.projectTitle || signal.entityName || "Entidad Desconocida";
+    const subject = signal.projectTitle || signal.entityName || signal.title || "Entidad Desconocida";
 
-    if (text.includes("post-production") || text.includes("posproducción")) {
-      claims.push({
-        id: `clm_${Date.now()}_1`,
-        claimType: "PROJECT_POST_PRODUCTION",
-        subject,
-        predicate: "current_phase",
-        object: "POST_PRODUCTION",
-        eventDate: signal.eventDate || signal.publishedAt,
-        publishedAt: signal.publishedAt,
-        source: signal.sourceId,
-        sourceTier: signal.sourceTier,
-        confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
-        evidenceSnippet: signal.title,
-        verificationStatus: "VERIFIED",
-      });
+    // 1. Post-Production Claims
+    const postProductionTerms = [
+      "post-production",
+      "posproducción",
+      "post production",
+      "wraps production",
+      "wraps filming",
+      "begins editing",
+      "enters post-production",
+      "post-production is underway",
+      "posproduccion",
+      "finaliza rodaje",
+      "termina rodaje",
+      "en posproducción",
+      "editing phase",
+      "etalonaje",
+      "color grading",
+    ];
+
+    for (const term of postProductionTerms) {
+      if (text.includes(term)) {
+        claims.push({
+          id: `clm_${Date.now()}_1`,
+          claimType: "PROJECT_POST_PRODUCTION",
+          subject,
+          predicate: "current_phase",
+          object: "POST_PRODUCTION",
+          eventDate: signal.eventDate || signal.publishedAt,
+          publishedAt: signal.publishedAt,
+          source: signal.sourceId,
+          sourceTier: signal.sourceTier,
+          confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
+          evidenceSnippet: signal.title,
+          verificationStatus: "VERIFIED",
+        });
+        break;
+      }
     }
 
-    if (text.includes("theatrical release") || text.includes("estreno en cines") || text.includes("premieres in theaters")) {
-      claims.push({
-        id: `clm_${Date.now()}_2`,
-        claimType: "PROJECT_RELEASE_DATE",
-        subject,
-        predicate: "current_phase",
-        object: "RELEASED",
-        eventDate: signal.eventDate || signal.publishedAt,
-        publishedAt: signal.publishedAt,
-        source: signal.sourceId,
-        sourceTier: signal.sourceTier,
-        confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "HIGH",
-        evidenceSnippet: signal.title,
-        verificationStatus: "VERIFIED",
-      });
+    // 2. Production / Shooting Claims
+    const productionTerms = [
+      "principal photography",
+      "filming begins",
+      "shooting has begun",
+      "production is underway",
+      "currently filming",
+      "starts shooting",
+      "production starts",
+      "begins principal photography",
+      "comienza rodaje",
+      "en rodaje",
+      "inicia rodaje",
+      "rodaje en",
+      "rodaje de",
+    ];
+
+    for (const term of productionTerms) {
+      if (text.includes(term)) {
+        claims.push({
+          id: `clm_${Date.now()}_prod`,
+          claimType: "PROJECT_POST_PRODUCTION", // Target for early post tracking
+          subject,
+          predicate: "current_phase",
+          object: "PRODUCTION",
+          eventDate: signal.eventDate || signal.publishedAt,
+          publishedAt: signal.publishedAt,
+          source: signal.sourceId,
+          sourceTier: signal.sourceTier,
+          confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
+          evidenceSnippet: signal.title,
+          verificationStatus: "VERIFIED",
+        });
+        break;
+      }
     }
 
-    if (text.includes("head of production") || text.includes("head of post")) {
-      claims.push({
-        id: `clm_${Date.now()}_3`,
-        claimType: "PERSON_CURRENT_ROLE",
-        subject: signal.personName || "Executive",
-        predicate: "holds_role",
-        object: signal.roleTitle || "Head of Post",
-        eventDate: signal.eventDate || signal.publishedAt,
-        publishedAt: signal.publishedAt,
-        source: signal.sourceId,
-        sourceTier: signal.sourceTier,
-        confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
-        evidenceSnippet: signal.title,
-        verificationStatus: "VERIFIED",
-      });
+    // 3. Release Date Claims
+    const releaseTerms = [
+      "theatrical release",
+      "estreno en cines",
+      "premieres in theaters",
+      "set for release",
+      "scheduled for release",
+      "coming to theaters",
+      "estreno el",
+      "se estrena",
+      "lanzamiento en cines",
+      "premieres on",
+      "slated for release",
+      "estrenada en",
+    ];
+
+    for (const term of releaseTerms) {
+      if (text.includes(term)) {
+        claims.push({
+          id: `clm_${Date.now()}_2`,
+          claimType: "PROJECT_RELEASE_DATE",
+          subject,
+          predicate: "current_phase",
+          object: "RELEASED",
+          eventDate: signal.eventDate || signal.publishedAt,
+          publishedAt: signal.publishedAt,
+          source: signal.sourceId,
+          sourceTier: signal.sourceTier,
+          confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "HIGH",
+          evidenceSnippet: signal.title,
+          verificationStatus: "VERIFIED",
+        });
+        break;
+      }
+    }
+
+    // 4. Person Role Claims
+    const roleTerms = [
+      "head of production",
+      "head of post",
+      "director of photography",
+      "colorist",
+      "post production supervisor",
+      "productor ejecutivo",
+      "director de fotografía",
+      "jefe de posproducción",
+      "director attached",
+      "cast joins",
+    ];
+
+    for (const term of roleTerms) {
+      if (text.includes(term)) {
+        claims.push({
+          id: `clm_${Date.now()}_3`,
+          claimType: "PERSON_CURRENT_ROLE",
+          subject: signal.personName || "Executive",
+          predicate: "holds_role",
+          object: signal.roleTitle || "Head of Post",
+          eventDate: signal.eventDate || signal.publishedAt,
+          publishedAt: signal.publishedAt,
+          source: signal.sourceId,
+          sourceTier: signal.sourceTier,
+          confidence: signal.sourceTier === "TIER_1_OFFICIAL" ? "HIGH" : "MEDIUM",
+          evidenceSnippet: signal.title,
+          verificationStatus: "VERIFIED",
+        });
+        break;
+      }
     }
 
     return claims;
@@ -132,6 +227,7 @@ export class IngestionEngine {
 
   /**
    * Parses raw HTML or RSS body text into structured candidate items/payloads.
+   * Performs deep HTML, RSS, OpenGraph, JSON-LD, and article body parsing.
    */
   public static parseRawBodyToPayloads(
     source: MarketSource,
@@ -161,7 +257,7 @@ export class IngestionEngine {
     if (bodyText.includes("<item>") || bodyText.includes("<entry>")) {
       const itemRegex = /<(?:item|entry)[^>]*>([\s\S]*?)<\/(?:item|entry)>/gi;
       let match;
-      while ((match = itemRegex.exec(bodyText)) !== null && payloads.length < 5) {
+      while ((match = itemRegex.exec(bodyText)) !== null && payloads.length < 10) {
         const itemContent = match[1];
         const titleMatch = itemContent.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
         const descMatch = itemContent.match(/<(?:description|summary|content)[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:description|summary|content)>/i);
@@ -170,7 +266,7 @@ export class IngestionEngine {
 
         if (titleMatch && titleMatch[1].trim()) {
           const rawTitle = titleMatch[1].replace(/<[^>]+>/g, "").trim();
-          const rawDesc = descMatch ? descMatch[1].replace(/<[^>]+>/g, "").trim().slice(0, 400) : rawTitle;
+          const rawDesc = descMatch ? descMatch[1].replace(/<[^>]+>/g, "").trim().slice(0, 1000) : rawTitle;
           const itemUrl = linkMatch ? (linkMatch[1] || linkMatch[2] || url).trim() : url;
           const pubDate = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
 
@@ -187,18 +283,43 @@ export class IngestionEngine {
       }
     }
 
-    // 2. HTML Article / News Headline Parsing
+    // 2. OpenGraph & JSON-LD Meta Extraction
     if (payloads.length === 0) {
-      const articleRegex = /<(?:article|div)[^>]*class=["'][^"']*(?:news|post|item|entry|press|article)[^"']*["'][^>]*>([\s\S]*?)<\/(?:article|div)>/gi;
+      const ogTitleMatch = bodyText.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
+                           bodyText.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+      const ogDescMatch = bodyText.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) ||
+                          bodyText.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+      const ogDateMatch = bodyText.match(/<meta[^>]*property=["'](?:article:published_time|og:updated_time)["'][^>]*content=["']([^"']+)["']/i);
+
+      if (ogTitleMatch && ogTitleMatch[1].trim().length > 5) {
+        const ogTitle = ogTitleMatch[1].replace(/&amp;/g, "&").trim();
+        const ogDesc = ogDescMatch ? ogDescMatch[1].replace(/&amp;/g, "&").trim() : ogTitle;
+        const ogDate = ogDateMatch ? new Date(ogDateMatch[1]).toISOString() : new Date().toISOString();
+
+        payloads.push({
+          title: ogTitle,
+          contentSummary: ogDesc.slice(0, 1000),
+          publishedAt: ogDate,
+          url,
+          contentLength: ogDesc.length,
+          httpStatus,
+          entityName: source.entityScope,
+        });
+      }
+    }
+
+    // 3. HTML Article / News Headline Block Parsing
+    if (payloads.length < 5) {
+      const articleRegex = /<(?:article|div|section)[^>]*class=["'][^"']*(?:news|post|item|entry|press|article|story|headline|content)[^"']*["'][^>]*>([\s\S]*?)<\/(?:article|div|section)>/gi;
       let match;
-      while ((match = articleRegex.exec(bodyText)) !== null && payloads.length < 5) {
-        const artText = match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      while ((match = articleRegex.exec(bodyText)) !== null && payloads.length < 10) {
+        const artText = match[1].replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
         const headlineMatch = match[1].match(/<h[1-4][^>]*>(?:<a[^>]*>)?([^<]+)(?:<\/a>)?<\/h[1-4]>/i);
         if (headlineMatch && headlineMatch[1].trim().length > 10) {
           const title = headlineMatch[1].trim();
           payloads.push({
             title,
-            contentSummary: artText.slice(0, 400),
+            contentSummary: artText.slice(0, 1000),
             publishedAt: new Date().toISOString(),
             url,
             contentLength: artText.length,
@@ -209,19 +330,21 @@ export class IngestionEngine {
       }
     }
 
-    // 3. Clean Page Title Fallback
+    // 4. Clean Full-Text Fallback
     if (payloads.length === 0) {
       const titleMatch = bodyText.match(/<title[^>]*>([^<]+)<\/title>/i);
       const cleanTitle = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : source.name;
       const cleanBody = bodyText.replace(/<script[\s\S]*?<\/script>/gi, "")
         .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+        .replace(/<footer[\s\S]*?<\/footer>/gi, "")
         .replace(/<[^>]+>/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 
       payloads.push({
         title: cleanTitle,
-        contentSummary: cleanBody.slice(0, 500),
+        contentSummary: cleanBody.slice(0, 1500),
         publishedAt: new Date().toISOString(),
         url,
         contentLength: cleanBody.length,

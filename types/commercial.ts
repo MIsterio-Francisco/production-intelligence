@@ -365,9 +365,14 @@ export interface SourceDiagnosticResult {
   authenticityStatus: SourceAuthenticityStatus;
   contentValidationStatus: "VALID" | "INVALID" | "PARKED_DOMAIN" | "FETCHED_BUT_NOT_EVIDENCE";
   sourceHealthStatus: SourceHealthStatus;
+  contentValid: boolean;
   documentsFound: number;
   claimsFound: number;
+  claimsExtracted: number;
+  claimsVerified: number;
+  entityResolved: number;
   eventsFound: number;
+  eventsDetected: number;
   eventsAccepted: number;
   rejectionReasons: string[];
   error?: string;

@@ -250,6 +250,9 @@ export class MarketScanner {
         let lastAuthStatus = source.authenticityStatus || "UNKNOWN";
         let lastContentValStatus: "VALID" | "INVALID" | "PARKED_DOMAIN" | "FETCHED_BUT_NOT_EVIDENCE" = "VALID";
 
+        let sourceClaimsVerified = 0;
+        let sourceEntitiesResolved = 0;
+
         for (const payload of payloads) {
           const { signal, isDuplicate, processingStage } = IngestionEngine.processRawPayload(source, payload);
 
@@ -313,6 +316,7 @@ export class MarketScanner {
               sourceRejectionReasons.push(`ENTITY_UNRESOLVED: ${payload.title}`);
             } else {
               entitiesResolved++;
+              sourceEntitiesResolved++;
             }
 
             if (signal.extractedClaims && signal.extractedClaims.length > 0) {
@@ -322,6 +326,7 @@ export class MarketScanner {
 
               const verified = signal.extractedClaims.filter((c) => c.verificationStatus === "VERIFIED");
               claimsVerified += verified.length;
+              sourceClaimsVerified += verified.length;
               this.auditMetrics.claimsVerifiedCount += verified.length;
 
               const rejectedClaims = signal.extractedClaims.filter((c) => c.verificationStatus === "REJECTED" || c.verificationStatus === "UNVERIFIED");
@@ -415,9 +420,14 @@ export class MarketScanner {
           authenticityStatus: lastAuthStatus,
           contentValidationStatus: lastContentValStatus,
           sourceHealthStatus: source.healthStatus,
+          contentValid: lastContentValStatus === "VALID",
           documentsFound: sourceDocsFound,
           claimsFound: sourceClaimsFound,
+          claimsExtracted: sourceClaimsFound,
+          claimsVerified: sourceClaimsVerified,
+          entityResolved: sourceEntitiesResolved,
           eventsFound: sourceEventsFound,
+          eventsDetected: sourceEventsFound,
           eventsAccepted: sourceEventsAccepted,
           rejectionReasons: sourceRejectionReasons,
           error: sourceErrorStr,

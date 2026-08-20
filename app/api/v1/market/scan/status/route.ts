@@ -23,6 +23,20 @@ export async function GET() {
     lastScanEventsPersisted: lastScan?.eventsPersisted || 0,
     lastScanChanges: lastScan?.changesGenerated.length || 0,
     persistenceMode: trace?.persistenceMode || (process.env.NEXT_PUBLIC_SUPABASE_URL ? "SUPABASE_DATABASE" : "IN_MEMORY_FALLBACK"),
+    sourceForensics: trace?.sourceDiagnostics.map((s) => ({
+      sourceId: s.sourceId,
+      sourceName: s.sourceName,
+      fetchMode: s.fetchMode,
+      httpStatus: s.httpStatus || 200,
+      contentLength: s.contentLength || 0,
+      contentValid: s.contentValid,
+      claimsExtracted: s.claimsExtracted,
+      claimsVerified: s.claimsVerified,
+      entityResolved: s.entityResolved,
+      eventsDetected: s.eventsDetected,
+      eventsAccepted: s.eventsAccepted,
+      rejectionReasons: s.rejectionReasons,
+    })) || [],
   };
 
   return NextResponse.json(statusPayload, { status: 200 });
