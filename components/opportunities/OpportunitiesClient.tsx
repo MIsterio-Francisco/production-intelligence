@@ -133,11 +133,11 @@ export function OpportunitiesClient({
                       <div className="flex items-center space-x-3 font-mono text-xs text-right">
                         <div className="p-2 rounded bg-background border border-border">
                           <span className="text-[9px] text-muted-foreground uppercase block">MCL Match</span>
-                          <span className="font-extrabold text-foreground">{company.mcl_match_score || 85}</span>
+                          <span className="font-extrabold text-foreground">{company.mcl_match_score ?? "N/A"}</span>
                         </div>
                         <div className="p-2 rounded bg-background border border-border">
                           <span className="text-[9px] text-muted-foreground uppercase block">Momentum</span>
-                          <span className="font-extrabold text-foreground">{company.momentum_score || 80}</span>
+                          <span className="font-extrabold text-foreground">{company.momentum_score ?? "N/A"}</span>
                         </div>
                       </div>
                     </div>

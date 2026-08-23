@@ -40,7 +40,7 @@ export function MarketPulseWidget({
     }
   };
 
-  const dataMode = lastResult?.dataMode || "IN_MEMORY_FALLBACK";
+  const dataMode = lastResult?.dataMode || "NO_SCAN_DATA";
   const realFetches = lastResult?.sourcesRealFetch ?? 0;
   const fallbacks = lastResult?.sourcesFallback ?? 0;
 
@@ -64,7 +64,9 @@ export function MarketPulseWidget({
               ? "🟢 LIVE EXTERNAL DATA"
               : dataMode === "PARTIAL_LIVE_DATA" || dataMode === "MIXED"
               ? "🟡 MIXED / PARTIAL LIVE"
-              : "⚪ IN-MEMORY FALLBACK"}
+              : dataMode === "NO_SCAN_DATA"
+              ? "⚪ NO RECENT SCAN DATA"
+              : "⚪ DEMO / IN-MEMORY"}
           </Badge>
           <Badge variant="outline" className="text-[10px] font-mono uppercase border-emerald-500/30 text-emerald-600 bg-emerald-50/50">
             🛡️ SOURCE AUTHENTICITY ENFORCED
@@ -85,6 +87,12 @@ export function MarketPulseWidget({
         <div className="text-[11px] font-mono text-accent bg-accent/10 p-2 rounded border border-accent/20">
           {scanStatus}
         </div>
+      )}
+
+      {!lastResult && (
+        <p className="text-[11px] text-muted-foreground border-t border-border pt-2">
+          No hay un resultado de escaneo persistido disponible para esta sesión. El indicador no presupone que el radar esté activo.
+        </p>
       )}
 
       {/* METRICS & TRACE DIAGNOSTICS */}

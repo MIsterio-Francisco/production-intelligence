@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { MarketScanner } from "@/lib/scanner/market-scanner";
+import { canRunManualOperation } from "@/lib/security/internal-auth";
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET || "internal_cron_secret_v1";
-
-    // Validate authorization secret for scheduled background tasks
-    if (authHeader && !authHeader.endsWith(cronSecret)) {
+    if (!(await canRunManualOperation(request))) {
       return NextResponse.json(
         { success: false, data: null, error: { code: "UNAUTHORIZED", message: "Invalid authorization secret." } },
         { status: 401 }

@@ -38,14 +38,14 @@ export default function AlertsPage() {
           <div>
             <h1 className="text-xl font-black uppercase tracking-tight text-foreground flex items-center gap-2">
               <Bell className="h-5 w-5 text-accent" />
-              Real-Time Email Alerts &amp; Signal Dispatcher
+              Email Alert Configuration
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Receive automated email dossiers whenever a new film or series enters production/post-production with Director, DoP, and Executive contacts.
+              Configure alerts after verified projects and recipients are available.
             </p>
           </div>
           <Badge variant="accent" className="font-mono text-xs font-bold">
-            MCL Mailer Active
+            NOT CONFIGURED
           </Badge>
         </div>
 
@@ -57,7 +57,7 @@ export default function AlertsPage() {
               <span>Direct Email Dispatch Configuration</span>
             </CardTitle>
             <Badge variant="success" className="font-mono text-[10px] font-bold">
-              RECIP_VERIFIED
+              RECIPIENT DRAFT
             </Badge>
           </CardHeader>
           <CardContent className="p-5 space-y-5">
@@ -83,7 +83,7 @@ export default function AlertsPage() {
                   variant="accent"
                   size="sm"
                   onClick={handleSendTestEmail}
-                  disabled={isSending}
+                  disabled={true}
                   className="font-bold h-9 w-full shadow-subtle"
                 >
                   {isSending ? (
@@ -92,7 +92,7 @@ export default function AlertsPage() {
                     </span>
                   ) : (
                     <span className="flex items-center gap-1.5">
-                      <Send className="h-3.5 w-3.5" /> Dispatch Test Opportunity Brief
+                      <Send className="h-3.5 w-3.5" /> Dispatch unavailable
                     </span>
                   )}
                 </Button>
@@ -168,22 +168,22 @@ export default function AlertsPage() {
                   id: "rule-1",
                   name: "New Spanish & International Feature entering Production / Post",
                   condition: "Auto-send email brief to francisco@misteriocolorlab.com with Director, DoP, Budget, and Head of Production contacts when project reaches Post-Production status.",
-                  active: true,
-                  triggered: "Active Engine Rule • Auto-Sync 6h",
+                  active: false,
+                  triggered: "Draft — requires verified source data",
                 },
                 {
                   id: "rule-2",
                   name: "MCL Color Finishing Score > 85% Opportunity Alert",
                   condition: "Auto-dispatch high priority opportunity dossier when MCL Match score exceeds 85% threshold.",
-                  active: true,
-                  triggered: "Active Engine Rule • Instant Trigger",
+                  active: false,
+                  triggered: "Draft — dispatch disabled",
                 },
               ].map((rule) => (
                 <div key={rule.id} className="p-4 flex items-center justify-between hover:bg-secondary/40">
                   <div className="space-y-1">
                     <div className="font-bold text-foreground flex items-center gap-2">
                       <span>{rule.name}</span>
-                      <Badge variant="success">ACTIVE</Badge>
+                      <Badge variant="outline">DRAFT</Badge>
                     </div>
                     <p className="text-muted-foreground text-[11px] font-mono">{rule.condition}</p>
                     <div className="text-[10px] text-accent font-semibold">{rule.triggered}</div>
@@ -200,4 +200,3 @@ export default function AlertsPage() {
     </AppLayout>
   );
 }
-

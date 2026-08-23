@@ -8,6 +8,7 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+  dataMode?: "LIVE" | "SEED" | "DEMO";
 }
 
 // Whitelisted sort columns mapping to prevent SQL injection
@@ -83,8 +84,7 @@ export async function getCompanies(
       return getFallbackCompanies(options, page, limit);
     }
 
-    if (!data || data.length < 25) {
-      // When database has a partial seed (e.g. 5 initial records), serve full 52-company dataset
+    if (!data) {
       return getFallbackCompanies(options, page, limit);
     }
 
@@ -102,6 +102,7 @@ export async function getCompanies(
       page,
       limit,
       totalPages,
+      dataMode: "LIVE",
     };
   } catch (err) {
     console.error("[CompanyService] Unexpected error:", err);
@@ -194,23 +195,32 @@ export async function getDashboardOverview() {
       { data: topMcl },
       { data: recentEvents },
       { data: recentProjects },
+      { count: activeProjectsCount },
+      { count: keyDecisionMakersCount },
+      { data: countryRows },
     ] = await Promise.all([
       supabase.from("companies").select("*", { count: "exact", head: true }),
       supabase.from("companies").select("id, name, slug, country_code, power_score, mcl_match_score, company_type").order("power_score", { ascending: false }).limit(5),
       supabase.from("companies").select("id, name, slug, country_code, mcl_match_score, power_score, company_type").order("mcl_match_score", { ascending: false }).limit(5),
       supabase.from("company_events").select("*, companies(name, slug, country_code)").order("event_date", { ascending: false }).limit(5),
       supabase.from("projects").select("*").order("created_at", { ascending: false }).limit(5),
+      supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["development", "pre_production", "production", "filming", "post_production", "finishing"]),
+      supabase.from("people").select("*", { count: "exact", head: true }),
+      supabase.from("companies").select("country_code").not("country_code", "is", null),
     ]);
 
-    if (!topPower || topPower.length < 10) {
+    if (!topPower) {
       return getFallbackDashboardOverview();
     }
 
     return {
-      totalCompanies: totalCompanies || 25,
-      countriesCount: 12,
-      activeProjectsCount: 1240,
-      highOpportunitiesCount: 84,
+      dataMode: "LIVE" as const,
+      generatedAt: new Date().toISOString(),
+      totalCompanies: totalCompanies ?? 0,
+      countriesCount: new Set(((countryRows || []) as Array<{ country_code: string | null }>).map((row) => row.country_code).filter(Boolean)).size,
+      activeProjectsCount: activeProjectsCount ?? 0,
+      keyDecisionMakersCount: keyDecisionMakersCount ?? 0,
+      highOpportunitiesCount: ((topMcl || []) as Array<{ mcl_match_score: number | null }>).filter((company) => (company.mcl_match_score || 0) >= 80).length,
       topGlobalCompanies: topPower,
       topCommercialOpportunities: topMcl,
       latestSignals: recentEvents || [],
@@ -1740,7 +1750,13 @@ function normalizeStr(str: string): string {
 }
 
 export function getFallbackCompanies(options: CompanyFilterOptions, page: number, limit: number): PaginatedResponse<CompanyWithDetails> {
-  let filtered = [...SEED_COMPANIES_FALLBACK];
+  let filtered = SEED_COMPANIES_FALLBACK.map((company) => ({
+    ...company,
+    contact_email: null,
+    phone: null,
+    provenance_type: "seed",
+    last_verified_at: null,
+  }));
 
   if (options.country) {
     filtered = filtered.filter((c) => c.country_code === options.country?.toUpperCase());
@@ -1777,9 +1793,9 @@ export function getFallbackCompanies(options: CompanyFilterOptions, page: number
         description: `Independent audiovisual production company specializing in feature films, prestige documentaries, and television series.`,
         company_type: "independent",
         founded_year: 2014,
-        website_url: `https://${slug}.com`,
-        contact_email: `contact@${slug}.com`,
-        phone: "+34 91 555 0199",
+        website_url: null,
+        contact_email: undefined,
+        phone: undefined,
         country_code: "ES",
         country_name: "Spain / International",
         city: "Madrid",
@@ -1799,7 +1815,7 @@ export function getFallbackCompanies(options: CompanyFilterOptions, page: number
         ai_opportunity_summary: `Active production slate with high color finishing and picture post requirements.`,
         provenance_type: "synthetic",
         data_classification: "public",
-        last_verified_at: new Date().toISOString(),
+        last_verified_at: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         categories: ["film", "television", "independent"],
@@ -1827,6 +1843,7 @@ export function getFallbackCompanies(options: CompanyFilterOptions, page: number
     page,
     limit,
     totalPages,
+    dataMode: "SEED",
   };
 }
 
@@ -2079,9 +2096,9 @@ export function getFallbackCompanyBySlug(slug: string) {
       description: `Productora audiovisual independiente dedicada a la producción de largometrajes y series de televisión.`,
       company_type: "independent",
       founded_year: 2018,
-      website_url: `https://${normSlug}.com`,
-      contact_email: `contacto@${normSlug}.com`,
-      phone: "+34 91 555 0199",
+      website_url: null,
+      contact_email: null,
+      phone: null,
       country_code: "ES",
       country_name: "Spain",
       city: "Madrid",
@@ -2101,62 +2118,43 @@ export function getFallbackCompanyBySlug(slug: string) {
       ai_opportunity_summary: `Proyectos activos de ficción con necesidades de etalonaje y acabado de color.`,
       provenance_type: "synthetic",
       data_classification: "public",
-      last_verified_at: new Date().toISOString(),
+      last_verified_at: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       categories: ["film", "television", "independent"]
     };
   }
+  company = {
+    ...company,
+    contact_email: null,
+    phone: null,
+    provenance_type: company.provenance_type === "synthetic" ? "synthetic" : "seed",
+    last_verified_at: null,
+  };
+
   const custom = SPECIFIC_COMPANY_DATA[normSlug] || SPECIFIC_COMPANY_DATA[slug];
 
-  const people = custom?.people || [];
-  const projects = custom?.projects || [];
-  const events = custom?.events || [];
+  const people = (custom?.people || []).map((person) => ({
+    ...person,
+    contact_email: null,
+    phone: null,
+    provenance_type: "seed",
+  }));
+  const projects = (custom?.projects || []).map((project) => ({
+    ...project,
+    provenance_type: "seed",
+  }));
+  const events = (custom?.events || []).map((event) => ({
+    ...event,
+    provenance_type: "seed",
+  }));
 
   return {
     company,
     projects,
     people,
-    socialProfiles: [
-      {
-        id: `soc_${company.id}_1`,
-        platform: "instagram",
-        username: company.slug.replace(/-/g, ""),
-        profile_url: `https://instagram.com/${company.slug.replace(/-/g, "")}`,
-        follower_count: 15400,
-        engagement_rate: 3.2,
-      },
-      {
-        id: `soc_${company.id}_2`,
-        platform: "linkedin",
-        username: company.slug,
-        profile_url: `https://linkedin.com/company/${company.slug}`,
-        follower_count: 8900,
-        engagement_rate: 2.4,
-      },
-    ],
-    sources: [
-      {
-        id: `s_${company.id}_1`,
-        source_type: "company_website",
-        source_name: "Official Portal",
-        url: company.website_url || `https://${company.slug}.com`,
-        title: `${company.name} Official Portal`,
-        publisher: company.name,
-        credibility_score: 98,
-        accessed_at: new Date().toISOString(),
-      },
-      {
-        id: `s_${company.id}_2`,
-        source_type: "imdb",
-        source_name: "IMDbPro",
-        url: "https://pro.imdb.com",
-        title: `IMDbPro Verified ${company.name} Data`,
-        publisher: "IMDbPro",
-        credibility_score: 95,
-        accessed_at: new Date().toISOString(),
-      },
-    ],
+    socialProfiles: [],
+    sources: [],
     events,
     scores: [
       {
@@ -2174,11 +2172,13 @@ export function getFallbackCompanyBySlug(slug: string) {
 
 function getFallbackDashboardOverview() {
   return {
-    totalCompanies: "520+",
-    countriesCount: 12,
-    activeProjectsCount: "1,240",
-    highOpportunitiesCount: 84,
-    keyDecisionMakersCount: "184+",
+    dataMode: "DEMO" as const,
+    generatedAt: new Date().toISOString(),
+    totalCompanies: SEED_COMPANIES_FALLBACK.length,
+    countriesCount: new Set(SEED_COMPANIES_FALLBACK.map((company) => company.country_code).filter(Boolean)).size,
+    activeProjectsCount: 0,
+    highOpportunitiesCount: 0,
+    keyDecisionMakersCount: 0,
     topGlobalCompanies: [
       { id: "c2", name: "A24", slug: "a24", country_code: "US", power_score: 96.0, mcl_match_score: 88.0, company_type: "independent" },
       { id: "c4", name: "Fremantle", slug: "fremantle", country_code: "UK", power_score: 95.0, mcl_match_score: 91.0, company_type: "studio" },

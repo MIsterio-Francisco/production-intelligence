@@ -6,7 +6,7 @@ import { getDashboardOverview } from "@/lib/services/company-service";
 import { getPeople } from "@/lib/services/person-service";
 import { getTopCommercialTargets } from "@/lib/services/opportunity-engine";
 import { TopTargetsView } from "@/components/opportunities/TopTargetsView";
-import { Building2, Globe2, Clapperboard, Flame, ArrowUpRight, TrendingUp, Activity, Users, Award, Target } from "lucide-react";
+import { Building2, Clapperboard, Flame, ArrowUpRight, TrendingUp, Users, Target } from "lucide-react";
 import Link from "next/link";
 
 import { MarketPulseWidget } from "@/components/scanner/MarketPulseWidget";
@@ -17,6 +17,7 @@ export default async function DashboardPage() {
     getPeople({ limit: 5 }),
     Promise.resolve(getTopCommercialTargets(3)),
   ]);
+  const isLive = data.dataMode === "LIVE";
 
   return (
     <AppLayout>
@@ -32,9 +33,9 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Graph Active (V1.5 Radar)
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium border ${isLive ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
+              <span className={`h-2 w-2 rounded-full ${isLive ? "bg-emerald-500" : "bg-amber-500"}`} />
+              {isLive ? "LIVE DATA" : "DEMO DATA — NO LIVE CONNECTION"}
             </span>
           </div>
         </div>
@@ -55,7 +56,7 @@ export default async function DashboardPage() {
                     {data.totalCompanies}
                   </p>
                   <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
-                    <TrendingUp className="h-3 w-3 mr-0.5" /> Phase 3 Verified Graph
+                    <TrendingUp className="h-3 w-3 mr-0.5" /> {isLive ? "Live database records" : "Seed catalogue"}
                   </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-secondary group-hover:bg-accent/10 flex items-center justify-center text-foreground transition-colors">
@@ -94,10 +95,10 @@ export default async function DashboardPage() {
                     Key Decision Makers
                   </p>
                   <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                    29 Verificados
+                    {data.keyDecisionMakersCount}
                   </p>
                   <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
-                    <ArrowUpRight className="h-3 w-3 mr-0.5" /> Heads of Post &amp; Execs →
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" /> {isLive ? "Database records" : "Not measured in demo"} →
                   </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-secondary group-hover:bg-accent/10 flex items-center justify-center text-foreground transition-colors">

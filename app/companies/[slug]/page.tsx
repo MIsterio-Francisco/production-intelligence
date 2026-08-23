@@ -23,8 +23,6 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
-  Mail,
-  Phone,
 } from "lucide-react";
 import { getCompanyInstagramData } from "@/lib/services/social-service";
 import { CompanySocialTab } from "@/components/companies/CompanySocialTab";
@@ -120,20 +118,17 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
                   </a>
                 )}
 
-                {/* Direct Contact Email */}
-                <a
-                  href={`mailto:${company.contact_email || (company.website_url ? `contact@${company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]}` : `info@${company.slug}.com`)}`}
-                  className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 font-mono font-bold transition-colors"
-                >
-                  <Mail className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>{company.contact_email || (company.website_url ? `contact@${company.website_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]}` : `info@${company.slug}.com`)}</span>
-                </a>
+                {company.contact_email && company.provenance_type === "verified" && (
+                  <a href={`mailto:${company.contact_email}`} className="underline hover:text-accent">
+                    {company.contact_email}
+                  </a>
+                )}
 
-                {/* Direct Phone Number */}
-                <span className="flex items-center gap-1 text-muted-foreground font-mono">
-                  <Phone className="h-3.5 w-3.5 text-accent" />
-                  <span>{company.phone || (company.country_code === "ES" ? "+34 91 500 1234" : company.country_code === "UK" ? "+44 20 7946 0912" : company.country_code === "FR" ? "+33 1 40 70 00 00" : "+1 (212) 555-0199")}</span>
-                </span>
+                {company.phone && company.provenance_type === "verified" && <span>{company.phone}</span>}
+
+                <Badge variant={company.provenance_type === "verified" ? "success" : "outline"} className="font-mono text-[10px] uppercase">
+                  {company.provenance_type === "verified" ? "Verified record" : company.provenance_type === "synthetic" ? "Demo record" : "Seed record — verify before contact"}
+                </Badge>
 
                 {company.founded_year && (
                   <span className="flex items-center gap-1">

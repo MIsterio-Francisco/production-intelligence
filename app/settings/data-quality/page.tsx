@@ -18,7 +18,7 @@ export default async function DataQualityDashboardPage() {
   const demoCompanies = companies.filter((c) => c.is_demo).length;
   const withWebsite = companies.filter((c) => c.website_url).length;
   const withCity = companies.filter((c) => c.city).length;
-  const highQualityCount = companies.filter((c) => (c.data_quality_score || 85) >= 80).length;
+  const highQualityCount = companies.filter((c) => c.data_quality_score != null && c.data_quality_score >= 80).length;
 
   return (
     <AppLayout>

@@ -84,12 +84,12 @@ export function Sidebar() {
       <div className="p-3 m-2 rounded bg-background border border-border text-[11px] text-muted-foreground space-y-1.5">
         <div className="flex items-center justify-between font-semibold text-foreground">
           <span>MCL Match Engine</span>
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="h-2 w-2 rounded-full bg-slate-400" />
         </div>
-        <div className="text-[10px] text-emerald-800 font-mono font-bold bg-emerald-50 p-1.5 rounded border border-emerald-200">
-          🟢 Auto-Scanner Active (12 Countries)
+        <div className="text-[10px] text-muted-foreground font-mono font-bold bg-secondary p-1.5 rounded border border-border">
+          Runtime status shown on Dashboard
         </div>
-        <div className="text-[10px] text-muted-foreground">V1.5 Background Market Scanner</div>
+        <div className="text-[10px] text-muted-foreground">V1.5.6 Market Scanner</div>
       </div>
     </aside>
   );

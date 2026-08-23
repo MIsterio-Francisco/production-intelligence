@@ -61,11 +61,11 @@ export async function sendProjectOpportunityEmailAlert(payload: EmailAlertPayloa
     ? `${project.budget_currency || "EUR"} ${(project.budget_min / 1000000).toFixed(1)}M - ${(project.budget_max / 1000000).toFixed(1)}M`
     : "Confidential / High Budget";
 
-  const dop = project.dop_name || "To Be Confirmed (Pre-Post Selection)";
-  const director = project.director_name || "Auteur Director";
-  const matchScore = signal?.mcl_match_score || 94;
+  const dop = project.dop_name || "Unknown";
+  const director = project.director_name || "Unknown";
+  const matchScore = signal?.mcl_match_score;
 
-  const formattedSubject = `[MCL Opportunity Alert] New ${project.project_type.replace("_", " ").toUpperCase()}: ${project.title} (${company.name}) - ${matchScore}% MCL Match`;
+  const formattedSubject = `[MCL Opportunity Alert] New ${project.project_type.replace("_", " ").toUpperCase()}: ${project.title} (${company.name})${matchScore == null ? "" : ` - ${matchScore}% MCL Match`}`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -96,7 +96,7 @@ export async function sendProjectOpportunityEmailAlert(payload: EmailAlertPayloa
 <body>
   <div class="card">
     <div class="header">
-      <div class="badge">🔥 MCL Match Opportunity Score: ${matchScore}/100</div>
+      ${matchScore == null ? "" : `<div class="badge">MCL Match Opportunity Score: ${matchScore}/100</div>`}
       <h1 class="title">${project.title}</h1>
       <p class="subtitle">Production Company: <strong>${company.name}</strong> (${company.country_name || "International"})</p>
     </div>
@@ -135,7 +135,7 @@ export async function sendProjectOpportunityEmailAlert(payload: EmailAlertPayloa
             <tr>
               <td><strong>${exec.full_name}</strong></td>
               <td>${exec.role.replace("_", " ").toUpperCase()}</td>
-              <td><a href="mailto:${exec.contact_email || company.contact_email}" style="color: #e11d48;">${exec.contact_email || company.contact_email || "contact@" + company.slug + ".com"}</a></td>
+              <td>${exec.contact_email || company.contact_email || "Not verified"}</td>
             </tr>
           `).join("")}
         </tbody>

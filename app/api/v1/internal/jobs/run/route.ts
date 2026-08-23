@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { runIngestionPipeline } from "@/lib/ingestion/pipeline";
+import { hasValidCronSecret } from "@/lib/security/internal-auth";
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET || "internal_cron_secret_v1";
-
-    if (!authHeader || !authHeader.endsWith(cronSecret)) {
+    if (!hasValidCronSecret(request)) {
       return NextResponse.json(
         { data: null, error: { code: "UNAUTHORIZED", message: "Invalid cron secret authorization." } },
         { status: 401 }
