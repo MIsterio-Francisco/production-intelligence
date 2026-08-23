@@ -14,6 +14,11 @@ export function ExternalCompanyResearch() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
+  const sourceLabels: Record<ExternalCompanyResult["source"], string> = {
+    WIKIDATA: "Wikidata",
+    CALIFORNIA_FILM_COMMISSION: "California Film Commission",
+    NEW_MEXICO_FILM_OFFICE: "New Mexico Film Office",
+  };
 
   async function research(countryOverride?: string) {
     setLoading(true);
@@ -61,7 +66,7 @@ export function ExternalCompanyResearch() {
     <section className="rounded-lg border border-accent/25 bg-card p-4 space-y-4">
       <div>
         <h2 className="text-sm font-black uppercase flex items-center gap-2"><Globe2 className="h-4 w-4 text-accent" /> Research libre</h2>
-        <p className="text-xs text-muted-foreground mt-1">Busca fuera de Supabase con fuentes gratuitas. USA consulta además producciones aprobadas oficialmente en California. Sin emails generales ni consumo automático de Apollo.</p>
+        <p className="text-xs text-muted-foreground mt-1">Busca fuera de Supabase con fuentes gratuitas. USA combina proyectos aprobados en California y producciones que terminaron fotografía principal en Nuevo México. Sin emails generales ni consumo automático de Apollo.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_130px_auto]">
         <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Productora, proyecto o mercado (US)" />
@@ -70,7 +75,7 @@ export function ExternalCompanyResearch() {
       </div>
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-muted-foreground">Mercados activos:</span>
-        <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => { setCountry("US"); void research("US"); }}>USA · producciones aprobadas</Button>
+        <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => { setCountry("US"); void research("US"); }}>USA · actividad oficial</Button>
         <span className="text-[11px] text-muted-foreground">UK y Europa: próximos adaptadores oficiales</span>
       </div>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
@@ -80,7 +85,7 @@ export function ExternalCompanyResearch() {
             const key = `${result.source}:${result.externalId}`;
             return (
               <article key={key} className="rounded-md border border-border p-3 space-y-2">
-                <div className="flex justify-between gap-2"><strong className="text-sm">{result.name}</strong><Badge variant="outline">{result.source}</Badge></div>
+                <div className="flex justify-between gap-2"><strong className="text-sm">{result.name}</strong><Badge variant="outline">{sourceLabels[result.source]}</Badge></div>
                 <p className="text-[11px] text-muted-foreground">{result.countryName || result.countryCode || "País no indicado"} · {result.evidence}</p>
                 {result.productionSignal && (
                   <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-900">

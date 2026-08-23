@@ -1,5 +1,6 @@
 import { discoverOfficialDecisionMakers } from "./official-decision-maker-discovery";
 import { searchCaliforniaApprovedProductions } from "./market-adapters/california-film-commission";
+import { searchNewMexicoCompletedProductions } from "./market-adapters/new-mexico-film-office";
 import type { ProductionSignal } from "./market-adapters/types";
 
 export interface ExternalCompanyResult {
@@ -8,7 +9,7 @@ export interface ExternalCompanyResult {
   countryCode: string | null;
   countryName: string | null;
   officialWebsiteUrl: string | null;
-  source: "WIKIDATA" | "CALIFORNIA_FILM_COMMISSION";
+  source: "WIKIDATA" | "CALIFORNIA_FILM_COMMISSION" | "NEW_MEXICO_FILM_OFFICE";
   sourceUrl: string;
   evidence: string;
   decisionMakers: Array<{ name: string; role: string; sourceUrl: string }>;
@@ -107,7 +108,10 @@ export async function researchExternalCompanies(query: string, countryCode?: str
   const normalizedCountry = querySelectsUnitedStates ? "US" : countryCode?.trim().toUpperCase();
   const tasks: Array<Promise<ExternalCompanyResult[]>> = [];
   if (effectiveQuery.trim()) tasks.push(searchWikidataCompanies(effectiveQuery, normalizedCountry));
-  if (normalizedCountry === "US") tasks.push(searchCaliforniaApprovedProductions(effectiveQuery));
+  if (normalizedCountry === "US") {
+    tasks.push(searchCaliforniaApprovedProductions(effectiveQuery));
+    tasks.push(searchNewMexicoCompletedProductions(effectiveQuery));
+  }
   const settled = await Promise.allSettled(tasks);
   const rawResults = settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
   const canonicalName = (name: string) => name.toLocaleLowerCase()

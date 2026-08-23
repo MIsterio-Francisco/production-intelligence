@@ -55,6 +55,5 @@ export async function searchCaliforniaApprovedProductions(query: string): Promis
   }).filter((result) => {
     if (normalizedQuery) return true;
     return /2025-2026|2026-2027/.test(result.productionSignal.fiscalYear || "");
-  }).slice(0, 40);
+  }).slice(0, 24);
 }
-
