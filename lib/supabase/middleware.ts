@@ -37,8 +37,22 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/signup");
 
+  const isPublicRoute =
+    isAuthRoute ||
+    request.nextUrl.pathname.startsWith("/auth/") ||
+    request.nextUrl.pathname.startsWith("/api/");
+
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  if (!user && !isPublicRoute) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set(
+      "next",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`
+    );
+    return NextResponse.redirect(loginUrl);
   }
 
   return supabaseResponse;

@@ -8,7 +8,12 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
-  dataMode?: "LIVE" | "SEED" | "DEMO";
+  dataMode?: "LIVE" | "SEED" | "DEMO" | "ERROR";
+  error?: string;
+}
+
+function emptyCompanyResult(page: number, limit: number, error: string): PaginatedResponse<CompanyWithDetails> {
+  return { data: [], total: 0, page, limit, totalPages: 0, dataMode: "ERROR", error };
 }
 
 // Whitelisted sort columns mapping to prevent SQL injection
@@ -85,11 +90,15 @@ export async function getCompanies(
 
     if (error) {
       console.error("[CompanyService] Error fetching companies:", error.message);
-      return getFallbackCompanies(options, page, limit);
+      return process.env.ENABLE_DEMO_DATA === "true"
+        ? getFallbackCompanies(options, page, limit)
+        : emptyCompanyResult(page, limit, "No se pudo consultar el catálogo real de Supabase.");
     }
 
     if (!data) {
-      return getFallbackCompanies(options, page, limit);
+      return process.env.ENABLE_DEMO_DATA === "true"
+        ? getFallbackCompanies(options, page, limit)
+        : emptyCompanyResult(page, limit, "Supabase no devolvió datos del catálogo.");
     }
 
     const formattedData: CompanyWithDetails[] = (data || []).map((row: any) => ({
@@ -110,7 +119,9 @@ export async function getCompanies(
     };
   } catch (err) {
     console.error("[CompanyService] Unexpected error:", err);
-    return getFallbackCompanies(options, page, limit);
+    return process.env.ENABLE_DEMO_DATA === "true"
+      ? getFallbackCompanies(options, page, limit)
+      : emptyCompanyResult(page, limit, "La conexión con Supabase falló.");
   }
 }
 
@@ -133,6 +144,7 @@ export async function getAvailableCompanyCountries(): Promise<Array<{ code: stri
       .map(([code, name]) => ({ code, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   } catch {
+    if (process.env.ENABLE_DEMO_DATA !== "true") return [];
     const countries = new Map<string, string>();
     for (const company of SEED_COMPANIES_FALLBACK) {
       if (company.country_code) countries.set(company.country_code, company.country_name || company.country_code);

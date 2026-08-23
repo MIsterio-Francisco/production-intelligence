@@ -45,6 +45,8 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
         limit={result.limit}
         totalPages={result.totalPages}
         countries={countries}
+        dataMode={result.dataMode || "LIVE"}
+        error={result.error}
       />
     </AppLayout>
   );

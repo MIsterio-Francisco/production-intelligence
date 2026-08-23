@@ -31,7 +31,11 @@ export default function LoginPage() {
       setError(authError.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      const safePath = requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
+        ? requestedPath
+        : "/dashboard";
+      router.push(safePath);
       router.refresh();
     }
   };

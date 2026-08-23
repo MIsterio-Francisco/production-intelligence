@@ -1,13 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Bell, User, Flame } from "lucide-react";
+import { Search, Bell, LogOut, Flame } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+
+  const handleSignOut = async () => {
+    await createClient().auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,13 +72,15 @@ export function Header() {
           <Bell className="h-4 w-4" />
         </Link>
 
-        <Link
-          href="/login"
+        <button
+          type="button"
+          onClick={handleSignOut}
           className="flex items-center space-x-1.5 p-1.5 text-xs font-medium text-foreground hover:bg-secondary rounded-md transition-colors"
+          title="Sign out"
         >
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span className="hidden md:inline">Account</span>
-        </Link>
+          <LogOut className="h-4 w-4 text-muted-foreground" />
+          <span className="hidden md:inline">Sign out</span>
+        </button>
       </div>
     </header>
   );

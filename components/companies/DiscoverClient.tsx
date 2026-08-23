@@ -30,6 +30,8 @@ interface DiscoverClientProps {
   limit: number;
   totalPages: number;
   countries: Array<{ code: string; name: string }>;
+  dataMode: "LIVE" | "SEED" | "DEMO" | "ERROR";
+  error?: string;
 }
 
 export function DiscoverClient({
@@ -39,6 +41,8 @@ export function DiscoverClient({
   limit,
   totalPages,
   countries,
+  dataMode,
+  error,
 }: DiscoverClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -146,6 +150,16 @@ export function DiscoverClient({
       </div>
 
       {/* Main Discover Layout: Sidebar Filters + Results */}
+      {dataMode === "ERROR" && (
+        <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+          <strong>Catálogo real no disponible.</strong> {error || "No se pudo conectar con Supabase."} No se muestran registros seed como si fueran datos globales.
+        </div>
+      )}
+      {(dataMode === "SEED" || dataMode === "DEMO") && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <strong>Modo demo:</strong> estos registros no representan el catálogo real de Supabase.
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Filter Sidebar */}
         <Card className="lg:col-span-1 h-fit">
