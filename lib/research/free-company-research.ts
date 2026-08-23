@@ -101,10 +101,13 @@ export async function searchWikidataCompanies(query: string, countryCode?: strin
 
 export async function researchExternalCompanies(query: string, countryCode?: string) {
   if (!query.trim() && !countryCode?.trim()) throw new Error("Introduce un nombre, concepto o país.");
-  const normalizedCountry = countryCode?.trim().toUpperCase();
+  const marketAlias = query.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const querySelectsUnitedStates = ["us", "usa", "united states", "estados unidos", "eeuu", "ee. uu."].includes(marketAlias);
+  const effectiveQuery = querySelectsUnitedStates ? "" : query;
+  const normalizedCountry = querySelectsUnitedStates ? "US" : countryCode?.trim().toUpperCase();
   const tasks: Array<Promise<ExternalCompanyResult[]>> = [];
-  if (query.trim()) tasks.push(searchWikidataCompanies(query, countryCode));
-  if (normalizedCountry === "US") tasks.push(searchCaliforniaApprovedProductions(query));
+  if (effectiveQuery.trim()) tasks.push(searchWikidataCompanies(effectiveQuery, normalizedCountry));
+  if (normalizedCountry === "US") tasks.push(searchCaliforniaApprovedProductions(effectiveQuery));
   const settled = await Promise.allSettled(tasks);
   const rawResults = settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
   const canonicalName = (name: string) => name.toLocaleLowerCase()

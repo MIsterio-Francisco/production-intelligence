@@ -15,12 +15,13 @@ export function ExternalCompanyResearch() {
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
 
-  async function research() {
+  async function research(countryOverride?: string) {
     setLoading(true);
     setMessage(null);
     try {
       const params = new URLSearchParams({ q: query });
-      if (country.trim()) params.set("country", country.trim().toUpperCase());
+      const selectedCountry = countryOverride || country;
+      if (selectedCountry.trim()) params.set("country", selectedCountry.trim().toUpperCase());
       const response = await fetch(`/api/v1/research/companies?${params}`, { cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "No se pudo investigar.");
@@ -63,9 +64,14 @@ export function ExternalCompanyResearch() {
         <p className="text-xs text-muted-foreground mt-1">Busca fuera de Supabase con fuentes gratuitas. USA consulta además producciones aprobadas oficialmente en California. Sin emails generales ni consumo automático de Apollo.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_130px_auto]">
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Productora o concepto, por ejemplo El Pampero Cine" />
+        <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Productora, proyecto o mercado (US)" />
         <Input value={country} onChange={(event) => setCountry(event.target.value)} maxLength={2} className="uppercase" placeholder="País: AR" />
-        <Button onClick={research} disabled={loading}><Search className="h-4 w-4 mr-1" />{loading ? "Buscando…" : "Buscar fuera"}</Button>
+        <Button onClick={() => void research()} disabled={loading}><Search className="h-4 w-4 mr-1" />{loading ? "Buscando…" : "Buscar fuera"}</Button>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-muted-foreground">Mercados activos:</span>
+        <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => { setCountry("US"); void research("US"); }}>USA · producciones aprobadas</Button>
+        <span className="text-[11px] text-muted-foreground">UK y Europa: próximos adaptadores oficiales</span>
       </div>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
       {results.length > 0 && (
