@@ -34,3 +34,6 @@ next-env.d.ts
 .DS_Store
 .vscode
 .idea
+
+# Supabase CLI local state
+supabase/.temp/
