@@ -13,3 +13,6 @@
 
 [functions.market-scanner-cron]
   schedule = "@hourly"
+
+[functions.daily-company-intake]
+  schedule = "0 6 * * *"

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -32,6 +32,20 @@ const navigationItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [engineStatus, setEngineStatus] = useState<"checking" | "operational" | "degraded">("checking");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/v1/health", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() : { status: "degraded" })
+      .then((payload) => {
+        if (active) setEngineStatus(payload.status === "operational" ? "operational" : "degraded");
+      })
+      .catch(() => { if (active) setEngineStatus("degraded"); });
+    return () => { active = false; };
+  }, []);
+
+  const engineLabel = engineStatus === "operational" ? "Operativo" : engineStatus === "degraded" ? "Degradado" : "Comprobando";
 
   return (
     <aside className="w-56 shrink-0 border-r border-border bg-card flex flex-col justify-between hidden md:flex min-h-[calc(100vh-3.5rem)]">
@@ -84,10 +98,16 @@ export function Sidebar() {
       <div className="p-3 m-2 rounded bg-background border border-border text-[11px] text-muted-foreground space-y-1.5">
         <div className="flex items-center justify-between font-semibold text-foreground">
           <span>MCL Match Engine</span>
-          <span className="h-2 w-2 rounded-full bg-slate-400" />
+          <span
+            className={cn(
+              "h-2 w-2 rounded-full",
+              engineStatus === "operational" ? "bg-emerald-500" : engineStatus === "degraded" ? "bg-amber-500" : "bg-slate-400"
+            )}
+            title={`Estado del motor: ${engineLabel}`}
+          />
         </div>
         <div className="text-[10px] text-muted-foreground font-mono font-bold bg-secondary p-1.5 rounded border border-border">
-          Runtime status shown on Dashboard
+          Estado: {engineLabel}
         </div>
         <div className="text-[10px] text-muted-foreground">V1.5.6 Market Scanner</div>
       </div>

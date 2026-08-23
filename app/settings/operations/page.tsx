@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, RefreshCw, Cpu, Server, CheckCircle2, AlertCircle, Clock, Database, Radio } from "lucide-react";
 import { ProviderRegistry } from "@/lib/ingestion/registry";
 import { createClient } from "@/lib/supabase/server";
+import { CompanyIntakeQueueForm } from "@/components/settings/CompanyIntakeQueueForm";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,11 @@ export default async function OperationsDashboardPage() {
     .select("*")
     .order("created_at", { ascending: false })
     .limit(10);
+
+  const [{ data: intakeCandidates }, { data: intakeRuns }] = await Promise.all([
+    (supabase.from("company_intake_candidates") as any).select("*").order("created_at", { ascending: false }).limit(10),
+    (supabase.from("daily_company_intake_runs") as any).select("*").order("run_date", { ascending: false }).limit(7),
+  ]);
 
   return (
     <AppLayout>
@@ -83,6 +89,26 @@ export default async function OperationsDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader className="py-3 px-4 border-b border-border">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              <Database className="h-4 w-4 text-accent" /> Admisión diaria de productoras verificadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Máximo dos productoras al día. La web oficial debe demostrar actividad de producción cinematográfica o televisiva. Apollo nunca se ejecuta automáticamente.
+            </p>
+            <CompanyIntakeQueueForm />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="rounded border border-border p-3"><span className="block text-muted-foreground">En cola</span><strong>{(intakeCandidates || []).filter((item: any) => item.status === "QUEUED").length}</strong></div>
+              <div className="rounded border border-border p-3"><span className="block text-muted-foreground">Admitidas</span><strong>{(intakeCandidates || []).filter((item: any) => item.status === "ADMITTED").length}</strong></div>
+              <div className="rounded border border-border p-3"><span className="block text-muted-foreground">Rechazadas</span><strong>{(intakeCandidates || []).filter((item: any) => item.status === "REJECTED").length}</strong></div>
+              <div className="rounded border border-border p-3"><span className="block text-muted-foreground">Última ejecución</span><strong>{intakeRuns?.[0]?.run_date || "Pendiente"}</strong></div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Live Data Provider Status Matrix */}
         <Card>
