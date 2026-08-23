@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "validate": "npm run typecheck && npm run lint",
@@ -36,26 +36,25 @@
     "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js"
   },
   "dependencies": {
-    "@netlify/functions": "^3.0.0",
+    "@netlify/functions": "^6.0.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
-    "next": "^15.1.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^16.3.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "autoprefixer": "^10.4.20",
-    "@eslint/eslintrc": "^3.3.1",
     "eslint": "^9.22.0",
-    "eslint-config-next": "^15.1.7",
+    "eslint-config-next": "^16.3.2",
     "postcss": "^8.5.2",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3"

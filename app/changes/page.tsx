@@ -28,6 +28,8 @@ export default function WhatChangedPage() {
   };
 
   useEffect(() => {
+    // The state update happens after the network request resolves, not synchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchScanState();
   }, []);
 
