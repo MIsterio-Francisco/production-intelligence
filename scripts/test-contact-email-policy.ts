@@ -3,6 +3,7 @@ import { isContactableEmail } from "../types/contact-email";
 import { isValidEmailSyntax, mapApolloEmailStatus, mayContactStatus, normalizeEmail } from "../lib/contacts/email-policy";
 import { evaluateApolloEligibility, isApolloDecisionMaker } from "../lib/contacts/apollo-eligibility";
 import { candidateIdentityKey, classifyOfficialProductionWebsite, DAILY_COMPANY_QUOTA } from "../lib/intake/daily-company-intake";
+import { isLinkedInProfileUrl, mayShowLinkedInLink } from "../lib/contacts/linkedin-policy";
 
 assert.equal(normalizeEmail(" Sales@Example.COM "), "sales@example.com");
 assert.equal(isValidEmailSyntax("sales@example.com"), true);
@@ -33,5 +34,10 @@ assert.equal(classifyOfficialProductionWebsite("<html><body>Film and television 
 assert.deepEqual(classifyOfficialProductionWebsite("<html><body>Documentary production company</body></html>").categories, ["documentary"]);
 assert.equal(classifyOfficialProductionWebsite("<html><body>Post-production studio and color grading studio</body></html>").eligible, false);
 assert.equal(candidateIdentityKey({ name: "Example Films", officialWebsiteUrl: "https://www.example.com/about", discoverySourceUrl: "https://trade.example/article" }), "example:example.com");
+assert.equal(isLinkedInProfileUrl("https://www.linkedin.com/in/example-person"), true);
+assert.equal(isLinkedInProfileUrl("https://linkedin.com/company/example-studio"), true);
+assert.equal(isLinkedInProfileUrl("https://example.com/in/example-person"), false);
+assert.equal(mayShowLinkedInLink({ url: "https://linkedin.com/in/example", status: "UNVERIFIED" }), false);
+assert.equal(mayShowLinkedInLink({ url: "https://linkedin.com/in/example", status: "VERIFIED", sourceUrl: "https://official.example/team", lastCheckedAt: new Date().toISOString() }), true);
 
-console.log("Contact, Apollo and daily intake policy: 21 passed, 0 failed");
+console.log("Contact, LinkedIn, Apollo and daily intake policy: 26 passed, 0 failed");

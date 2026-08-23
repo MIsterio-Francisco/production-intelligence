@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { mayShowLinkedInLink } from "@/lib/contacts/linkedin-policy";
 
 interface PersonDetailProps {
   params: Promise<{ id: string }>;
@@ -30,6 +31,12 @@ export default async function PersonDetailPage({ params }: PersonDetailProps) {
 
   const currentPositions = (person.positions || []).filter((p) => p.is_current);
   const formerPositions = (person.positions || []).filter((p) => !p.is_current);
+  const linkedinIsPublic = mayShowLinkedInLink({
+    url: person.linkedin_url,
+    status: (person as any).linkedin_status,
+    sourceUrl: (person as any).linkedin_source_url,
+    lastCheckedAt: (person as any).linkedin_last_checked_at,
+  });
 
   return (
     <AppLayout>
@@ -54,7 +61,7 @@ export default async function PersonDetailPage({ params }: PersonDetailProps) {
               <MapPin className="h-3.5 w-3.5 text-accent" /> {person.city ? `${person.city}, ${person.country_code}` : person.country_code || "Global"}
             </span>
 
-            {person.linkedin_url && (
+            {linkedinIsPublic && person.linkedin_url && (
               <a
                 href={person.linkedin_url}
                 target="_blank"
@@ -65,15 +72,14 @@ export default async function PersonDetailPage({ params }: PersonDetailProps) {
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
-
-            {/* Direct Executive Contact Email */}
-            <a
-              href={`mailto:${(person as any).email || `${person.full_name?.toLowerCase().replace(/\s+/g, ".")}@${person.positions?.[0]?.company_slug ? `${person.positions[0].company_slug}.com` : "production-intelligence.com"}`}`}
-              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 font-mono font-bold transition-colors"
-            >
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-              <span>{(person as any).email || `${person.full_name?.toLowerCase().replace(/\s+/g, ".")}@${person.positions?.[0]?.company_slug ? `${person.positions[0].company_slug}.com` : "production-intelligence.com"}`}</span>
-            </a>
+            {person.linkedin_url && !linkedinIsPublic && (
+              <span className="flex items-center gap-1.5 text-amber-700" title="El enlace se conserva internamente, pero no se abre hasta verificar su procedencia.">
+                <Linkedin className="h-3.5 w-3.5" /> LinkedIn sin verificar
+              </span>
+            )}
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5" /> Contacto disponible solo con evidencia verificada
+            </span>
           </div>
 
           {person.bio && (

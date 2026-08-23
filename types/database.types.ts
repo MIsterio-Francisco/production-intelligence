@@ -103,6 +103,9 @@ export interface Database {
           last_name: string | null;
           job_title: string | null;
           linkedin_url: string | null;
+          linkedin_status?: string | null;
+          linkedin_source_url?: string | null;
+          linkedin_last_checked_at?: string | null;
           website_url: string | null;
           country_code: string | null;
           city: string | null;
