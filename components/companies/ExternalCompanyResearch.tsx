@@ -60,7 +60,7 @@ export function ExternalCompanyResearch() {
     <section className="rounded-lg border border-accent/25 bg-card p-4 space-y-4">
       <div>
         <h2 className="text-sm font-black uppercase flex items-center gap-2"><Globe2 className="h-4 w-4 text-accent" /> Research libre</h2>
-        <p className="text-xs text-muted-foreground mt-1">Busca fuera de Supabase con fuentes gratuitas. Sin emails generales ni consumo automático de Apollo.</p>
+        <p className="text-xs text-muted-foreground mt-1">Busca fuera de Supabase con fuentes gratuitas. USA consulta además producciones aprobadas oficialmente en California. Sin emails generales ni consumo automático de Apollo.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_130px_auto]">
         <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Productora o concepto, por ejemplo El Pampero Cine" />
@@ -76,14 +76,22 @@ export function ExternalCompanyResearch() {
               <article key={key} className="rounded-md border border-border p-3 space-y-2">
                 <div className="flex justify-between gap-2"><strong className="text-sm">{result.name}</strong><Badge variant="outline">{result.source}</Badge></div>
                 <p className="text-[11px] text-muted-foreground">{result.countryName || result.countryCode || "País no indicado"} · {result.evidence}</p>
+                {result.productionSignal && (
+                  <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-900">
+                    <strong>Producción activa:</strong> {result.productionSignal.projectTitle}
+                    <div>{result.productionSignal.market} · {result.productionSignal.fiscalYear || "Fecha fiscal no indicada"}{result.productionSignal.signalDate ? ` · ${result.productionSignal.signalDate}` : ""}</div>
+                    {(result.productionSignal.qualifiedExpenditure || result.productionSignal.creditAllocation) && <div>Gasto cualificado: {result.productionSignal.qualifiedExpenditure || "—"} · Incentivo: {result.productionSignal.creditAllocation || "—"}</div>}
+                  </div>
+                )}
                 {result.officialWebsiteUrl ? (
                   <a className="text-xs font-semibold text-accent underline break-all" href={result.officialWebsiteUrl} target="_blank" rel="noreferrer">Web oficial</a>
-                ) : <p className="text-xs text-amber-700">La fuente no aporta web oficial; no se puede guardar todavía.</p>}
+                ) : <p className="text-xs text-amber-700">Señal oficial encontrada; falta resolver la web oficial antes de guardarla.</p>}
                 {result.decisionMakers.map((person) => (
                   <a key={`${person.sourceUrl}:${person.role}`} href={person.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-foreground hover:text-accent">
                     <UserRound className="h-3 w-3" /> {person.name} — {person.role}
                   </a>
                 ))}
+                <a className="block text-[11px] text-muted-foreground underline" href={result.sourceUrl} target="_blank" rel="noreferrer">Ver fuente y evidencia</a>
                 <Button size="sm" variant="outline" disabled={!result.officialWebsiteUrl || saved.has(key)} onClick={() => saveCandidate(result)}>
                   {saved.has(key) ? "Guardada" : "Guardar candidata"}
                 </Button>

@@ -1,16 +1,21 @@
+import { discoverOfficialDecisionMakers } from "./official-decision-maker-discovery";
+import { searchCaliforniaApprovedProductions } from "./market-adapters/california-film-commission";
+import type { ProductionSignal } from "./market-adapters/types";
+
 export interface ExternalCompanyResult {
   externalId: string;
   name: string;
   countryCode: string | null;
   countryName: string | null;
   officialWebsiteUrl: string | null;
-  source: "WIKIDATA" | "TMDB";
+  source: "WIKIDATA" | "CALIFORNIA_FILM_COMMISSION";
   sourceUrl: string;
   evidence: string;
   decisionMakers: Array<{ name: string; role: string; sourceUrl: string }>;
+  productionSignal?: ProductionSignal;
 }
 
-async function searchWikidata(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
+export async function searchWikidataCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
   if (!query.trim()) return [];
   const safeCountry = countryCode?.trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2);
   const searches = await Promise.all(["es", "en"].map(async (language) => {
@@ -94,63 +99,35 @@ async function searchWikidata(query: string, countryCode?: string): Promise<Exte
   }));
 }
 
-async function searchTmdb(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
-  const token = process.env.TMDB_API_READ_TOKEN;
-  if (!token) return [];
-  const headers = { Authorization: `Bearer ${token}`, accept: "application/json" };
-  let results: any[] = [];
-  if (query.trim()) {
-    const searchUrl = new URL("https://api.themoviedb.org/3/search/company");
-    searchUrl.searchParams.set("query", query.trim());
-    const response = await fetch(searchUrl, { headers, signal: AbortSignal.timeout(10_000), cache: "no-store" });
-    if (!response.ok) throw new Error(`TMDb returned HTTP ${response.status}.`);
-    results = (await response.json()).results || [];
-  } else if (countryCode) {
-    const discoveredTitles: Array<{ id: number; media: "movie" | "tv" }> = [];
-    for (const media of ["movie", "tv"] as const) {
-      const url = new URL(`https://api.themoviedb.org/3/discover/${media}`);
-      url.searchParams.set("with_origin_country", countryCode.toUpperCase());
-      url.searchParams.set("sort_by", "popularity.desc");
-      const response = await fetch(url, { headers, signal: AbortSignal.timeout(10_000), cache: "no-store" });
-      if (response.ok) discoveredTitles.push(...((await response.json()).results || []).slice(0, 8).map((item: any) => ({ id: item.id, media })));
-    }
-    const details = await Promise.all(discoveredTitles.map(async (title) => {
-      const response = await fetch(`https://api.themoviedb.org/3/${title.media}/${title.id}`, { headers, signal: AbortSignal.timeout(10_000), cache: "no-store" });
-      return response.ok ? (await response.json()).production_companies || [] : [];
-    }));
-    results = details.flat();
-  }
-  const uniqueResults = [...new Map(results.map((company: any) => [company.id, company])).values()].slice(0, 20);
-
-  return Promise.all(uniqueResults.map(async (company: any) => {
-    const detailUrl = `https://api.themoviedb.org/3/company/${company.id}`;
-    const detailResponse = await fetch(detailUrl, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-      cache: "no-store",
-    });
-    const detail = detailResponse.ok ? await detailResponse.json() : company;
-    return {
-      externalId: String(company.id),
-      name: detail.name || company.name,
-      countryCode: detail.origin_country || company.origin_country || null,
-      countryName: detail.headquarters || null,
-      officialWebsiteUrl: detail.homepage || null,
-      source: "TMDB" as const,
-      sourceUrl: `https://www.themoviedb.org/company/${company.id}`,
-      evidence: "Empresa incluida en la base audiovisual de TMDb.",
-      decisionMakers: [],
-    };
-  }));
-}
-
 export async function researchExternalCompanies(query: string, countryCode?: string) {
   if (!query.trim() && !countryCode?.trim()) throw new Error("Introduce un nombre, concepto o país.");
-  const settled = await Promise.allSettled([
-    searchWikidata(query, countryCode),
-    searchTmdb(query, countryCode),
-  ]);
-  const results = settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
+  const normalizedCountry = countryCode?.trim().toUpperCase();
+  const tasks: Array<Promise<ExternalCompanyResult[]>> = [];
+  if (query.trim()) tasks.push(searchWikidataCompanies(query, countryCode));
+  if (normalizedCountry === "US") tasks.push(searchCaliforniaApprovedProductions(query));
+  const settled = await Promise.allSettled(tasks);
+  const rawResults = settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
+  const canonicalName = (name: string) => name.toLocaleLowerCase()
+    .replace(/\b(incorporated|corporation|company|productions?|pictures|studios?|inc|llc|ltd)\b/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+  const wikidataResults = rawResults.filter((item) => item.source === "WIKIDATA");
+  const matchedWikidata = new Set<string>();
+  const results = rawResults.map((item) => {
+    if (item.source !== "CALIFORNIA_FILM_COMMISSION") return item;
+    const signalName = canonicalName(item.name);
+    const identity = wikidataResults.find((candidate) => {
+      const candidateName = canonicalName(candidate.name);
+      return candidateName === signalName || (signalName.length >= 5 && (candidateName.startsWith(signalName) || signalName.startsWith(candidateName)));
+    });
+    if (!identity) return item;
+    matchedWikidata.add(identity.externalId);
+    return {
+      ...item,
+      officialWebsiteUrl: identity.officialWebsiteUrl,
+      decisionMakers: identity.decisionMakers,
+    };
+  }).filter((item) => item.source !== "WIKIDATA" || !matchedWikidata.has(item.externalId));
   const seen = new Set<string>();
   return results.filter((item) => {
     const key = (item.officialWebsiteUrl || item.name).toLowerCase();
@@ -159,4 +136,3 @@ export async function researchExternalCompanies(query: string, countryCode?: str
     return true;
   }).slice(0, 40);
 }
-import { discoverOfficialDecisionMakers } from "./official-decision-maker-discovery";
