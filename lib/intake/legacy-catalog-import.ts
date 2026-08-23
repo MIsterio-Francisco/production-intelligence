@@ -2,8 +2,6 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { SEED_COMPANIES_FALLBACK } from "@/lib/services/company-service";
 import { normalizedDomain, queueCompanyCandidates } from "./daily-company-intake";
 
-const LEGACY_CLASSIFICATION = "SOURCE_CLAIM";
-
 export async function importLegacyCompanyCatalog() {
   const supabase = createAdminClient();
   const { data: existing, error: existingError } = await supabase
@@ -27,12 +25,10 @@ export async function importLegacyCompanyCatalog() {
     country_code: company.country_code || null,
     country_name: company.country_name || null,
     city: company.city || null,
-    region: company.region || null,
     employee_count_min: company.employee_count_min || null,
     employee_count_max: company.employee_count_max || null,
     is_active: company.is_active !== false,
     provenance_type: "legacy_catalog",
-    data_classification: LEGACY_CLASSIFICATION,
     data_quality_score: 40,
     is_demo: false,
     score_confidence: 0,
@@ -99,6 +95,6 @@ export async function importLegacyCompanyCatalog() {
     imported: rows.length,
     alreadyPresent: SEED_COMPANIES_FALLBACK.length - rows.length,
     queuedForOfficialReview: queued,
-    classification: LEGACY_CLASSIFICATION,
+    classification: "SOURCE_CLAIM",
   };
 }
