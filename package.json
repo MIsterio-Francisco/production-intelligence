@@ -33,7 +33,8 @@
     "audit:zero-event": "./node_modules/.bin/tsc scripts/audit-zero-event-scan.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-zero-event-scan.js",
     "audit:netlify": "./node_modules/.bin/tsc scripts/audit-netlify-infrastructure.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-netlify-infrastructure.js",
     "audit:live-scan": "./node_modules/.bin/tsc scripts/audit-live-production-scan.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/audit-live-production-scan.js",
-    "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js"
+    "test:commercial": "tsc scripts/test-commercial-targeting.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-commercial-targeting.js",
+    "test:contacts": "tsc scripts/test-contact-email-policy.ts --outDir dist --module commonjs --target es2022 --moduleResolution node --skipLibCheck && node dist/scripts/test-contact-email-policy.js"
   },
   "dependencies": {
     "@netlify/functions": "^6.0.0",

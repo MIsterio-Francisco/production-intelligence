@@ -27,6 +27,7 @@ import {
 import { getCompanyInstagramData } from "@/lib/services/social-service";
 import { CompanySocialTab } from "@/components/companies/CompanySocialTab";
 import Link from "next/link";
+import { VerifiedContactEmails } from "@/components/companies/VerifiedContactEmails";
 
 interface CompanyProfileProps {
   params: Promise<{ slug: string }>;
@@ -140,6 +141,8 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
               <div className="pt-2">
                 <SaveCompanyButton companyId={company.id} />
               </div>
+
+              <VerifiedContactEmails companyId={company.id} />
             </div>
 
             {/* SCORE HEADER CARDS WITH CONFIDENCE & VERSION (PRD Section 30) */}
