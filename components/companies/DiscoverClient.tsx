@@ -29,6 +29,7 @@ interface DiscoverClientProps {
   page: number;
   limit: number;
   totalPages: number;
+  countries: Array<{ code: string; name: string }>;
 }
 
 export function DiscoverClient({
@@ -37,6 +38,7 @@ export function DiscoverClient({
   page,
   limit,
   totalPages,
+  countries,
 }: DiscoverClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -186,16 +188,9 @@ export function DiscoverClient({
                 className="w-full h-8 rounded-md border border-input bg-card px-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-accent"
               >
                 <option value="">All Countries</option>
-                <option value="US">United States (US)</option>
-                <option value="UK">United Kingdom (UK)</option>
-                <option value="FR">France (FR)</option>
-                <option value="ES">Spain (ES)</option>
-                <option value="DE">Germany (DE)</option>
-                <option value="IT">Italy (IT)</option>
-                <option value="MX">Mexico (MX)</option>
-                <option value="CA">Canada (CA)</option>
-                <option value="AU">Australia (AU)</option>
-                <option value="CL">Chile (CL)</option>
+                {countries.map((item) => (
+                  <option key={item.code} value={item.code}>{item.name} ({item.code})</option>
+                ))}
               </select>
             </div>
 

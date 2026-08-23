@@ -69,7 +69,12 @@ export async function enrichCompanyContacts(
 
   const domain = companyDomain(company.website_url);
   for (const person of people.slice(0, 3)) {
-    const match = await enrichPersonWithApollo({ name: person.full_name, companyDomain: domain });
+    const match = await enrichPersonWithApollo({
+      name: person.full_name,
+      companyDomain: domain,
+      companyId: company.id,
+      personId: person.id,
+    });
     if (!match?.email || !isValidEmailSyntax(match.email)) {
       summary.skipped += 1;
       continue;

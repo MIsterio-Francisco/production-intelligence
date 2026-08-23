@@ -4,18 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getDashboardOverview } from "@/lib/services/company-service";
 import { getPeople } from "@/lib/services/person-service";
-import { getTopCommercialTargets } from "@/lib/services/opportunity-engine";
-import { TopTargetsView } from "@/components/opportunities/TopTargetsView";
+import { getSavedCompanies } from "@/lib/services/saved-company-service";
+import { WeeklyTargetTracker } from "@/components/opportunities/WeeklyTargetTracker";
 import { Building2, Clapperboard, Flame, ArrowUpRight, TrendingUp, Users, Target } from "lucide-react";
 import Link from "next/link";
 
 import { MarketPulseWidget } from "@/components/scanner/MarketPulseWidget";
 
 export default async function DashboardPage() {
-  const [data, peopleRes, topTargets] = await Promise.all([
+  const [data, peopleRes, weeklyTargets] = await Promise.all([
     getDashboardOverview(),
     getPeople({ limit: 5 }),
-    Promise.resolve(getTopCommercialTargets(3)),
+    getSavedCompanies(),
   ]);
   const isLive = data.dataMode === "LIVE";
 
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
                     {data.totalCompanies}
                   </p>
                   <p className="text-[10px] text-emerald-600 font-bold flex items-center mt-0.5">
-                    <TrendingUp className="h-3 w-3 mr-0.5" /> {isLive ? "Live database records" : "Seed catalogue"}
+                    <TrendingUp className="h-3 w-3 mr-0.5" /> {isLive ? `${data.verifiedCompaniesCount} verificadas / objetivo 200` : "Seed catalogue — 0 verificadas"}
                   </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-secondary group-hover:bg-accent/10 flex items-center justify-center text-foreground transition-colors">
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
                     Top Target Machine
                   </p>
                   <p className="text-2xl font-black tracking-tight mt-1 text-foreground">
-                    {topTargets.length} Targets
+                    {weeklyTargets.length} Targets
                   </p>
                   <p className="text-[10px] text-accent font-bold flex items-center mt-0.5">
                     <Target className="h-3 w-3 mr-0.5" /> Direct B2B Opportunities →
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
 
         {/* TOP COMMERCIAL TARGET WIDGET FOR MISTERIO COLOR LAB */}
         <div className="bg-card border border-border p-5 rounded-lg shadow-sm">
-          <TopTargetsView targets={topTargets} />
+          <WeeklyTargetTracker initialTargets={weeklyTargets} />
         </div>
 
         {/* Dashboard Grid Sections */}

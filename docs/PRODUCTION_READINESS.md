@@ -36,9 +36,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 
 # Server-Side Private Secrets (NEVER exposed to client)
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
-OPENAI_API_KEY=sk-proj-...
-CRON_SECRET=internal_cron_secret_v1
+SUPABASE_SERVICE_ROLE_KEY=<server-only-service-role-key>
+OPENAI_API_KEY=<server-only-openai-key>
+CRON_SECRET=<generate-a-long-random-secret>
 ```
 
 ---

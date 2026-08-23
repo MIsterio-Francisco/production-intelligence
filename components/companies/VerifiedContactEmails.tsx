@@ -14,11 +14,20 @@ interface ContactRow {
   contactable: boolean;
 }
 
+interface ApolloBudgetSummary {
+  phase: "PROMO" | "STANDARD";
+  promoExpiresAt: string;
+  todayUsed: number;
+  dailyLimit: number;
+  estimatedRemaining: number;
+}
+
 export function VerifiedContactEmails({ companyId }: { companyId: string }) {
   const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [apolloEligibility, setApolloEligibility] = useState<{ eligible: boolean; reason: string } | null>(null);
+  const [apolloBudget, setApolloBudget] = useState<ApolloBudgetSummary | null>(null);
 
   const loadContacts = useCallback(async () => {
     const response = await fetch(`/api/v1/companies/${companyId}/contacts`);
@@ -26,6 +35,8 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
     const payload = await response.json();
     setContacts(payload.data || []);
     setApolloEligibility(payload.apolloEligibility || null);
+    const budgetResponse = await fetch("/api/v1/apollo/budget", { cache: "no-store" });
+    if (budgetResponse.ok) setApolloBudget((await budgetResponse.json()).data || null);
   }, [companyId]);
 
   useEffect(() => {
@@ -83,6 +94,11 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
       {apolloEligibility && (
         <p className={`text-[11px] ${apolloEligibility.eligible ? "text-muted-foreground" : "text-amber-600"}`}>
           Apollo: {apolloEligibility.reason}
+        </p>
+      )}
+      {apolloBudget && (
+        <p className="text-[11px] text-muted-foreground">
+          Presupuesto Apollo estimado: {apolloBudget.todayUsed}/{apolloBudget.dailyLimit} hoy · {apolloBudget.estimatedRemaining} restantes en fase {apolloBudget.phase}.
         </p>
       )}
 

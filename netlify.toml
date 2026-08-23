@@ -16,3 +16,6 @@
 
 [functions.daily-company-intake]
   schedule = "0 6 * * *"
+
+[functions.apollo-budget-rollover]
+  schedule = "15 0 * * *"

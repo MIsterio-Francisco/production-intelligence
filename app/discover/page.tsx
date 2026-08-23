@@ -1,7 +1,7 @@
 import React from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DiscoverClient } from "@/components/companies/DiscoverClient";
-import { getCompanies } from "@/lib/services/company-service";
+import { getAvailableCompanyCountries, getCompanies } from "@/lib/services/company-service";
 
 interface DiscoverPageProps {
   searchParams: Promise<{
@@ -22,7 +22,7 @@ interface DiscoverPageProps {
 export default async function DiscoverPage({ searchParams }: DiscoverPageProps) {
   const resolvedParams = await searchParams;
 
-  const result = await getCompanies({
+  const [result, countries] = await Promise.all([getCompanies({
     search: resolvedParams.search,
     country: resolvedParams.country,
     category: resolvedParams.category,
@@ -33,8 +33,8 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
     sort: resolvedParams.sort || "mcl_match_score",
     order: resolvedParams.order || "desc",
     page: resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1,
-    limit: resolvedParams.limit ? parseInt(resolvedParams.limit, 10) : 20,
-  });
+    limit: resolvedParams.limit ? parseInt(resolvedParams.limit, 10) : 200,
+  }), getAvailableCompanyCountries()]);
 
   return (
     <AppLayout>
@@ -44,6 +44,7 @@ export default async function DiscoverPage({ searchParams }: DiscoverPageProps) 
         page={result.page}
         limit={result.limit}
         totalPages={result.totalPages}
+        countries={countries}
       />
     </AppLayout>
   );

@@ -25,7 +25,7 @@ export async function getCompanies(
   options: CompanyFilterOptions = {}
 ): Promise<PaginatedResponse<CompanyWithDetails>> {
   const page = Math.max(1, options.page || 1);
-  const limit = Math.min(50, Math.max(1, options.limit || 20));
+  const limit = Math.min(200, Math.max(1, options.limit || 200));
   const offset = (page - 1) * limit;
 
   const sortColumn = ALLOWED_SORT_FIELDS[options.sort || "mcl_match_score"] || "mcl_match_score";
@@ -36,7 +36,11 @@ export async function getCompanies(
 
     let query = supabase
       .from("companies")
-      .select("*, company_categories(category)", { count: "exact" });
+      .select(options.category ? "*, company_categories!inner(category)" : "*, company_categories(category)", { count: "exact" });
+
+    if (options.category) {
+      query = query.eq("company_categories.category", options.category);
+    }
 
     // Filter: Country
     if (options.country) {
@@ -107,6 +111,33 @@ export async function getCompanies(
   } catch (err) {
     console.error("[CompanyService] Unexpected error:", err);
     return getFallbackCompanies(options, page, limit);
+  }
+}
+
+export async function getAvailableCompanyCountries(): Promise<Array<{ code: string; name: string }>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("companies")
+      .select("country_code, country_name")
+      .eq("is_active", true)
+      .not("country_code", "is", null)
+      .limit(1000);
+    if (error) throw error;
+    const countries = new Map<string, string>();
+    for (const row of (data || []) as Array<{ country_code: string | null; country_name: string | null }>) {
+      const code = row.country_code?.toUpperCase();
+      if (code) countries.set(code, row.country_name || code);
+    }
+    return [...countries.entries()]
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    const countries = new Map<string, string>();
+    for (const company of SEED_COMPANIES_FALLBACK) {
+      if (company.country_code) countries.set(company.country_code, company.country_name || company.country_code);
+    }
+    return [...countries.entries()].map(([code, name]) => ({ code, name })).sort((a, b) => a.name.localeCompare(b.name));
   }
 }
 
@@ -191,6 +222,7 @@ export async function getDashboardOverview() {
 
     const [
       { count: totalCompanies },
+      { count: verifiedCompaniesCount },
       { data: topPower },
       { data: topMcl },
       { data: recentEvents },
@@ -200,6 +232,8 @@ export async function getDashboardOverview() {
       { data: countryRows },
     ] = await Promise.all([
       supabase.from("companies").select("*", { count: "exact", head: true }),
+      supabase.from("companies").select("*", { count: "exact", head: true })
+        .eq("data_classification", "VERIFIED_FACT").not("last_verified_at", "is", null),
       supabase.from("companies").select("id, name, slug, country_code, power_score, mcl_match_score, company_type").order("power_score", { ascending: false }).limit(5),
       supabase.from("companies").select("id, name, slug, country_code, mcl_match_score, power_score, company_type").order("mcl_match_score", { ascending: false }).limit(5),
       supabase.from("company_events").select("*, companies(name, slug, country_code)").order("event_date", { ascending: false }).limit(5),
@@ -217,6 +251,7 @@ export async function getDashboardOverview() {
       dataMode: "LIVE" as const,
       generatedAt: new Date().toISOString(),
       totalCompanies: totalCompanies ?? 0,
+      verifiedCompaniesCount: verifiedCompaniesCount ?? 0,
       countriesCount: new Set(((countryRows || []) as Array<{ country_code: string | null }>).map((row) => row.country_code).filter(Boolean)).size,
       activeProjectsCount: activeProjectsCount ?? 0,
       keyDecisionMakersCount: keyDecisionMakersCount ?? 0,
@@ -2175,6 +2210,7 @@ function getFallbackDashboardOverview() {
     dataMode: "DEMO" as const,
     generatedAt: new Date().toISOString(),
     totalCompanies: SEED_COMPANIES_FALLBACK.length,
+    verifiedCompaniesCount: 0,
     countriesCount: new Set(SEED_COMPANIES_FALLBACK.map((company) => company.country_code).filter(Boolean)).size,
     activeProjectsCount: 0,
     highOpportunitiesCount: 0,
