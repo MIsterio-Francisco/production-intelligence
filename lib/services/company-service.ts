@@ -298,7 +298,7 @@ export async function getRankingsData(tab: string = "GLOBAL", page: number = 1, 
 }
 
 // Fallback Mock Data Providers (Ensures 100% stable UI experience during development)
-const SEED_COMPANIES_FALLBACK: any[] = [
+export const SEED_COMPANIES_FALLBACK: any[] = [
   {
     id: "c1",
     name: "Morena Films",

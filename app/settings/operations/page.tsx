@@ -6,6 +6,7 @@ import { Activity, RefreshCw, Cpu, Server, CheckCircle2, AlertCircle, Clock, Dat
 import { ProviderRegistry } from "@/lib/ingestion/registry";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyIntakeQueueForm } from "@/components/settings/CompanyIntakeQueueForm";
+import { LegacyCatalogRestore } from "@/components/settings/LegacyCatalogRestore";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,7 @@ export default async function OperationsDashboardPage() {
             <p className="text-xs text-muted-foreground">
               Máximo dos productoras al día. La web oficial debe demostrar actividad de producción cinematográfica o televisiva. Apollo nunca se ejecuta automáticamente.
             </p>
+            <LegacyCatalogRestore />
             <CompanyIntakeQueueForm />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div className="rounded border border-border p-3"><span className="block text-muted-foreground">En cola</span><strong>{(intakeCandidates || []).filter((item: any) => item.status === "QUEUED").length}</strong></div>
