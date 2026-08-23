@@ -18,12 +18,14 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
   const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [apolloEligibility, setApolloEligibility] = useState<{ eligible: boolean; reason: string } | null>(null);
 
   const loadContacts = useCallback(async () => {
     const response = await fetch(`/api/v1/companies/${companyId}/contacts`);
     if (!response.ok) return;
     const payload = await response.json();
     setContacts(payload.data || []);
+    setApolloEligibility(payload.apolloEligibility || null);
   }, [companyId]);
 
   useEffect(() => {
@@ -65,13 +67,24 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
           <Button size="sm" variant="outline" disabled={loading} onClick={() => enrich(false)}>
             <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} /> Web oficial
           </Button>
-          <Button size="sm" variant="outline" disabled={loading} onClick={() => enrich(true)} title="Puede consumir créditos de Apollo">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={loading || apolloEligibility?.eligible === false}
+            onClick={() => enrich(true)}
+            title={apolloEligibility?.reason || "Puede consumir créditos de Apollo"}
+          >
             Buscar con Apollo
           </Button>
         </div>
       </div>
 
       {message && <p className="text-[11px] text-muted-foreground">{message}</p>}
+      {apolloEligibility && (
+        <p className={`text-[11px] ${apolloEligibility.eligible ? "text-muted-foreground" : "text-amber-600"}`}>
+          Apollo: {apolloEligibility.reason}
+        </p>
+      )}
 
       {contacts.length > 0 ? (
         <div className="space-y-1.5">

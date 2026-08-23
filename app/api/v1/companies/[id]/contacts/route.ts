@@ -3,6 +3,28 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { isAuthenticatedUser } from "@/lib/security/internal-auth";
 import { enrichCompanyContacts } from "@/lib/contacts/contact-enrichment-service";
 import { isContactableEmail } from "@/types/contact-email";
+import { evaluateApolloEligibility } from "@/lib/contacts/apollo-eligibility";
+
+async function loadApolloCandidates(supabase: ReturnType<typeof createAdminClient>, companyId: string) {
+  const [{ data: company }, { data: peopleRows }] = await Promise.all([
+    supabase
+      .from("companies")
+      .select("id, website_url, company_type, data_classification, provenance_type, company_categories(category)")
+      .eq("id", companyId)
+      .single(),
+    supabase
+      .from("company_people")
+      .select("role, seniority, people(id, full_name, job_title)")
+      .eq("company_id", companyId)
+      .eq("is_current", true),
+  ]);
+  const people = (peopleRows || []).flatMap((row: any) => row.people ? [{
+    ...row.people,
+    role: row.role,
+    seniority: row.seniority,
+  }] : []);
+  return { company, people };
+}
 
 export async function GET(
   _request: Request,
@@ -28,7 +50,15 @@ export async function GET(
       lastCheckedAt: row.last_checked_at,
     }),
   }));
-  return NextResponse.json({ data: contacts, error: null });
+  const candidates = await loadApolloCandidates(supabase, id);
+  const eligibility = candidates.company
+    ? evaluateApolloEligibility(candidates.company as any, candidates.people)
+    : { eligible: false, reason: "Company not found.", people: [] };
+  return NextResponse.json({
+    data: contacts,
+    apolloEligibility: { eligible: eligibility.eligible, reason: eligibility.reason },
+    error: null,
+  });
 }
 
 export async function POST(
@@ -44,16 +74,19 @@ export async function POST(
   const includeApollo = body.includeApollo === true;
   const supabase = createAdminClient();
 
-  const [{ data: company }, { data: peopleRows }] = await Promise.all([
-    supabase.from("companies").select("id, website_url").eq("id", id).single(),
-    supabase.from("company_people").select("people(id, full_name)").eq("company_id", id).eq("is_current", true),
-  ]);
-
+  const { company, people } = await loadApolloCandidates(supabase, id);
   if (!company) return NextResponse.json({ data: null, error: "Company not found." }, { status: 404 });
-  const people = (peopleRows || []).flatMap((row: any) => row.people ? [row.people] : []);
 
   try {
-    const summary = await enrichCompanyContacts(company, people, { includeApollo });
+    let selectedPeople = people;
+    if (includeApollo) {
+      const eligibility = evaluateApolloEligibility(company as any, people);
+      if (!eligibility.eligible) {
+        return NextResponse.json({ data: null, error: eligibility.reason }, { status: 422 });
+      }
+      selectedPeople = eligibility.people;
+    }
+    const summary = await enrichCompanyContacts(company, selectedPeople, { includeApollo });
     return NextResponse.json({ data: summary, error: null });
   } catch (error) {
     return NextResponse.json(

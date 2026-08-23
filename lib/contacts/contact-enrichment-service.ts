@@ -11,6 +11,9 @@ interface CompanyInput {
 interface PersonInput {
   id: string;
   full_name: string;
+  job_title?: string | null;
+  role?: string | null;
+  seniority?: string | null;
 }
 
 function companyDomain(websiteUrl: string): string {
@@ -65,7 +68,7 @@ export async function enrichCompanyContacts(
   if (!options.includeApollo) return summary;
 
   const domain = companyDomain(company.website_url);
-  for (const person of people.slice(0, 10)) {
+  for (const person of people.slice(0, 3)) {
     const match = await enrichPersonWithApollo({ name: person.full_name, companyDomain: domain });
     if (!match?.email || !isValidEmailSyntax(match.email)) {
       summary.skipped += 1;
