@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import Link from "next/link";
+import { ExternalCompanyResearch } from "./ExternalCompanyResearch";
 
 interface DiscoverClientProps {
   initialData: CompanyWithDetails[];
@@ -148,6 +149,8 @@ export function DiscoverClient({
           </Button>
         </div>
       </div>
+
+      <ExternalCompanyResearch />
 
       {/* Main Discover Layout: Sidebar Filters + Results */}
       {dataMode === "ERROR" && (
