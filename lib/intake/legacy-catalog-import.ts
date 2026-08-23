@@ -37,7 +37,6 @@ export async function importLegacyCompanyCatalog() {
     is_demo: false,
     score_confidence: 0,
     ai_summary: company.ai_summary || null,
-    ai_opportunity_summary: company.ai_opportunity_summary || null,
     last_verified_at: null,
     updated_at: new Date().toISOString(),
   }));
