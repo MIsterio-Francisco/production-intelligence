@@ -22,12 +22,21 @@ interface ApolloBudgetSummary {
   estimatedRemaining: number;
 }
 
+interface ApolloCandidate {
+  id: string;
+  name: string;
+  title: string;
+  linkedinUrl?: string;
+  organizationName?: string;
+}
+
 export function VerifiedContactEmails({ companyId }: { companyId: string }) {
   const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [apolloEligibility, setApolloEligibility] = useState<{ eligible: boolean; reason: string } | null>(null);
   const [apolloBudget, setApolloBudget] = useState<ApolloBudgetSummary | null>(null);
+  const [apolloCandidates, setApolloCandidates] = useState<ApolloCandidate[]>([]);
 
   const loadContacts = useCallback(async () => {
     const response = await fetch(`/api/v1/companies/${companyId}/contacts`);
@@ -67,6 +76,46 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
     }
   };
 
+  const searchApollo = async () => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/v1/companies/${companyId}/apollo-candidates`, { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No se pudo buscar en Apollo.");
+      setApolloCandidates(payload.data || []);
+      setMessage(payload.data?.length
+        ? `${payload.data.length} decisor(es) encontrados. La búsqueda no consume créditos.`
+        : "Apollo no encontró decisores con los cargos prioritarios para este dominio.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No se pudo buscar en Apollo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const revealApolloEmail = async (candidate: ApolloCandidate) => {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/v1/companies/${companyId}/apollo-candidates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId: candidate.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No se pudo enriquecer el contacto.");
+      setMessage(payload.data.status === "NO_EMAIL"
+        ? `Apollo no devolvió un email para ${candidate.name}.`
+        : `Email de ${candidate.name}: ${payload.data.status}.`);
+      await loadContacts();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No se pudo enriquecer el contacto.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mt-4 rounded-lg border border-border bg-background p-3 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -82,10 +131,10 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
             size="sm"
             variant="outline"
             disabled={loading || apolloEligibility?.eligible === false}
-            onClick={() => enrich(true)}
-            title={apolloEligibility?.reason || "Puede consumir créditos de Apollo"}
+            onClick={searchApollo}
+            title={apolloEligibility?.reason || "La búsqueda de candidatos no consume créditos"}
           >
-            Buscar con Apollo
+            Buscar decisores con Apollo
           </Button>
         </div>
       </div>
@@ -100,6 +149,25 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
         <p className="text-[11px] text-muted-foreground">
           Presupuesto Apollo estimado: {apolloBudget.todayUsed}/{apolloBudget.dailyLimit} hoy · {apolloBudget.estimatedRemaining} restantes en fase {apolloBudget.phase}.
         </p>
+      )}
+
+      {apolloCandidates.length > 0 && (
+        <div className="space-y-2 rounded-md border border-border p-2">
+          <p className="text-[10px] font-bold uppercase text-muted-foreground">Candidatos Apollo · búsqueda gratuita</p>
+          {apolloCandidates.map((candidate) => (
+            <div key={candidate.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 text-xs">
+              <div>
+                <p className="font-semibold">{candidate.name}</p>
+                <p className="text-[11px] text-muted-foreground">{candidate.title}{candidate.organizationName ? ` · ${candidate.organizationName}` : ""}</p>
+                {candidate.linkedinUrl && <a href={candidate.linkedinUrl} target="_blank" rel="noreferrer" className="text-[10px] underline text-muted-foreground">LinkedIn</a>}
+              </div>
+              <Button size="sm" variant="outline" disabled={loading} onClick={() => revealApolloEmail(candidate)}>
+                Revelar email
+              </Button>
+            </div>
+          ))}
+          <p className="text-[10px] text-amber-700">“Revelar email” puede consumir créditos. No se solicitan teléfonos.</p>
+        </div>
       )}
 
       {contacts.length > 0 ? (

@@ -15,12 +15,14 @@ export async function finalizeApolloUsage(
   usageId: string,
   status: "MATCHED" | "NO_MATCH" | "FAILED",
   providerRecordId?: string,
-  errorCode?: string
+  errorCode?: string,
+  estimatedCredits: number = 1
 ) {
   const { error } = await (createAdminClient().from("apollo_usage_log") as any).update({
     status,
     provider_record_id: providerRecordId || null,
     error_code: errorCode || null,
+    estimated_credits: Math.max(0, estimatedCredits),
     completed_at: new Date().toISOString(),
   }).eq("id", usageId);
   if (error) console.error(`[ApolloBudget] Unable to finalize usage ${usageId}: ${error.message}`);

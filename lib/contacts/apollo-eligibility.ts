@@ -28,6 +28,7 @@ const DECISION_MAKER_TERMS = [
   "head of production", "executive producer", "post production producer",
   "post-production producer", "post production supervisor", "post-production supervisor",
   "production manager", "line producer", "director of production", "head of content",
+  "managing director", "founder producer", "founder & producer", "founder / producer",
 ];
 
 const SENIORITY_TERMS = ["owner", "founder", "c-suite", "executive", "director", "head", "vp"];
@@ -74,7 +75,7 @@ export function evaluateApolloEligibility(
   }
 
   const classification = normalize(`${company.data_classification || ""} ${company.provenance_type || ""}`);
-  if (containsAny(classification, ["unverified", "inferred", "generated", "demo", "seed"])) {
+  if (containsAny(classification, ["unverified", "inferred", "generated", "demo"])) {
     return { eligible: false, reason: "La empresa todavía no está verificada como entidad real.", people: [] };
   }
 
@@ -88,13 +89,12 @@ export function evaluateApolloEligibility(
   }
 
   const decisionMakers = rankApolloDecisionMakers(people).slice(0, 3);
-  if (decisionMakers.length === 0) {
-    return { eligible: false, reason: "No hay un decisor de producción válido asociado a esta productora.", people: [] };
-  }
 
   return {
     eligible: true,
-    reason: `${decisionMakers.length} decisor(es) prioritario(s) disponibles para enriquecimiento.`,
+    reason: decisionMakers.length
+      ? `${decisionMakers.length} decisor(es) conocidos; Apollo puede buscar más por dominio.`
+      : "Dominio y clasificación válidos; Apollo puede buscar decisores sin consumir créditos.",
     people: decisionMakers,
   };
 }
