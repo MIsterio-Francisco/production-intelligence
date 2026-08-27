@@ -4,21 +4,16 @@ import { isAuthenticatedUser } from "@/lib/security/internal-auth";
 import { evaluateApolloEligibility, isApolloDecisionMaker } from "@/lib/contacts/apollo-eligibility";
 import { enrichPersonWithApollo, searchApolloDecisionMakers } from "@/lib/contacts/apollo-client";
 import { isValidEmailSyntax, normalizeEmail } from "@/lib/contacts/email-policy";
+import { resolveContactCompany } from "@/lib/contacts/resolve-company-record";
 
 function domainOf(websiteUrl: string) {
   return new URL(websiteUrl).hostname.replace(/^www\./, "");
 }
 
-async function loadCompany(id: string) {
-  return (createAdminClient().from("companies") as any)
-    .select("id, website_url, company_type, data_classification, provenance_type, company_categories(category)")
-    .eq("id", id).single();
-}
-
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAuthenticatedUser())) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   const { id } = await params;
-  const { data: company } = await loadCompany(id);
+  const company = await resolveContactCompany(id);
   if (!company) return NextResponse.json({ error: "Company not found." }, { status: 404 });
   const eligibility = evaluateApolloEligibility(company as any, []);
   if (!eligibility.eligible) return NextResponse.json({ error: eligibility.reason }, { status: 422 });
@@ -32,11 +27,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAuthenticatedUser())) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const { id: companyId } = await params;
+  const { id: companyReference } = await params;
   const body = await request.json().catch(() => ({}));
   if (typeof body.candidateId !== "string") return NextResponse.json({ error: "Apollo candidate is required." }, { status: 400 });
-  const { data: company } = await loadCompany(companyId);
+  const company = await resolveContactCompany(companyReference);
   if (!company) return NextResponse.json({ error: "Company not found." }, { status: 404 });
+  const companyId = company.id as string;
   const eligibility = evaluateApolloEligibility(company as any, []);
   if (!eligibility.eligible) return NextResponse.json({ error: eligibility.reason }, { status: 422 });
 

@@ -4,20 +4,16 @@ import { isAuthenticatedUser } from "@/lib/security/internal-auth";
 import { enrichCompanyContacts } from "@/lib/contacts/contact-enrichment-service";
 import { isContactableEmail } from "@/types/contact-email";
 import { evaluateApolloEligibility } from "@/lib/contacts/apollo-eligibility";
+import { resolveContactCompany } from "@/lib/contacts/resolve-company-record";
 
 async function loadApolloCandidates(supabase: ReturnType<typeof createAdminClient>, companyId: string) {
-  const [{ data: company }, { data: peopleRows }] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("id, website_url, company_type, data_classification, provenance_type, company_categories(category)")
-      .eq("id", companyId)
-      .single(),
-    supabase
-      .from("company_people")
-      .select("role, seniority, people(id, full_name, job_title)")
-      .eq("company_id", companyId)
-      .eq("is_current", true),
-  ]);
+  const company = await resolveContactCompany(companyId);
+  if (!company) return { company: null, people: [] };
+  const { data: peopleRows } = await (supabase
+    .from("company_people") as any)
+    .select("role, seniority, people(id, full_name, job_title)")
+    .eq("company_id", company.id)
+    .eq("is_current", true);
   const people = (peopleRows || []).flatMap((row: any) => row.people ? [{
     ...row.people,
     role: row.role,
@@ -36,9 +32,11 @@ export async function GET(
 
   const { id } = await params;
   const supabase = createAdminClient();
+  const company = await resolveContactCompany(id);
+  const resolvedId = company?.id || id;
   const { data, error } = await (supabase.from("contact_emails") as any)
     .select("*")
-    .eq("company_id", id)
+    .eq("company_id", resolvedId)
     .order("last_checked_at", { ascending: false });
 
   if (error) return NextResponse.json({ data: null, error: error.message }, { status: 500 });
@@ -50,7 +48,9 @@ export async function GET(
       lastCheckedAt: row.last_checked_at,
     }),
   }));
-  const candidates = await loadApolloCandidates(supabase, id);
+  const candidates = company
+    ? await loadApolloCandidates(supabase, resolvedId)
+    : { company: null, people: [] };
   const eligibility = candidates.company
     ? evaluateApolloEligibility(candidates.company as any, candidates.people)
     : { eligible: false, reason: "Company not found.", people: [] };
