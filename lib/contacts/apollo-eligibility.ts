@@ -79,12 +79,18 @@ export function evaluateApolloEligibility(
     return { eligible: false, reason: "La empresa todavía no está verificada como entidad real.", people: [] };
   }
 
-  const categories = (company.company_categories || []).map((item) => item.category).join(" ");
-  const companyIdentity = normalize(`${company.company_type || ""} ${categories}`);
-  if (containsAny(companyIdentity, EXCLUDED_COMPANY_TERMS)) {
+  const companyType = normalize(company.company_type);
+  const categories = normalize((company.company_categories || []).map((item) => item.category).join(" "));
+  const companyIdentity = normalize(`${companyType} ${categories}`);
+  // A production company can also offer post-production. Only block it when the
+  // primary company type is a supplier, or when no production identity exists.
+  if (containsAny(companyType, EXCLUDED_COMPANY_TERMS)) {
     return { eligible: false, reason: "Apollo está bloqueado para estudios de postproducción y otros proveedores.", people: [] };
   }
   if (!containsAny(companyIdentity, PRODUCTION_COMPANY_TERMS)) {
+    if (containsAny(companyIdentity, EXCLUDED_COMPANY_TERMS)) {
+      return { eligible: false, reason: "Apollo está bloqueado para estudios de postproducción y otros proveedores.", people: [] };
+    }
     return { eligible: false, reason: "La empresa no está clasificada como productora de cine o televisión.", people: [] };
   }
 

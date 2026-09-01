@@ -142,7 +142,7 @@ export default async function CompanyProfilePage({ params, searchParams }: Compa
                 <SaveCompanyButton companyId={company.id} />
               </div>
 
-              <VerifiedContactEmails companyId={company.id} />
+              <VerifiedContactEmails companyId={company.slug || company.id} />
             </div>
 
             {/* SCORE HEADER CARDS WITH CONFIDENCE & VERSION (PRD Section 30) */}

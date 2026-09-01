@@ -11,9 +11,10 @@ const COMPANY_SELECT =
  */
 export async function resolveContactCompany(reference: string) {
   const supabase = createAdminClient();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(reference);
   const existing = await (supabase.from("companies") as any)
     .select(COMPANY_SELECT)
-    .eq("id", reference)
+    .eq(isUuid ? "id" : "slug", reference)
     .maybeSingle();
   if (existing.data) return existing.data;
 
