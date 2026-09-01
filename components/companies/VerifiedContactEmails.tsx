@@ -30,6 +30,18 @@ interface ApolloCandidate {
   organizationName?: string;
 }
 
+async function readApiPayload(response: Response) {
+  const body = await response.text();
+  if (!body.trim()) {
+    throw new Error(`El servidor no devolvió detalles (HTTP ${response.status}). Revisa los logs de la función en Netlify.`);
+  }
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error(`El servidor devolvió una respuesta no válida (HTTP ${response.status}).`);
+  }
+}
+
 export function VerifiedContactEmails({ companyId }: { companyId: string }) {
   const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,11 +53,11 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
   const loadContacts = useCallback(async () => {
     const response = await fetch(`/api/v1/companies/${companyId}/contacts`);
     if (!response.ok) return;
-    const payload = await response.json();
+    const payload = await readApiPayload(response);
     setContacts(payload.data || []);
     setApolloEligibility(payload.apolloEligibility || null);
     const budgetResponse = await fetch("/api/v1/apollo/budget", { cache: "no-store" });
-    if (budgetResponse.ok) setApolloBudget((await budgetResponse.json()).data || null);
+    if (budgetResponse.ok) setApolloBudget((await readApiPayload(budgetResponse)).data || null);
   }, [companyId]);
 
   useEffect(() => {
@@ -63,7 +75,7 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ includeApollo }),
       });
-      const payload = await response.json();
+      const payload = await readApiPayload(response);
       if (!response.ok) throw new Error(payload.error || "Contact enrichment failed");
       setMessage(includeApollo
         ? `Apollo: ${payload.data.apolloVerified} verificados; ${payload.data.apolloUnverified} no contactables.`
@@ -81,7 +93,7 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
     setMessage(null);
     try {
       const response = await fetch(`/api/v1/companies/${companyId}/apollo-candidates`, { cache: "no-store" });
-      const payload = await response.json();
+      const payload = await readApiPayload(response);
       if (!response.ok) throw new Error(payload.error || "No se pudo buscar en Apollo.");
       setApolloCandidates(payload.data || []);
       setMessage(payload.data?.length
@@ -103,7 +115,7 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ candidateId: candidate.id }),
       });
-      const payload = await response.json();
+      const payload = await readApiPayload(response);
       if (!response.ok) throw new Error(payload.error || "No se pudo enriquecer el contacto.");
       setMessage(payload.data.status === "NO_EMAIL"
         ? `Apollo no devolvió un email para ${candidate.name}.`

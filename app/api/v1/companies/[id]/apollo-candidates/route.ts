@@ -13,7 +13,12 @@ function domainOf(websiteUrl: string) {
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAuthenticatedUser())) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   const { id } = await params;
-  const company = await resolveContactCompany(id);
+  let company;
+  try {
+    company = await resolveContactCompany(id);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to resolve company record." }, { status: 500 });
+  }
   if (!company) return NextResponse.json({ error: "Company not found." }, { status: 404 });
   const eligibility = evaluateApolloEligibility(company as any, []);
   if (!eligibility.eligible) return NextResponse.json({ error: eligibility.reason }, { status: 422 });
@@ -30,7 +35,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id: companyReference } = await params;
   const body = await request.json().catch(() => ({}));
   if (typeof body.candidateId !== "string") return NextResponse.json({ error: "Apollo candidate is required." }, { status: 400 });
-  const company = await resolveContactCompany(companyReference);
+  let company;
+  try {
+    company = await resolveContactCompany(companyReference);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to resolve company record." }, { status: 500 });
+  }
   if (!company) return NextResponse.json({ error: "Company not found." }, { status: 404 });
   const companyId = company.id as string;
   const eligibility = evaluateApolloEligibility(company as any, []);

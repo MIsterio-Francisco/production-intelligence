@@ -32,7 +32,15 @@ export async function GET(
 
   const { id } = await params;
   const supabase = createAdminClient();
-  const company = await resolveContactCompany(id);
+  let company;
+  try {
+    company = await resolveContactCompany(id);
+  } catch (error) {
+    return NextResponse.json({
+      data: null,
+      error: error instanceof Error ? error.message : "Unable to resolve company record.",
+    }, { status: 500 });
+  }
   const resolvedId = company?.id || id;
   const { data, error } = await (supabase.from("contact_emails") as any)
     .select("*")
@@ -74,7 +82,16 @@ export async function POST(
   const includeApollo = body.includeApollo === true;
   const supabase = createAdminClient();
 
-  const { company, people } = await loadApolloCandidates(supabase, id);
+  let company;
+  let people;
+  try {
+    ({ company, people } = await loadApolloCandidates(supabase, id));
+  } catch (error) {
+    return NextResponse.json({
+      data: null,
+      error: error instanceof Error ? error.message : "Unable to resolve company record.",
+    }, { status: 500 });
+  }
   if (!company) return NextResponse.json({ data: null, error: "Company not found." }, { status: 404 });
 
   try {
