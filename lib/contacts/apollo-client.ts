@@ -19,15 +19,37 @@ export interface ApolloDecisionMakerCandidate {
 const TARGET_TITLES = [
   "head of production", "director of production", "executive producer",
   "post production producer", "post production supervisor", "managing director",
-  "founder producer",
+  "founder producer", "producer", "production executive", "head producer",
 ];
 
 function apolloHeaders(apiKey: string) {
   return {
     "Content-Type": "application/json",
+    "Accept": "application/json",
     "Cache-Control": "no-cache",
     "x-api-key": apiKey,
   };
+}
+
+async function apolloApiError(response: Response, operation: "search" | "enrichment"): Promise<Error> {
+  let providerMessage = "";
+  try {
+    const payload = await response.json();
+    providerMessage = String(payload?.error || payload?.message || payload?.error_message || "").trim();
+  } catch {
+    providerMessage = "";
+  }
+  if (response.status === 401) {
+    return new Error("Apollo rechazó APOLLO_API_KEY (401). Revisa que la clave de Netlify sea la clave activa completa.");
+  }
+  if (response.status === 403) {
+    const endpoint = operation === "search" ? "api/v1/mixed_people/api_search" : "api/v1/people/match";
+    return new Error(`Apollo no autoriza ${endpoint} (403). Activa ese endpoint en la clave API; las cuentas gratuitas deben usar un email profesional.${providerMessage ? ` Apollo: ${providerMessage}` : ""}`);
+  }
+  if (response.status === 429) {
+    return new Error("Apollo ha limitado temporalmente las solicitudes (429). Espera unos minutos antes de repetir.");
+  }
+  return new Error(`Apollo ${operation === "search" ? "people search" : "enrichment"} falló (HTTP ${response.status})${providerMessage ? `: ${providerMessage}` : "."}`);
 }
 
 export async function searchApolloDecisionMakers(companyDomain: string): Promise<ApolloDecisionMakerCandidate[]> {
@@ -47,7 +69,7 @@ export async function searchApolloDecisionMakers(companyDomain: string): Promise
     signal: AbortSignal.timeout(10_000),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`Apollo people search failed with HTTP ${response.status}`);
+  if (!response.ok) throw await apolloApiError(response, "search");
   const payload = await response.json();
   return (payload.people || []).flatMap((person: any) => {
     if (!person?.id || !person?.name || !person?.title) return [];
@@ -89,7 +111,7 @@ export async function enrichPersonWithApollo(input: {
 
   if (!response.ok) {
     await finalizeApolloUsage(usageId, "FAILED", undefined, `HTTP_${response.status}`, 0);
-    throw new Error(`Apollo enrichment failed with HTTP ${response.status}`);
+    throw await apolloApiError(response, "enrichment");
   }
   const payload = await response.json();
   const person = payload.person;

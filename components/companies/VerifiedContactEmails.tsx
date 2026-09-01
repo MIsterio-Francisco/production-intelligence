@@ -86,7 +86,7 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
       setApolloCandidates(payload.data || []);
       setMessage(payload.data?.length
         ? `${payload.data.length} decisor(es) encontrados. La búsqueda no consume créditos.`
-        : "Apollo no encontró decisores con los cargos prioritarios para este dominio.");
+        : "Apollo aceptó la consulta, pero no encontró cargos de producción para el dominio oficial. No se consumieron créditos; puede que Apollo tenga la empresa registrada con otro dominio.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudo buscar en Apollo.");
     } finally {
