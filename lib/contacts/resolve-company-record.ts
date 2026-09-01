@@ -2,7 +2,7 @@ import { SEED_COMPANIES_FALLBACK } from "@/lib/services/company-service";
 import { createAdminClient } from "@/lib/supabase/server";
 
 const COMPANY_SELECT =
-  "id, website_url, company_type, data_classification, provenance_type, company_categories(category)";
+  "id, website_url, description, company_type, data_classification, provenance_type, company_categories(category)";
 
 /**
  * Resolves both real Supabase UUIDs and the legacy catalog IDs used by fallback

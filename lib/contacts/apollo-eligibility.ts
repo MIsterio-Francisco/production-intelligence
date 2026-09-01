@@ -1,5 +1,6 @@
 export interface ApolloCompanyCandidate {
   website_url: string | null;
+  description?: string | null;
   company_type?: string | null;
   data_classification?: string | null;
   provenance_type?: string | null;
@@ -81,7 +82,7 @@ export function evaluateApolloEligibility(
 
   const companyType = normalize(company.company_type);
   const categories = normalize((company.company_categories || []).map((item) => item.category).join(" "));
-  const companyIdentity = normalize(`${companyType} ${categories}`);
+  const companyIdentity = normalize(`${companyType} ${categories} ${company.description || ""}`);
   // A production company can also offer post-production. Only block it when the
   // primary company type is a supplier, or when no production identity exists.
   if (containsAny(companyType, EXCLUDED_COMPANY_TERMS)) {
