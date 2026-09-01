@@ -29,7 +29,8 @@ const DECISION_MAKER_TERMS = [
   "head of production", "executive producer", "post production producer",
   "post-production producer", "post production supervisor", "post-production supervisor",
   "production manager", "line producer", "director of production", "head of content",
-  "managing director", "founder producer", "founder & producer", "founder / producer",
+  "production executive", "head producer", "producer", "managing director",
+  "founder producer", "founder & producer", "founder / producer",
 ];
 
 const SENIORITY_TERMS = ["owner", "founder", "c-suite", "executive", "director", "head", "vp"];

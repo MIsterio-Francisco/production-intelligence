@@ -22,6 +22,11 @@ const TARGET_TITLES = [
   "founder producer", "producer", "production executive", "head producer",
 ];
 
+const PRODUCTION_TITLE_TERMS = [
+  "production", "producer", "producción", "productor", "executive producer",
+  "managing director", "founder", "co-founder", "studio head", "head producer",
+];
+
 function apolloHeaders(apiKey: string) {
   return {
     "Content-Type": "application/json",
@@ -55,23 +60,36 @@ async function apolloApiError(response: Response, operation: "search" | "enrichm
 export async function searchApolloDecisionMakers(companyDomain: string): Promise<ApolloDecisionMakerCandidate[]> {
   const apiKey = process.env.APOLLO_API_KEY;
   if (!apiKey) throw new Error("APOLLO_API_KEY is not configured");
-  const url = new URL("https://api.apollo.io/api/v1/mixed_people/api_search");
-  TARGET_TITLES.forEach((title) => url.searchParams.append("person_titles[]", title));
-  ["owner", "founder", "c_suite", "vp", "head", "director", "manager"].forEach((seniority) =>
-    url.searchParams.append("person_seniorities[]", seniority));
-  url.searchParams.append("q_organization_domains_list[]", companyDomain);
-  url.searchParams.set("include_similar_titles", "true");
-  url.searchParams.set("page", "1");
-  url.searchParams.set("per_page", "10");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: apolloHeaders(apiKey),
-    signal: AbortSignal.timeout(10_000),
-    cache: "no-store",
-  });
-  if (!response.ok) throw await apolloApiError(response, "search");
-  const payload = await response.json();
-  return (payload.people || []).flatMap((person: any) => {
+  const runSearch = async (includeTitles: boolean) => {
+    const url = new URL("https://api.apollo.io/api/v1/mixed_people/api_search");
+    if (includeTitles) TARGET_TITLES.forEach((title) => url.searchParams.append("person_titles[]", title));
+    ["owner", "founder", "c_suite", "vp", "head", "director", "manager"].forEach((seniority) =>
+      url.searchParams.append("person_seniorities[]", seniority));
+    url.searchParams.append("q_organization_domains_list[]", companyDomain);
+    url.searchParams.set("include_similar_titles", "true");
+    url.searchParams.set("page", "1");
+    url.searchParams.set("per_page", includeTitles ? "10" : "25");
+    const response = await fetch(url, {
+      method: "POST",
+      headers: apolloHeaders(apiKey),
+      signal: AbortSignal.timeout(10_000),
+      cache: "no-store",
+    });
+    if (!response.ok) throw await apolloApiError(response, "search");
+    return response.json();
+  };
+
+  let payload = await runSearch(true);
+  let people = payload.people || [];
+  if (people.length === 0) {
+    payload = await runSearch(false);
+    people = (payload.people || []).filter((person: any) => {
+      const title = String(person?.title || "").toLowerCase();
+      return PRODUCTION_TITLE_TERMS.some((term) => title.includes(term));
+    });
+  }
+
+  return people.flatMap((person: any) => {
     if (!person?.id || !person?.name || !person?.title) return [];
     return [{
       id: String(person.id),
