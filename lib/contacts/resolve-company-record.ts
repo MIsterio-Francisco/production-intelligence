@@ -31,6 +31,25 @@ export async function resolveContactCompany(reference: string) {
     .maybeSingle();
   if (restored.data) return restored.data;
 
+  // Older catalogue restores may have generated a different slug. Reuse the
+  // canonical company selected by the importer's name/domain deduplication.
+  const sameName = await (supabase.from("companies") as any)
+    .select(COMPANY_SELECT)
+    .ilike("name", legacy.name)
+    .limit(1)
+    .maybeSingle();
+  if (sameName.data) return sameName.data;
+
+  if (legacy.website_url) {
+    const domain = new URL(legacy.website_url).hostname.replace(/^www\./, "");
+    const sameDomain = await (supabase.from("companies") as any)
+      .select(COMPANY_SELECT)
+      .ilike("website_url", `%${domain}%`)
+      .limit(1)
+      .maybeSingle();
+    if (sameDomain.data) return sameDomain.data;
+  }
+
   const row = {
     name: legacy.name,
     slug: legacy.slug,
