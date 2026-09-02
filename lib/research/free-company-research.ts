@@ -39,13 +39,11 @@ function companyNameFromTitle(title: string, url: URL) {
 
 async function searchTavilyCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
-  if (!apiKey) return [];
+  if (!apiKey) throw new Error("Tavily no está configurado en este despliegue (falta TAVILY_API_KEY). Vuelve a desplegar Netlify después de guardar la variable.");
   const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
   const market = normalizedCountry ? TAVILY_COUNTRIES[normalizedCountry] || normalizedCountry : "global";
   const userIntent = query.trim() || "film television TV commercial production companies producers";
-  const companyIntent = "film production company OR television production company OR commercial film production OR TVC production house";
-  const roleIntent = "Head of Production OR Production Director OR Executive Producer OR Managing Director OR Line Producer OR Jefe de Producción OR Productor Ejecutivo";
-  const searchQuery = `${userIntent} ${market} official website (${companyIntent}) team (${roleIntent}) -post-production -equipment -rental -software`;
+  const searchQuery = `${userIntent} in ${market} film production companies television producers commercial production houses TVC official websites decision makers production team`;
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -73,10 +71,9 @@ async function searchTavilyCompanies(query: string, countryCode?: string): Promi
     try { url = new URL(row.url); } catch { return []; }
     if (!/^https?:$/.test(url.protocol)) return [];
     const evidence = `${row.title || ""} ${row.content || ""}`;
-    const productionRelevant = /(film|cine|cinema|television|\btv\b|tvc|commercial production|production house|audiovisual|productora|production company|producciones|producers?)/i.test(evidence);
     const providerLed = /(post.?production|color grading|camera rental|equipment rental|software|marketing agency|animation service|vfx studio)/i.test(evidence) &&
       !/(film production company|television production company|commercial production|production house|productora cinematogr|productora audiovisual)/i.test(evidence);
-    if (!productionRelevant || providerLed) return [];
+    if (providerLed) return [];
     const officialWebsiteUrl = `${url.origin}/`;
     return [{
       externalId: `tavily:${url.hostname}:${index}`,
@@ -191,6 +188,10 @@ export async function researchExternalCompanies(query: string, countryCode?: str
   }
   const settled = await Promise.allSettled(tasks);
   const rawResults = settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
+  const tavilyAttempt = settled[0];
+  if (tavilyAttempt?.status === "rejected" && rawResults.length === 0) {
+    throw tavilyAttempt.reason instanceof Error ? tavilyAttempt.reason : new Error("Tavily no pudo completar la búsqueda.");
+  }
   const canonicalName = (name: string) => name.toLocaleLowerCase()
     .replace(/\b(incorporated|corporation|company|productions?|pictures|studios?|inc|llc|ltd)\b/g, "")
     .replace(/[^a-z0-9]+/g, "")

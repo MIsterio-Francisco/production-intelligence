@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Globe2, Search, UserRound } from "lucide-react";
+import { BookmarkPlus, Globe2, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ export function ExternalCompanyResearch() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
   const sourceLabels: Record<ExternalCompanyResult["source"], string> = {
     TAVILY: "Tavily · web candidata",
     WIKIDATA: "Wikidata",
@@ -32,6 +34,7 @@ export function ExternalCompanyResearch() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "No se pudo investigar.");
       setResults(payload.data || []);
+      setSelected(new Set());
       if (!payload.data?.length) setMessage("No se encontraron candidatas. Prueba términos más concretos o cambia el país.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudo investigar.");
@@ -40,28 +43,40 @@ export function ExternalCompanyResearch() {
     }
   }
 
-  async function saveCandidate(result: ExternalCompanyResult) {
-    if (!result.officialWebsiteUrl) return;
+  async function saveCandidates(candidates: ExternalCompanyResult[]) {
+    const eligible = candidates.filter((result) => result.officialWebsiteUrl && !saved.has(`${result.source}:${result.externalId}`));
+    if (!eligible.length) return;
+    setSaving(true);
     setMessage(null);
-    const response = await fetch("/api/v1/internal/company-intake/candidates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ candidates: [{
-        name: result.name,
-        officialWebsiteUrl: result.officialWebsiteUrl,
-        discoverySourceUrl: result.sourceUrl,
-        discoverySourceType: result.source,
-        countryCode: result.countryCode,
-      }] }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      setMessage(payload.error || "No se pudo guardar la candidata.");
-      return;
+    try {
+      const response = await fetch("/api/v1/internal/company-intake/candidates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidates: eligible.map((result) => ({
+          name: result.name,
+          officialWebsiteUrl: result.officialWebsiteUrl,
+          discoverySourceUrl: result.sourceUrl,
+          discoverySourceType: result.source,
+          countryCode: result.countryCode,
+        })) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No se pudieron guardar las candidatas.");
+      const keys = eligible.map((result) => `${result.source}:${result.externalId}`);
+      setSaved((current) => new Set([...current, ...keys]));
+      setSelected((current) => new Set([...current].filter((key) => !keys.includes(key))));
+      setMessage(payload.data.length
+        ? `${payload.data.length} candidata/s guardada/s para verificar su web oficial.`
+        : "Las empresas seleccionadas ya estaban guardadas o existen en el catálogo.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No se pudieron guardar las candidatas.");
+    } finally {
+      setSaving(false);
     }
-    setSaved((current) => new Set(current).add(`${result.source}:${result.externalId}`));
-    setMessage(payload.data.length ? "Candidata guardada para verificar su web oficial." : "La empresa ya estaba en la cola.");
   }
+
+  const selectableResults = results.filter((result) => result.officialWebsiteUrl && !saved.has(`${result.source}:${result.externalId}`));
+  const selectedResults = selectableResults.filter((result) => selected.has(`${result.source}:${result.externalId}`));
 
   return (
     <section className="rounded-lg border border-accent/25 bg-card p-4 space-y-4">
@@ -81,12 +96,35 @@ export function ExternalCompanyResearch() {
       </div>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
       {results.length > 0 && (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/30 p-2">
+            <Button type="button" size="sm" variant="outline" disabled={!selectableResults.length || saving} onClick={() => {
+              const allSelected = selectableResults.every((result) => selected.has(`${result.source}:${result.externalId}`));
+              setSelected(allSelected ? new Set() : new Set(selectableResults.map((result) => `${result.source}:${result.externalId}`)));
+            }}>
+              {selectableResults.length > 0 && selectableResults.every((result) => selected.has(`${result.source}:${result.externalId}`)) ? "Deseleccionar todas" : "Seleccionar todas"}
+            </Button>
+            <Button type="button" size="sm" disabled={!selectedResults.length || saving} onClick={() => void saveCandidates(selectedResults)}>
+              <BookmarkPlus className="mr-1 h-4 w-4" /> {saving ? "Guardando…" : `Guardar candidata/s (${selectedResults.length})`}
+            </Button>
+            <span className="text-[11px] text-muted-foreground">Se omiten automáticamente empresas duplicadas por dominio o nombre.</span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
           {results.map((result) => {
             const key = `${result.source}:${result.externalId}`;
             return (
               <article key={key} className="rounded-md border border-border p-3 space-y-2">
-                <div className="flex justify-between gap-2"><strong className="text-sm">{result.name}</strong><Badge variant="outline">{sourceLabels[result.source]}</Badge></div>
+                <div className="flex justify-between gap-2">
+                  <label className="flex items-start gap-2">
+                    <input type="checkbox" className="mt-0.5 h-4 w-4 accent-current" checked={selected.has(key)} disabled={!result.officialWebsiteUrl || saved.has(key) || saving} onChange={(event) => setSelected((current) => {
+                      const next = new Set(current);
+                      if (event.target.checked) next.add(key); else next.delete(key);
+                      return next;
+                    })} />
+                    <strong className="text-sm">{result.name}</strong>
+                  </label>
+                  <Badge variant="outline">{sourceLabels[result.source]}</Badge>
+                </div>
                 <p className="text-[11px] text-muted-foreground">{result.countryName || result.countryCode || "País no indicado"} · {result.evidence}</p>
                 {result.productionSignal && (
                   <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-900">
@@ -104,12 +142,13 @@ export function ExternalCompanyResearch() {
                   </a>
                 ))}
                 <a className="block text-[11px] text-muted-foreground underline" href={result.sourceUrl} target="_blank" rel="noreferrer">Ver fuente y evidencia</a>
-                <Button size="sm" variant="outline" disabled={!result.officialWebsiteUrl || saved.has(key)} onClick={() => saveCandidate(result)}>
+                <Button size="sm" variant="outline" disabled={!result.officialWebsiteUrl || saved.has(key) || saving} onClick={() => void saveCandidates([result])}>
                   {saved.has(key) ? "Guardada" : "Guardar candidata"}
                 </Button>
               </article>
             );
           })}
+          </div>
         </div>
       )}
     </section>
