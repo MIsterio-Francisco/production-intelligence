@@ -37,7 +37,7 @@ export async function GET(
   });
 }
 
-export async function POST(
+async function createManualPerson(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -158,4 +158,17 @@ export async function POST(
   }
 
   return NextResponse.json({ data: { personId, emailSaved: Boolean(rawEmail) }, error: null });
+}
+
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    return await createManualPerson(request, context);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No se pudo guardar la persona investigada.";
+    console.error("[ManualPeople] Unable to save researched person:", message);
+    return NextResponse.json({ data: null, error: message }, { status: 500 });
+  }
 }
