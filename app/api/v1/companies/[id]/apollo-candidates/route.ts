@@ -55,13 +55,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const supabase = createAdminClient();
-    let personQuery = (supabase.from("people") as any).select("id").eq("full_name", candidate.name);
-    personQuery = candidate.linkedinUrl ? personQuery.eq("linkedin_url", candidate.linkedinUrl) : personQuery.eq("job_title", candidate.title);
-    let { data: person } = await personQuery.maybeSingle();
+    const { data: linkedPeople } = await (supabase.from("company_people") as any)
+      .select("person_id, role, people(id, full_name, linkedin_url)")
+      .eq("company_id", companyId);
+    const existingLink = (linkedPeople || []).find((row: any) => {
+      const linkedPerson = row.people;
+      if (!linkedPerson || linkedPerson.full_name !== candidate.name) return false;
+      return candidate.linkedinUrl
+        ? linkedPerson.linkedin_url === candidate.linkedinUrl
+        : row.role === candidate.title;
+    });
+    let person = existingLink?.people || null;
     if (!person) {
       const inserted = await (supabase.from("people") as any).insert({
         full_name: candidate.name,
-        job_title: candidate.title,
         linkedin_url: candidate.linkedinUrl || null,
         provenance_type: "APOLLO_SEARCH",
       } as any).select("id").single();

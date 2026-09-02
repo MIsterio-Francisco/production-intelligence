@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, RefreshCw, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Download, Mail, RefreshCw, ShieldCheck, UserPlus, X } from "lucide-react";
 
 interface ContactRow {
   id: string;
@@ -33,7 +33,6 @@ interface ApolloCandidate {
 interface CompanyPerson {
   id: string;
   full_name: string;
-  job_title?: string | null;
   role?: string | null;
   linkedin_url?: string | null;
   research_source_url?: string | null;
@@ -182,7 +181,14 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
           <p className="text-xs font-bold flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-accent" /> Contactos con procedencia</p>
           <p className="text-[10px] text-muted-foreground">Solo VERIFIED y PUBLIC pueden marcarse como contactables.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/api/v1/contacts/export"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+            title="Exportar todos los contactos de empresas"
+          >
+            <Download className="mr-1 h-3.5 w-3.5" /> CSV
+          </a>
           <Button size="sm" variant="outline" disabled={loading} onClick={() => setShowManualPerson((value) => !value)}>
             {showManualPerson ? <X className="h-3.5 w-3.5 mr-1" /> : <UserPlus className="h-3.5 w-3.5 mr-1" />}
             {showManualPerson ? "Cancelar" : "Añadir persona"}
@@ -295,7 +301,7 @@ export function VerifiedContactEmails({ companyId }: { companyId: string }) {
           <p className="text-[10px] font-bold uppercase text-muted-foreground">Personas asociadas ({people.length})</p>
           {people.map((person) => (
             <div key={person.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-1.5 text-xs">
-              <span><strong>{person.full_name}</strong> · {person.role || person.job_title || "Cargo sin especificar"}</span>
+              <span><strong>{person.full_name}</strong> · {person.role || "Cargo sin especificar"}</span>
               <div className="flex gap-2 text-[10px] text-muted-foreground">
                 {person.linkedin_url && <a href={person.linkedin_url} target="_blank" rel="noreferrer" className="underline">LinkedIn</a>}
                 {person.research_source_url && <a href={person.research_source_url} target="_blank" rel="noreferrer" className="underline">Fuente</a>}

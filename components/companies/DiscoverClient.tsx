@@ -135,9 +135,9 @@ export function DiscoverClient({
           <a
             href="/api/v1/contacts/export"
             className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-            title="Exporta únicamente emails VERIFIED y PUBLIC con su procedencia"
+            title="Exporta empresas, personas verificadas o manuales y emails con procedencia"
           >
-            <Download className="mr-1 h-3.5 w-3.5" /> Exportar emails CSV
+            <Download className="mr-1 h-3.5 w-3.5" /> Exportar contactos CSV
           </a>
           <Button
             variant={viewMode === "table" ? "primary" : "outline"}

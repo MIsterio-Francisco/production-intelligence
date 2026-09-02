@@ -26,7 +26,7 @@ export async function GET(
   if (!company) return NextResponse.json({ data: null, error: "Company not found." }, { status: 404 });
 
   const { data, error } = await (createAdminClient().from("company_people") as any)
-    .select("role, is_current, people(id, full_name, job_title, linkedin_url, provenance_type, research_source_url, research_last_checked_at)")
+    .select("role, is_current, people(id, full_name, linkedin_url, provenance_type, research_source_url, research_last_checked_at)")
     .eq("company_id", company.id)
     .eq("is_current", true);
 
@@ -77,7 +77,7 @@ async function createManualPerson(
   const supabase = createAdminClient();
   const checkedAt = new Date().toISOString();
   const { data: affiliations, error: affiliationsError } = await (supabase.from("company_people") as any)
-    .select("person_id, people(id, full_name, job_title, linkedin_url)")
+    .select("person_id, role, people(id, full_name, linkedin_url)")
     .eq("company_id", company.id);
   if (affiliationsError) throw new Error(affiliationsError.message);
 
@@ -87,13 +87,12 @@ async function createManualPerson(
     if (!person || person.full_name?.trim().toLocaleLowerCase() !== normalizedName) return false;
     return linkedinUrl
       ? person.linkedin_url === linkedinUrl
-      : person.job_title?.trim().toLocaleLowerCase() === jobTitle.toLocaleLowerCase();
+      : row.role?.trim().toLocaleLowerCase() === jobTitle.toLocaleLowerCase();
   })?.people;
 
   let personId = existing?.id as string | undefined;
   if (personId) {
     const { error } = await (supabase.from("people") as any).update({
-      job_title: jobTitle,
       linkedin_url: linkedinUrl || existing.linkedin_url || null,
       linkedin_status: linkedinUrl ? "PUBLIC" : "UNVERIFIED",
       linkedin_source_url: linkedinUrl ? sourceUrl : null,
@@ -107,7 +106,6 @@ async function createManualPerson(
   } else {
     const { data: inserted, error } = await (supabase.from("people") as any).insert({
       full_name: fullName,
-      job_title: jobTitle,
       linkedin_url: linkedinUrl || null,
       linkedin_status: linkedinUrl ? "PUBLIC" : "UNVERIFIED",
       linkedin_source_url: linkedinUrl ? sourceUrl : null,

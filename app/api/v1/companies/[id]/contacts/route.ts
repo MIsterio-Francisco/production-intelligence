@@ -11,7 +11,7 @@ async function loadApolloCandidates(supabase: ReturnType<typeof createAdminClien
   if (!company) return { company: null, people: [] };
   const { data: peopleRows } = await (supabase
     .from("company_people") as any)
-    .select("role, seniority, people(id, full_name, job_title)")
+    .select("role, seniority, people(id, full_name)")
     .eq("company_id", company.id)
     .eq("is_current", true);
   const people = (peopleRows || []).flatMap((row: any) => row.people ? [{
