@@ -81,7 +81,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       role: candidate.title,
       seniority: null,
       is_current: true,
-      confidence: 80,
     } as any, { onConflict: "company_id,person_id,role" });
 
     const match = await enrichPersonWithApollo({

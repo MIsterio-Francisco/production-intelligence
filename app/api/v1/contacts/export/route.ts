@@ -29,7 +29,10 @@ export async function GET() {
   }
 
   const supabase = createAdminClient();
-  const [affiliationsResult, emailsResult] = await Promise.all([
+  const [companiesResult, affiliationsResult, emailsResult] = await Promise.all([
+    (supabase.from("companies") as any)
+      .select("id, name, country_code, country_name, city, website_url")
+      .order("name", { ascending: true }),
     (supabase.from("company_people") as any)
       .select("company_id, person_id, role, is_current, people(id, full_name, provenance_type, research_source_url, linkedin_source_url, research_last_checked_at, linkedin_last_checked_at)")
       .eq("is_current", true),
@@ -39,26 +42,15 @@ export async function GET() {
       .order("last_checked_at", { ascending: false }),
   ]);
 
-  if (affiliationsResult.error || emailsResult.error) {
+  if (companiesResult.error || affiliationsResult.error || emailsResult.error) {
     return NextResponse.json(
-      { error: affiliationsResult.error?.message || emailsResult.error?.message || "Unable to load contacts." },
+      { error: companiesResult.error?.message || affiliationsResult.error?.message || emailsResult.error?.message || "Unable to load contacts." },
       { status: 500 }
     );
   }
 
   const affiliations = (affiliationsResult.data || []).filter((row: any) => row.people && isExportablePerson(row.people));
   const emails = emailsResult.data || [];
-  const companyIds = [...new Set([
-    ...affiliations.map((row: any) => row.company_id),
-    ...emails.map((row: any) => row.company_id),
-  ].filter(Boolean))];
-  const companiesResult = companyIds.length
-    ? await (supabase.from("companies") as any)
-        .select("id, name, country_code, country_name, city, website_url")
-        .in("id", companyIds)
-    : { data: [], error: null };
-  if (companiesResult.error) return NextResponse.json({ error: companiesResult.error.message }, { status: 500 });
-
   const companies = new Map((companiesResult.data || []).map((row: any) => [row.id, row]));
   const genericEmails = new Map<string, any[]>();
   const personEmails = new Map<string, any[]>();
@@ -91,11 +83,11 @@ export async function GET() {
   });
 
   const companiesWithPeople = new Set(affiliations.map((row: any) => row.company_id));
-  for (const [companyId, generic] of genericEmails) {
-    if (companiesWithPeople.has(companyId)) continue;
-    const company: any = companies.get(companyId);
+  for (const company of companiesResult.data || []) {
+    if (companiesWithPeople.has(company.id)) continue;
+    const generic = genericEmails.get(company.id) || [];
     rows.push([
-      company?.name, company?.website_url, company?.country_code, company?.country_name, company?.city,
+      company.name, company.website_url, company.country_code, company.country_name, company.city,
       "", "", "", "", generic.map((row: any) => row.email).join("; "), "", "",
       [...new Set(generic.map((row: any) => row.source_url).filter(Boolean))].join("; "),
       newestDate(generic.map((row: any) => row.last_checked_at)),

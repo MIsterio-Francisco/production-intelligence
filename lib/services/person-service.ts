@@ -52,7 +52,7 @@ export async function getPeople(
 
     let query = supabase
       .from("people")
-      .select("*, company_people(role, seniority, is_current, confidence, companies(id, name, slug, country_code))", { count: "exact" });
+      .select("*, company_people(role, seniority, is_current, companies(id, name, slug, country_code))", { count: "exact" });
 
     if (options.country) {
       query = query.eq("country_code", options.country.toUpperCase());
@@ -60,7 +60,7 @@ export async function getPeople(
 
     if (options.search && options.search.trim()) {
       const s = `%${options.search.trim()}%`;
-      query = query.or(`full_name.ilike.${s},job_title.ilike.${s},bio.ilike.${s},city.ilike.${s}`);
+      query = query.or(`full_name.ilike.${s},bio.ilike.${s},city.ilike.${s}`);
     }
 
     query = query
@@ -73,18 +73,22 @@ export async function getPeople(
       return getFallbackPeople(options, page, limit);
     }
 
-    const formatted = data.map((person: any) => ({
-      ...person,
-      positions: (person.company_people || []).map((cp: any) => ({
+    const formatted = data.map((person: any) => {
+      const positions = (person.company_people || []).map((cp: any) => ({
         company_id: cp.companies?.id,
         company_name: cp.companies?.name,
         company_slug: cp.companies?.slug,
         role: cp.role,
         seniority: cp.seniority,
         is_current: cp.is_current,
-        confidence: cp.confidence,
-      })),
-    }));
+        confidence: 0,
+      }));
+      return {
+        ...person,
+        job_title: positions.find((position: any) => position.is_current)?.role || positions[0]?.role || null,
+        positions,
+      };
+    });
 
     return {
       data: formatted,
@@ -104,7 +108,7 @@ export async function getPersonById(id: string): Promise<PersonWithGraph | null>
 
     const { data: person, error } = await supabase
       .from("people")
-      .select("*, company_people(role, seniority, is_current, confidence, companies(id, name, slug, country_code))")
+      .select("*, company_people(role, seniority, is_current, companies(id, name, slug, country_code))")
       .eq("id", id)
       .single();
 
@@ -129,11 +133,12 @@ export async function getPersonById(id: string): Promise<PersonWithGraph | null>
       role: cp.role,
       seniority: cp.seniority,
       is_current: cp.is_current,
-      confidence: cp.confidence,
+      confidence: 0,
     }));
 
     return {
       ...rawPerson,
+      job_title: formattedPositions.find((position: any) => position.is_current)?.role || formattedPositions[0]?.role || null,
       positions: formattedPositions,
       awards: awardsData || [],
       sources: sourcesData || [],

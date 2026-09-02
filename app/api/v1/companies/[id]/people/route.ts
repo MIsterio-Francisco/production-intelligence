@@ -123,7 +123,6 @@ async function createManualPerson(
     person_id: personId,
     role: jobTitle,
     is_current: true,
-    confidence: 80,
   }, { onConflict: "company_id,person_id,role" });
   if (relationshipError) throw new Error(relationshipError.message);
 
