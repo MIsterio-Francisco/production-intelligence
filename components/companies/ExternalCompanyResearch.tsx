@@ -15,6 +15,7 @@ export function ExternalCompanyResearch() {
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const sourceLabels: Record<ExternalCompanyResult["source"], string> = {
+    TAVILY: "Tavily · web candidata",
     WIKIDATA: "Wikidata",
     CALIFORNIA_FILM_COMMISSION: "California Film Commission",
     NEW_MEXICO_FILM_OFFICE: "New Mexico Film Office",
@@ -31,7 +32,7 @@ export function ExternalCompanyResearch() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "No se pudo investigar.");
       setResults(payload.data || []);
-      if (!payload.data?.length) setMessage("No se encontraron candidatas en las fuentes gratuitas.");
+      if (!payload.data?.length) setMessage("No se encontraron candidatas. Prueba términos más concretos o cambia el país.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudo investigar.");
     } finally {
@@ -66,17 +67,17 @@ export function ExternalCompanyResearch() {
     <section className="rounded-lg border border-accent/25 bg-card p-4 space-y-4">
       <div>
         <h2 className="text-sm font-black uppercase flex items-center gap-2"><Globe2 className="h-4 w-4 text-accent" /> Research libre</h2>
-        <p className="text-xs text-muted-foreground mt-1">Busca fuera de Supabase con fuentes gratuitas. USA combina proyectos aprobados en California y producciones que terminaron fotografía principal en Nuevo México. Sin emails generales ni consumo automático de Apollo.</p>
+        <p className="text-xs text-muted-foreground mt-1">Busca globalmente productoras de cine, TV y publicidad/TVC. Tavily prioriza empresas con señales de Head of Production, Production Director, Executive Producer, Managing Director o cargos equivalentes. Los resultados son candidatos hasta verificar su web; Apollo nunca se ejecuta automáticamente.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_130px_auto]">
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Productora, proyecto o mercado (US)" />
+        <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Ej.: productoras de TVC, ficción, Producers, Head of Production…" />
         <Input value={country} onChange={(event) => setCountry(event.target.value)} maxLength={2} className="uppercase" placeholder="País: AR" />
         <Button onClick={() => void research()} disabled={loading}><Search className="h-4 w-4 mr-1" />{loading ? "Buscando…" : "Buscar fuera"}</Button>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground">Mercados activos:</span>
+        <span className="text-[11px] text-muted-foreground">Búsqueda global activa:</span>
         <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => { setCountry("US"); void research("US"); }}>USA · actividad oficial</Button>
-        <span className="text-[11px] text-muted-foreground">UK y Europa: próximos adaptadores oficiales</span>
+        <span className="text-[11px] text-muted-foreground">Usa ES, PT, GB, US, MX u otro código de país para priorizar el mercado.</span>
       </div>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
       {results.length > 0 && (
@@ -95,7 +96,7 @@ export function ExternalCompanyResearch() {
                   </div>
                 )}
                 {result.officialWebsiteUrl ? (
-                  <a className="text-xs font-semibold text-accent underline break-all" href={result.officialWebsiteUrl} target="_blank" rel="noreferrer">Web oficial</a>
+                  <a className="text-xs font-semibold text-accent underline break-all" href={result.officialWebsiteUrl} target="_blank" rel="noreferrer">{result.source === "TAVILY" ? "Abrir web candidata" : "Web oficial"}</a>
                 ) : <p className="text-xs text-amber-700">Señal oficial encontrada; falta resolver la web oficial antes de guardarla.</p>}
                 {result.decisionMakers.map((person) => (
                   <a key={`${person.sourceUrl}:${person.role}`} href={person.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-foreground hover:text-accent">

@@ -4,7 +4,7 @@ export interface OfficialDecisionMaker {
   sourceUrl: string;
 }
 
-const TARGET_ROLE = /(head of production|director of production|production director|jef[ea] de producci[oó]n|director[ae]? de producci[oó]n|executive producer|productor[ae]? ejecutiv[oa])/i;
+const TARGET_ROLE = /(head of production|director of production|production director|head producer|line producer|managing director|jef[ea] de producci[oó]n|director[ae]? de producci[oó]n|productor[ae]? de l[ií]nea|director[ae]? general|executive producer|productor[ae]? ejecutiv[oa]|diretor[ae]? de produ[cç][aã]o|produtor[ae]? executiv[oa])/i;
 
 function collectJsonPeople(value: unknown, sourceUrl: string, output: OfficialDecisionMaker[]) {
   if (Array.isArray(value)) {

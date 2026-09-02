@@ -9,11 +9,87 @@ export interface ExternalCompanyResult {
   countryCode: string | null;
   countryName: string | null;
   officialWebsiteUrl: string | null;
-  source: "WIKIDATA" | "CALIFORNIA_FILM_COMMISSION" | "NEW_MEXICO_FILM_OFFICE";
+  source: "TAVILY" | "WIKIDATA" | "CALIFORNIA_FILM_COMMISSION" | "NEW_MEXICO_FILM_OFFICE";
   sourceUrl: string;
   evidence: string;
   decisionMakers: Array<{ name: string; role: string; sourceUrl: string }>;
   productionSignal?: ProductionSignal;
+}
+
+const TAVILY_EXCLUDED_DOMAINS = [
+  "wikipedia.org", "imdb.com", "linkedin.com", "facebook.com", "instagram.com",
+  "youtube.com", "x.com", "twitter.com", "vimeo.com", "crunchbase.com",
+  "productionhub.com", "mandy.com", "clutch.co", "sortlist.com",
+];
+
+const TAVILY_COUNTRIES: Record<string, string> = {
+  AR: "argentina", AU: "australia", BE: "belgium", BR: "brazil", CA: "canada",
+  CL: "chile", CO: "colombia", DE: "germany", DK: "denmark", ES: "spain",
+  FI: "finland", FR: "france", GB: "united kingdom", IE: "ireland", IT: "italy",
+  MX: "mexico", NL: "netherlands", NO: "norway", NZ: "new zealand", PL: "poland",
+  PT: "portugal", SE: "sweden", US: "united states",
+};
+
+function companyNameFromTitle(title: string, url: URL) {
+  const cleanTitle = title.split(/\s+[|–—-]\s+/)[0]?.trim();
+  if (cleanTitle && cleanTitle.length >= 2 && cleanTitle.length <= 90) return cleanTitle;
+  return url.hostname.replace(/^www\./, "").split(".")[0].replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+async function searchTavilyCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
+  const apiKey = process.env.TAVILY_API_KEY?.trim();
+  if (!apiKey) return [];
+  const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
+  const market = normalizedCountry ? TAVILY_COUNTRIES[normalizedCountry] || normalizedCountry : "global";
+  const userIntent = query.trim() || "film television TV commercial production companies producers";
+  const companyIntent = "film production company OR television production company OR commercial film production OR TVC production house";
+  const roleIntent = "Head of Production OR Production Director OR Executive Producer OR Managing Director OR Line Producer OR Jefe de Producción OR Productor Ejecutivo";
+  const searchQuery = `${userIntent} ${market} official website (${companyIntent}) team (${roleIntent}) -post-production -equipment -rental -software`;
+  const response = await fetch("https://api.tavily.com/search", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: searchQuery,
+      topic: "general",
+      search_depth: "basic",
+      max_results: 15,
+      include_answer: false,
+      include_raw_content: false,
+      exclude_domains: TAVILY_EXCLUDED_DOMAINS,
+      ...(TAVILY_COUNTRIES[normalizedCountry || ""] ? { country: TAVILY_COUNTRIES[normalizedCountry || ""] } : {}),
+    }),
+    signal: AbortSignal.timeout(12_000),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Tavily returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 180)}` : "."}`);
+  }
+  const payload = await response.json() as { results?: Array<{ title?: string; url?: string; content?: string; score?: number }> };
+  return (payload.results || []).flatMap((row, index) => {
+    if (!row.url) return [];
+    let url: URL;
+    try { url = new URL(row.url); } catch { return []; }
+    if (!/^https?:$/.test(url.protocol)) return [];
+    const evidence = `${row.title || ""} ${row.content || ""}`;
+    const productionRelevant = /(film|cine|cinema|television|\btv\b|tvc|commercial production|production house|audiovisual|productora|production company|producciones|producers?)/i.test(evidence);
+    const providerLed = /(post.?production|color grading|camera rental|equipment rental|software|marketing agency|animation service|vfx studio)/i.test(evidence) &&
+      !/(film production company|television production company|commercial production|production house|productora cinematogr|productora audiovisual)/i.test(evidence);
+    if (!productionRelevant || providerLed) return [];
+    const officialWebsiteUrl = `${url.origin}/`;
+    return [{
+      externalId: `tavily:${url.hostname}:${index}`,
+      name: companyNameFromTitle(row.title || "", url),
+      countryCode: normalizedCountry || null,
+      countryName: TAVILY_COUNTRIES[normalizedCountry || ""] || null,
+      officialWebsiteUrl,
+      source: "TAVILY" as const,
+      sourceUrl: row.url,
+      evidence: (row.content || "Resultado web relacionado con producción de cine o televisión.").slice(0, 300),
+      decisionMakers: [],
+    }];
+  });
 }
 
 export async function searchWikidataCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
@@ -107,6 +183,7 @@ export async function researchExternalCompanies(query: string, countryCode?: str
   const effectiveQuery = querySelectsUnitedStates ? "" : query;
   const normalizedCountry = querySelectsUnitedStates ? "US" : countryCode?.trim().toUpperCase();
   const tasks: Array<Promise<ExternalCompanyResult[]>> = [];
+  tasks.push(searchTavilyCompanies(effectiveQuery, normalizedCountry));
   if (effectiveQuery.trim()) tasks.push(searchWikidataCompanies(effectiveQuery, normalizedCountry));
   if (normalizedCountry === "US") {
     tasks.push(searchCaliforniaApprovedProductions(effectiveQuery));
@@ -137,9 +214,13 @@ export async function researchExternalCompanies(query: string, countryCode?: str
   }).filter((item) => item.source !== "WIKIDATA" || !matchedWikidata.has(item.externalId));
   const seen = new Set<string>();
   return results.filter((item) => {
-    const key = (item.officialWebsiteUrl || item.name).toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
+    let domainKey = "";
+    if (item.officialWebsiteUrl) {
+      try { domainKey = new URL(item.officialWebsiteUrl).hostname.toLowerCase().replace(/^www\./, ""); } catch { /* use name */ }
+    }
+    const identityKeys = [domainKey && `domain:${domainKey}`, `name:${canonicalName(item.name)}`].filter(Boolean);
+    if (identityKeys.some((key) => seen.has(key))) return false;
+    identityKeys.forEach((key) => seen.add(key));
     return true;
   }).slice(0, 40);
 }

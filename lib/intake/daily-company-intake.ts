@@ -78,7 +78,8 @@ function slugify(name: string, domain: string): string {
 
 export async function queueCompanyCandidates(inputs: CompanyIntakeCandidateInput[]) {
   if (inputs.length === 0 || inputs.length > 50) throw new Error("Submit between 1 and 50 candidates.");
-  const rows = inputs.map((input) => ({
+  const uniqueInputs = [...new Map(inputs.map((input) => [normalizedDomain(input.officialWebsiteUrl), input])).values()];
+  const rows = uniqueInputs.map((input) => ({
     name: input.name.trim(),
     official_website_url: input.officialWebsiteUrl,
     normalized_domain: normalizedDomain(input.officialWebsiteUrl),
@@ -91,8 +92,19 @@ export async function queueCompanyCandidates(inputs: CompanyIntakeCandidateInput
   if (rows.some((row) => !row.name || !row.discovery_source_url)) throw new Error("Name and discovery source are required.");
 
   const supabase = createAdminClient();
+  const { data: existingCompanies, error: existingCompaniesError } = await supabase
+    .from("companies").select("name,website_url");
+  if (existingCompaniesError) throw new Error(`Unable to check existing companies: ${existingCompaniesError.message}`);
+  const companyIdentities = (existingCompanies || []) as Array<{ name: string; website_url: string | null }>;
+  const existingDomains = new Set(companyIdentities.flatMap((company) => {
+    if (!company.website_url) return [];
+    try { return [normalizedDomain(company.website_url)]; } catch { return []; }
+  }));
+  const existingNames = new Set(companyIdentities.map((company) => normalizeEntityName(company.name)));
+  const newRows = rows.filter((row) => !existingDomains.has(row.normalized_domain) && !existingNames.has(normalizeEntityName(row.name)));
+  if (newRows.length === 0) return [];
   const { data, error } = await (supabase.from("company_intake_candidates") as any)
-    .upsert(rows, { onConflict: "normalized_domain", ignoreDuplicates: true })
+    .upsert(newRows, { onConflict: "normalized_domain", ignoreDuplicates: true })
     .select("id, name, normalized_domain, status");
   if (error) throw new Error(`Unable to queue company candidates: ${error.message}`);
   return data || [];
