@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthenticatedUser } from "@/lib/security/internal-auth";
 import { researchExternalCompanies } from "@/lib/research/free-company-research";
+import { readExternalResearchCache, saveExternalResearchCache } from "@/lib/research/external-research-cache";
 
 export async function GET(request: Request) {
   if (!(await isAuthenticatedUser())) {
@@ -8,11 +9,30 @@ export async function GET(request: Request) {
   }
   const url = new URL(request.url);
   try {
-    const data = await researchExternalCompanies(
-      url.searchParams.get("q") || "",
-      url.searchParams.get("country") || undefined
+    const query = url.searchParams.get("q") || "";
+    const country = url.searchParams.get("country") || undefined;
+    try {
+      const cached = await readExternalResearchCache(query, country);
+      if (cached) return NextResponse.json({ data: cached.results, diagnostics: cached.diagnostics, error: null });
+    } catch {
+      // The search remains available while the cache migration is being deployed.
+    }
+    const research = await researchExternalCompanies(
+      query,
+      country
     );
-    return NextResponse.json({ data, error: null });
+    if (research.diagnostics.tavilyStatus === "OK") {
+      try {
+        await saveExternalResearchCache(query, country, research.results, research.diagnostics);
+      } catch {
+        return NextResponse.json({
+          data: research.results,
+          diagnostics: research.diagnostics,
+          error: "Tavily consumió la consulta, pero no se pudo guardar el resultado. Aplica la migración external_research_cache antes de continuar.",
+        }, { status: 503 });
+      }
+    }
+    return NextResponse.json({ data: research.results, diagnostics: research.diagnostics, error: null });
   } catch (error) {
     return NextResponse.json({
       data: null,

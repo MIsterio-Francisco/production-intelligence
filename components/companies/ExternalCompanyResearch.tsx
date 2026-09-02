@@ -36,7 +36,15 @@ export function ExternalCompanyResearch() {
       if (!response.ok) throw new Error(payload.error || "No se pudo investigar.");
       setResults(payload.data || []);
       setSelected(new Set());
-      if (!payload.data?.length) setMessage("No se encontraron candidatas. Prueba términos más concretos o cambia el país.");
+      if (payload.diagnostics?.tavilyStatus === "ERROR") {
+        setMessage(`Tavily no completó la búsqueda: ${payload.diagnostics.tavilyError}`);
+      } else if (!payload.data?.length) {
+        setMessage(`Tavily respondió pero devolvió ${payload.diagnostics?.tavilyReturned ?? 0} resultados utilizables. No gastes más créditos con esta consulta hasta revisar el diagnóstico.`);
+      } else {
+        setMessage(payload.diagnostics?.cacheHit
+          ? `Resultado recuperado de Supabase sin consumir otro crédito: ${payload.data.length} candidata/s.`
+          : `Tavily devolvió ${payload.diagnostics?.tavilyReturned ?? 0} resultado/s; se guardaron en Supabase durante 30 días y ${payload.diagnostics?.tavilyAccepted ?? 0} aparecen como candidatas Tavily.`);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudo investigar.");
     } finally {

@@ -30,6 +30,21 @@ const TAVILY_COUNTRIES: Record<string, string> = {
   PT: "portugal", SE: "sweden", US: "united states",
 };
 
+const WIKIDATA_COUNTRY_CODES: Record<string, string> = {
+  Q29: "ES", Q30: "US", Q31: "BE", Q32: "LU", Q33: "FI", Q34: "SE", Q35: "DK",
+  Q36: "PL", Q38: "IT", Q39: "CH", Q40: "AT", Q45: "PT", Q55: "NL", Q96: "MX",
+  Q142: "FR", Q145: "GB", Q155: "BR", Q183: "DE", Q298: "CL", Q408: "AU",
+  Q414: "AR", Q664: "NZ", Q739: "CO", Q16: "CA", Q27: "IE", Q20: "NO",
+};
+
+function normalizeProductionIntent(query: string) {
+  const normalized = query.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (/^(productoras?|productores?|production companies?|film production compan(?:y|ies))$/.test(normalized)) {
+    return "film and television production companies";
+  }
+  return query.trim();
+}
+
 function companyNameFromTitle(title: string, url: URL) {
   const cleanTitle = title.split(/\s+[|–—-]\s+/)[0]?.trim();
   if (cleanTitle && cleanTitle.length >= 2 && cleanTitle.length <= 90) return cleanTitle;
@@ -42,7 +57,7 @@ async function searchTavilyCompanies(query: string, countryCode?: string): Promi
   if (!apiKey) throw new Error("Tavily no está configurado en este despliegue (falta TAVILY_API_KEY). Vuelve a desplegar Netlify después de guardar la variable.");
   const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
   const market = normalizedCountry ? TAVILY_COUNTRIES[normalizedCountry] || normalizedCountry : "global";
-  const userIntent = query.trim() || "film television TV commercial production companies producers";
+  const userIntent = normalizeProductionIntent(query) || "film television TV commercial production companies producers";
   const searchQuery = `${userIntent} in ${market} official company websites`;
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
@@ -132,6 +147,10 @@ export async function searchWikidataCompanies(query: string, countryCode?: strin
   const baseResults = Object.values(entities).flatMap((entity: any) => {
     const description = entity.descriptions?.es?.value || entity.descriptions?.en?.value || "";
     const instanceIds = (entity.claims?.P31 || []).map((claim: any) => claim.mainsnak?.datavalue?.value?.id);
+    const entityCountryCodes = (entity.claims?.P17 || [])
+      .map((claim: any) => WIKIDATA_COUNTRY_CODES[claim.mainsnak?.datavalue?.value?.id])
+      .filter(Boolean);
+    if (safeCountry && !entityCountryCodes.includes(safeCountry)) return [];
     const eligible = instanceIds.some((id: string) => productionIds.has(id)) ||
       /(film|television|tv|cinematogr|productora|production company|film studio)/i.test(description);
     if (!eligible) return [];
@@ -148,8 +167,8 @@ export async function searchWikidataCompanies(query: string, countryCode?: strin
     return [{
       externalId: entity.id,
       name: entity.labels?.es?.value || entity.labels?.en?.value || entity.id,
-      countryCode: safeCountry || null,
-      countryName: null,
+      countryCode: entityCountryCodes[0] || null,
+      countryName: entityCountryCodes[0] ? TAVILY_COUNTRIES[entityCountryCodes[0]] || null : null,
       officialWebsiteUrl: website,
       source: "WIKIDATA" as const,
       sourceUrl: `https://www.wikidata.org/wiki/${entity.id}`,
@@ -185,9 +204,10 @@ export async function researchExternalCompanies(query: string, countryCode?: str
   const settled = await Promise.allSettled(tasks);
   const rawResults = settled.flatMap((item) => item.status === "fulfilled" ? item.value : []);
   const tavilyAttempt = settled[0];
-  if (tavilyAttempt?.status === "rejected" && rawResults.length === 0) {
-    throw tavilyAttempt.reason instanceof Error ? tavilyAttempt.reason : new Error("Tavily no pudo completar la búsqueda.");
-  }
+  const tavilyError = tavilyAttempt?.status === "rejected"
+    ? (tavilyAttempt.reason instanceof Error ? tavilyAttempt.reason.message : "Tavily no pudo completar la búsqueda.")
+    : null;
+  const tavilyReturned = tavilyAttempt?.status === "fulfilled" ? tavilyAttempt.value.length : 0;
   const canonicalName = (name: string) => name.toLocaleLowerCase()
     .replace(/\b(incorporated|corporation|company|productions?|pictures|studios?|inc|llc|ltd)\b/g, "")
     .replace(/[^a-z0-9]+/g, "")
@@ -210,7 +230,7 @@ export async function researchExternalCompanies(query: string, countryCode?: str
     };
   }).filter((item) => item.source !== "WIKIDATA" || !matchedWikidata.has(item.externalId));
   const seen = new Set<string>();
-  return results.filter((item) => {
+  const deduplicatedResults = results.filter((item) => {
     let domainKey = "";
     if (item.officialWebsiteUrl) {
       try { domainKey = new URL(item.officialWebsiteUrl).hostname.toLowerCase().replace(/^www\./, ""); } catch { /* use name */ }
@@ -220,4 +240,13 @@ export async function researchExternalCompanies(query: string, countryCode?: str
     identityKeys.forEach((key) => seen.add(key));
     return true;
   }).slice(0, 40);
+  return {
+    results: deduplicatedResults,
+    diagnostics: {
+      tavilyStatus: tavilyError ? "ERROR" as const : "OK" as const,
+      tavilyError,
+      tavilyReturned,
+      tavilyAccepted: deduplicatedResults.filter((item) => item.source === "TAVILY").length,
+    },
+  };
 }
