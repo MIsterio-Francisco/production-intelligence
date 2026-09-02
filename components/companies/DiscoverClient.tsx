@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Flame,
   ArrowUpDown,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { ExternalCompanyResearch } from "./ExternalCompanyResearch";
@@ -130,7 +131,14 @@ export function DiscoverClient({
             Explore the global production landscape and discover high-value commercial opportunities.
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="/api/v1/contacts/export"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+            title="Exporta únicamente emails VERIFIED y PUBLIC con su procedencia"
+          >
+            <Download className="mr-1 h-3.5 w-3.5" /> Exportar emails CSV
+          </a>
           <Button
             variant={viewMode === "table" ? "primary" : "outline"}
             size="sm"
