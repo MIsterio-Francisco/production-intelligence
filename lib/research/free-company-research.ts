@@ -43,7 +43,7 @@ async function searchTavilyCompanies(query: string, countryCode?: string): Promi
   const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
   const market = normalizedCountry ? TAVILY_COUNTRIES[normalizedCountry] || normalizedCountry : "global";
   const userIntent = query.trim() || "film television TV commercial production companies producers";
-  const searchQuery = `${userIntent} in ${market} film production companies television producers commercial production houses TVC official websites decision makers production team`;
+  const searchQuery = `${userIntent} in ${market} official company websites`;
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -70,10 +70,6 @@ async function searchTavilyCompanies(query: string, countryCode?: string): Promi
     let url: URL;
     try { url = new URL(row.url); } catch { return []; }
     if (!/^https?:$/.test(url.protocol)) return [];
-    const evidence = `${row.title || ""} ${row.content || ""}`;
-    const providerLed = /(post.?production|color grading|camera rental|equipment rental|software|marketing agency|animation service|vfx studio)/i.test(evidence) &&
-      !/(film production company|television production company|commercial production|production house|productora cinematogr|productora audiovisual)/i.test(evidence);
-    if (providerLed) return [];
     const officialWebsiteUrl = `${url.origin}/`;
     return [{
       externalId: `tavily:${url.hostname}:${index}`,

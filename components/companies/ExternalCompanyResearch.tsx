@@ -16,6 +16,7 @@ export function ExternalCompanyResearch() {
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [resolving, setResolving] = useState<Set<string>>(new Set());
   const sourceLabels: Record<ExternalCompanyResult["source"], string> = {
     TAVILY: "Tavily · web candidata",
     WIKIDATA: "Wikidata",
@@ -72,6 +73,37 @@ export function ExternalCompanyResearch() {
       setMessage(error instanceof Error ? error.message : "No se pudieron guardar las candidatas.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function resolveCandidateWebsite(result: ExternalCompanyResult) {
+    const key = `${result.source}:${result.externalId}`;
+    setResolving((current) => new Set(current).add(key));
+    setMessage(null);
+    try {
+      const params = new URLSearchParams({ q: result.name });
+      if (result.countryCode) params.set("country", result.countryCode);
+      const response = await fetch(`/api/v1/research/companies?${params}`, { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Tavily no pudo resolver la web.");
+      const tavilyMatch = (payload.data || []).find((candidate: ExternalCompanyResult) =>
+        candidate.source === "TAVILY" && candidate.officialWebsiteUrl
+      ) as ExternalCompanyResult | undefined;
+      if (!tavilyMatch?.officialWebsiteUrl) throw new Error(`Tavily no encontró una web candidata para ${result.name}.`);
+      setResults((current) => current.map((candidate) =>
+        `${candidate.source}:${candidate.externalId}` === key
+          ? { ...candidate, officialWebsiteUrl: tavilyMatch.officialWebsiteUrl, sourceUrl: tavilyMatch.sourceUrl }
+          : candidate
+      ));
+      setMessage(`Web candidata resuelta para ${result.name}. Revísala antes de seleccionar y guardar.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Tavily no pudo resolver la web.");
+    } finally {
+      setResolving((current) => {
+        const next = new Set(current);
+        next.delete(key);
+        return next;
+      });
     }
   }
 
@@ -135,7 +167,14 @@ export function ExternalCompanyResearch() {
                 )}
                 {result.officialWebsiteUrl ? (
                   <a className="text-xs font-semibold text-accent underline break-all" href={result.officialWebsiteUrl} target="_blank" rel="noreferrer">{result.source === "TAVILY" ? "Abrir web candidata" : "Web oficial"}</a>
-                ) : <p className="text-xs text-amber-700">Señal oficial encontrada; falta resolver la web oficial antes de guardarla.</p>}
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-amber-700">Señal oficial encontrada; falta resolver la web antes de seleccionarla.</p>
+                    <Button type="button" size="sm" variant="outline" disabled={resolving.has(key)} onClick={() => void resolveCandidateWebsite(result)}>
+                      <Search className="mr-1 h-3.5 w-3.5" /> {resolving.has(key) ? "Buscando web…" : "Buscar web con Tavily"}
+                    </Button>
+                  </div>
+                )}
                 {result.decisionMakers.map((person) => (
                   <a key={`${person.sourceUrl}:${person.role}`} href={person.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-foreground hover:text-accent">
                     <UserRound className="h-3 w-3" /> {person.name} — {person.role}
