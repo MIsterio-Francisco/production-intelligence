@@ -10,6 +10,7 @@ export interface CompanyIntakeCandidateInput {
   discoverySourceUrl: string;
   discoverySourceType?: string;
   countryCode?: string;
+  websiteVerification?: "SOURCE_ASSERTED" | "SEARCH_CANDIDATE" | "MISSING";
 }
 
 const PRODUCTION_TERMS = [
@@ -86,6 +87,8 @@ export async function queueCompanyCandidates(inputs: CompanyIntakeCandidateInput
     discovery_source_url: input.discoverySourceUrl,
     discovery_source_type: input.discoverySourceType || "MANUAL_RESEARCH",
     country_code: input.countryCode?.toUpperCase() || null,
+    website_verification: input.websiteVerification || (input.discoverySourceType === "TAVILY" ? "SEARCH_CANDIDATE" : "SOURCE_ASSERTED"),
+    country_verification: input.countryCode ? "SOURCE_ASSERTED" : "UNVERIFIED",
     status: "QUEUED",
     updated_at: new Date().toISOString(),
   }));
@@ -110,7 +113,25 @@ export async function queueCompanyCandidates(inputs: CompanyIntakeCandidateInput
   return data || [];
 }
 
-async function verifyOfficialSite(url: string) {
+function normalizeIdentityText(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function websiteMatchesCandidate(html: string, companyName: string, domain: string, requireDomainMatch: boolean): boolean {
+  const pageText = normalizeIdentityText(visibleText(html).slice(0, 80_000));
+  const domainStem = normalizeIdentityText(domain.split(".")[0]).replace(/\s+/g, "");
+  const ignored = new Set(["film", "films", "production", "productions", "pictures", "studio", "studios", "company", "media", "the", "and", "de", "la", "el", "y"]);
+  const nameTokens = normalizeIdentityText(companyName).split(" ")
+    .filter((token) => token.length >= 3 && !ignored.has(token));
+  const compactName = nameTokens.join("");
+  const domainMatches = compactName.length >= 3 && domainStem.length >= 4 &&
+    (compactName.includes(domainStem) || domainStem.includes(compactName));
+  if (domainMatches) return true;
+  if (requireDomainMatch) return false;
+  return nameTokens.length > 0 && nameTokens.every((token) => pageText.includes(token));
+}
+
+async function verifyOfficialSite(url: string, companyName: string, discoveryStatus: string) {
   const requestedDomain = normalizedDomain(url);
   const response = await fetch(url, {
     redirect: "follow",
@@ -124,6 +145,9 @@ async function verifyOfficialSite(url: string) {
   }
   const html = await response.text();
   if (html.length < 500) throw new Error("Official website returned insufficient content.");
+  if (!websiteMatchesCandidate(html, companyName, finalDomain, discoveryStatus === "SEARCH_CANDIDATE")) {
+    throw new Error("The website does not contain enough identity evidence for the candidate company.");
+  }
   return { ...classifyOfficialProductionWebsite(html), finalUrl: response.url };
 }
 
@@ -146,7 +170,7 @@ async function processCandidate(candidate: any) {
     return "DUPLICATE" as const;
   }
 
-  const verification = await verifyOfficialSite(candidate.official_website_url);
+  const verification = await verifyOfficialSite(candidate.official_website_url, candidate.name, candidate.website_verification);
   if (!verification.eligible) {
     await (supabase.from("company_intake_candidates") as any).update({
       status: "REJECTED", last_error: verification.reason, updated_at: new Date().toISOString(),
@@ -184,6 +208,8 @@ async function processCandidate(candidate: any) {
       intake_candidate_id: candidate.id,
       discovery_source_url: candidate.discovery_source_url,
       verification_reason: verification.reason,
+      website_discovery_status: candidate.website_verification,
+      country_verification: candidate.country_verification,
       normalized_domain: candidate.normalized_domain,
     },
   });

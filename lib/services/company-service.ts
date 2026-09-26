@@ -41,7 +41,8 @@ export async function getCompanies(
 
     let query = supabase
       .from("companies")
-      .select(options.category ? "*, company_categories!inner(category)" : "*, company_categories(category)", { count: "exact" });
+      .select(options.category ? "*, company_categories!inner(category)" : "*, company_categories(category)", { count: "exact" })
+      .eq("is_demo", false);
 
     if (options.category) {
       query = query.eq("company_categories.category", options.category);
@@ -132,6 +133,7 @@ export async function getAvailableCompanyCountries(): Promise<Array<{ code: stri
       .from("companies")
       .select("country_code, country_name")
       .eq("is_active", true)
+      .eq("is_demo", false)
       .not("country_code", "is", null)
       .limit(1000);
     if (error) throw error;
@@ -169,6 +171,7 @@ export async function getCompanyBySlug(slug: string): Promise<{
       .from("companies")
       .select("*, company_categories(category)")
       .eq("slug", slug)
+      .eq("is_demo", false)
       .single();
 
     if (error || !company) {
@@ -243,16 +246,16 @@ export async function getDashboardOverview() {
       { count: keyDecisionMakersCount },
       { data: countryRows },
     ] = await Promise.all([
-      supabase.from("companies").select("*", { count: "exact", head: true }),
+      supabase.from("companies").select("*", { count: "exact", head: true }).eq("is_demo", false),
       supabase.from("companies").select("*", { count: "exact", head: true })
-        .eq("data_classification", "VERIFIED_FACT").not("last_verified_at", "is", null),
-      supabase.from("companies").select("id, name, slug, country_code, power_score, mcl_match_score, company_type").order("power_score", { ascending: false }).limit(5),
-      supabase.from("companies").select("id, name, slug, country_code, mcl_match_score, power_score, company_type").order("mcl_match_score", { ascending: false }).limit(5),
+        .eq("is_demo", false).eq("data_classification", "VERIFIED_FACT").not("last_verified_at", "is", null),
+      supabase.from("companies").select("id, name, slug, country_code, power_score, mcl_match_score, company_type").eq("is_demo", false).order("power_score", { ascending: false }).limit(5),
+      supabase.from("companies").select("id, name, slug, country_code, mcl_match_score, power_score, company_type").eq("is_demo", false).order("mcl_match_score", { ascending: false }).limit(5),
       supabase.from("company_events").select("*, companies(name, slug, country_code)").order("event_date", { ascending: false }).limit(5),
       supabase.from("projects").select("*").order("created_at", { ascending: false }).limit(5),
       supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["development", "pre_production", "production", "filming", "post_production", "finishing"]),
       supabase.from("people").select("*", { count: "exact", head: true }),
-      supabase.from("companies").select("country_code").not("country_code", "is", null),
+      supabase.from("companies").select("country_code").eq("is_demo", false).not("country_code", "is", null),
     ]);
 
     if (!topPower) {
@@ -2125,6 +2128,9 @@ function normalizeCompanySlug(slug: string): string {
 }
 
 export function getFallbackCompanyBySlug(slug: string) {
+  if (process.env.ENABLE_DEMO_DATA !== "true") {
+    return { company: null, projects: [], people: [], socialProfiles: [], sources: [], events: [], scores: [] };
+  }
   const normSlug = normalizeCompanySlug(slug);
   let company = SEED_COMPANIES_FALLBACK.find((c) => c.slug === normSlug || c.slug === slug);
   if (!company) {

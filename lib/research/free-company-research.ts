@@ -8,12 +8,23 @@ export interface ExternalCompanyResult {
   name: string;
   countryCode: string | null;
   countryName: string | null;
+  marketHintCode: string | null;
+  marketHintName: string | null;
+  countryVerification: "SOURCE_VERIFIED" | "UNVERIFIED";
   officialWebsiteUrl: string | null;
+  websiteVerification: "SOURCE_ASSERTED" | "SEARCH_CANDIDATE" | "MISSING";
   source: "TAVILY" | "WIKIDATA" | "CALIFORNIA_FILM_COMMISSION" | "NEW_MEXICO_FILM_OFFICE";
   sourceUrl: string;
   evidence: string;
   decisionMakers: Array<{ name: string; role: string; sourceUrl: string }>;
   productionSignal?: ProductionSignal;
+}
+
+interface TavilySearchRow {
+  title?: string;
+  url?: string;
+  content?: string;
+  score?: number;
 }
 
 const TAVILY_EXCLUDED_DOMAINS = [
@@ -52,6 +63,34 @@ function companyNameFromTitle(title: string, url: URL) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+export function mapTavilySearchResults(rows: TavilySearchRow[], countryCode?: string): ExternalCompanyResult[] {
+  const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
+  return rows.flatMap((row, index) => {
+    if (!row.url) return [];
+    let url: URL;
+    try { url = new URL(row.url); } catch { return []; }
+    if (!/^https?:$/.test(url.protocol)) return [];
+    return [{
+      externalId: `tavily:${url.hostname}:${index}`,
+      name: companyNameFromTitle(row.title || "", url),
+      // A search market is a retrieval hint, not evidence about the company's country.
+      countryCode: null,
+      countryName: null,
+      marketHintCode: normalizedCountry || null,
+      marketHintName: TAVILY_COUNTRIES[normalizedCountry || ""] || null,
+      countryVerification: "UNVERIFIED" as const,
+      // Search results can point to directories, articles or subsidiaries. The
+      // intake verifier must prove this is the company's own site before admission.
+      officialWebsiteUrl: `${url.origin}/`,
+      websiteVerification: "SEARCH_CANDIDATE" as const,
+      source: "TAVILY" as const,
+      sourceUrl: row.url,
+      evidence: (row.content || "Resultado web relacionado con producción de cine o televisión.").slice(0, 300),
+      decisionMakers: [],
+    }];
+  });
+}
+
 async function searchTavilyCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
   if (!apiKey) throw new Error("Tavily no está configurado en este despliegue (falta TAVILY_API_KEY). Vuelve a desplegar Netlify después de guardar la variable.");
@@ -79,25 +118,8 @@ async function searchTavilyCompanies(query: string, countryCode?: string): Promi
     const detail = await response.text().catch(() => "");
     throw new Error(`Tavily returned HTTP ${response.status}${detail ? `: ${detail.slice(0, 180)}` : "."}`);
   }
-  const payload = await response.json() as { results?: Array<{ title?: string; url?: string; content?: string; score?: number }> };
-  return (payload.results || []).flatMap((row, index) => {
-    if (!row.url) return [];
-    let url: URL;
-    try { url = new URL(row.url); } catch { return []; }
-    if (!/^https?:$/.test(url.protocol)) return [];
-    const officialWebsiteUrl = `${url.origin}/`;
-    return [{
-      externalId: `tavily:${url.hostname}:${index}`,
-      name: companyNameFromTitle(row.title || "", url),
-      countryCode: normalizedCountry || null,
-      countryName: TAVILY_COUNTRIES[normalizedCountry || ""] || null,
-      officialWebsiteUrl,
-      source: "TAVILY" as const,
-      sourceUrl: row.url,
-      evidence: (row.content || "Resultado web relacionado con producción de cine o televisión.").slice(0, 300),
-      decisionMakers: [],
-    }];
-  });
+  const payload = await response.json() as { results?: TavilySearchRow[] };
+  return mapTavilySearchResults(payload.results || [], normalizedCountry);
 }
 
 export async function searchWikidataCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
@@ -169,7 +191,11 @@ export async function searchWikidataCompanies(query: string, countryCode?: strin
       name: entity.labels?.es?.value || entity.labels?.en?.value || entity.id,
       countryCode: entityCountryCodes[0] || null,
       countryName: entityCountryCodes[0] ? TAVILY_COUNTRIES[entityCountryCodes[0]] || null : null,
+      marketHintCode: safeCountry || null,
+      marketHintName: TAVILY_COUNTRIES[safeCountry || ""] || null,
+      countryVerification: entityCountryCodes[0] ? "SOURCE_VERIFIED" as const : "UNVERIFIED" as const,
       officialWebsiteUrl: website,
+      websiteVerification: website ? "SOURCE_ASSERTED" as const : "MISSING" as const,
       source: "WIKIDATA" as const,
       sourceUrl: `https://www.wikidata.org/wiki/${entity.id}`,
       evidence: description || "Entidad audiovisual identificada en Wikidata.",
@@ -226,6 +252,7 @@ export async function researchExternalCompanies(query: string, countryCode?: str
     return {
       ...item,
       officialWebsiteUrl: identity.officialWebsiteUrl,
+      websiteVerification: identity.officialWebsiteUrl ? "SOURCE_ASSERTED" as const : "MISSING" as const,
       decisionMakers: identity.decisionMakers,
     };
   }).filter((item) => item.source !== "WIKIDATA" || !matchedWikidata.has(item.externalId));

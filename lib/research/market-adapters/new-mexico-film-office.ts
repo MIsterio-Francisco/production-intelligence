@@ -31,9 +31,13 @@ async function readReport(path: string): Promise<ExternalCompanyResult | null> {
   return {
     externalId: `nmfo-${path.split("/").filter(Boolean).pop()}`,
     name: companyName,
-    countryCode: "US",
-    countryName: "New Mexico, United States",
+    countryCode: null,
+    countryName: null,
+    marketHintCode: "US",
+    marketHintName: "United States",
+    countryVerification: "UNVERIFIED",
     officialWebsiteUrl: null,
+    websiteVerification: "MISSING",
     source: "NEW_MEXICO_FILM_OFFICE",
     sourceUrl,
     evidence: `${projectTitle} notificó la finalización de fotografía principal.`,
@@ -64,4 +68,3 @@ export async function searchNewMexicoCompletedProductions(query: string): Promis
   const needle = query.trim().toLocaleLowerCase();
   return reports.filter((item) => !needle || `${item.name} ${item.productionSignal?.projectTitle}`.toLocaleLowerCase().includes(needle)).slice(0, 16);
 }
-

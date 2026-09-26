@@ -66,7 +66,10 @@ export function ExternalCompanyResearch() {
           officialWebsiteUrl: result.officialWebsiteUrl,
           discoverySourceUrl: result.sourceUrl,
           discoverySourceType: result.source,
-          countryCode: result.countryCode,
+          // Never persist the search filter as a company fact. Only sources
+          // that explicitly identify a country may populate this field.
+          countryCode: result.countryVerification === "SOURCE_VERIFIED" ? result.countryCode : null,
+          websiteVerification: result.websiteVerification,
         })) }),
       });
       const payload = await response.json();
@@ -100,7 +103,12 @@ export function ExternalCompanyResearch() {
       if (!tavilyMatch?.officialWebsiteUrl) throw new Error(`Tavily no encontró una web candidata para ${result.name}.`);
       setResults((current) => current.map((candidate) =>
         `${candidate.source}:${candidate.externalId}` === key
-          ? { ...candidate, officialWebsiteUrl: tavilyMatch.officialWebsiteUrl, sourceUrl: tavilyMatch.sourceUrl }
+          ? {
+              ...candidate,
+              officialWebsiteUrl: tavilyMatch.officialWebsiteUrl,
+              websiteVerification: "SEARCH_CANDIDATE",
+              sourceUrl: tavilyMatch.sourceUrl,
+            }
           : candidate
       ));
       setMessage(`Web candidata resuelta para ${result.name}. Revísala antes de seleccionar y guardar.`);
@@ -122,7 +130,7 @@ export function ExternalCompanyResearch() {
     <section className="rounded-lg border border-accent/25 bg-card p-4 space-y-4">
       <div>
         <h2 className="text-sm font-black uppercase flex items-center gap-2"><Globe2 className="h-4 w-4 text-accent" /> Research libre</h2>
-        <p className="text-xs text-muted-foreground mt-1">Busca globalmente productoras de cine, TV y publicidad/TVC. Tavily prioriza empresas con señales de Head of Production, Production Director, Executive Producer, Managing Director o cargos equivalentes. Los resultados son candidatos hasta verificar su web; Apollo nunca se ejecuta automáticamente.</p>
+        <p className="text-xs text-muted-foreground mt-1">Busca candidatas globales de cine, TV y publicidad/TVC. El mercado introducido solo orienta la búsqueda: el país, la web y la actividad se guardan como hechos únicamente después de verificarlos. Apollo nunca se ejecuta automáticamente.</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_130px_auto]">
         <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Ej.: productoras de TVC, ficción, Producers, Head of Production…" />
@@ -147,7 +155,7 @@ export function ExternalCompanyResearch() {
             <Button type="button" size="sm" disabled={!selectedResults.length || saving} onClick={() => void saveCandidates(selectedResults)}>
               <BookmarkPlus className="mr-1 h-4 w-4" /> {saving ? "Guardando…" : `Guardar candidata/s (${selectedResults.length})`}
             </Button>
-            <span className="text-[11px] text-muted-foreground">Se omiten automáticamente empresas duplicadas por dominio o nombre.</span>
+            <span className="text-[11px] text-muted-foreground">Se envían a verificación; todavía no se incorporan al catálogo. Se omiten duplicados por dominio o nombre.</span>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
           {results.map((result) => {
@@ -165,7 +173,14 @@ export function ExternalCompanyResearch() {
                   </label>
                   <Badge variant="outline">{sourceLabels[result.source]}</Badge>
                 </div>
-                <p className="text-[11px] text-muted-foreground">{result.countryName || result.countryCode || "País no indicado"} · {result.evidence}</p>
+                <div className="text-[11px] text-muted-foreground space-y-1">
+                  <p>
+                    {result.countryVerification === "SOURCE_VERIFIED"
+                      ? `País verificado por la fuente: ${result.countryName || result.countryCode}`
+                      : `País sin verificar${result.marketHintCode ? ` · mercado consultado: ${result.marketHintCode}` : ""}`}
+                  </p>
+                  <p>{result.evidence}</p>
+                </div>
                 {result.productionSignal && (
                   <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-900">
                     <strong>Producción activa:</strong> {result.productionSignal.projectTitle}
@@ -174,7 +189,16 @@ export function ExternalCompanyResearch() {
                   </div>
                 )}
                 {result.officialWebsiteUrl ? (
-                  <a className="text-xs font-semibold text-accent underline break-all" href={result.officialWebsiteUrl} target="_blank" rel="noreferrer">{result.source === "TAVILY" ? "Abrir web candidata" : "Web oficial"}</a>
+                  <div className="space-y-1">
+                    <a className="text-xs font-semibold text-accent underline break-all" href={result.officialWebsiteUrl} target="_blank" rel="noreferrer">
+                      {result.websiteVerification === "SEARCH_CANDIDATE" ? "Abrir web candidata" : "Abrir web declarada por la fuente"}
+                    </a>
+                    <p className="text-[10px] text-amber-700">
+                      {result.websiteVerification === "SEARCH_CANDIDATE"
+                        ? "No está verificada como web oficial; el proceso de admisión debe comprobarla."
+                        : "La fuente declara esta web; el proceso de admisión comprobará dominio y actividad."}
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <p className="text-xs text-amber-700">Señal oficial encontrada; falta resolver la web antes de seleccionarla.</p>
@@ -190,7 +214,7 @@ export function ExternalCompanyResearch() {
                 ))}
                 <a className="block text-[11px] text-muted-foreground underline" href={result.sourceUrl} target="_blank" rel="noreferrer">Ver fuente y evidencia</a>
                 <Button size="sm" variant="outline" disabled={!result.officialWebsiteUrl || saved.has(key) || saving} onClick={() => void saveCandidates([result])}>
-                  {saved.has(key) ? "Guardada" : "Guardar candidata"}
+                  {saved.has(key) ? "En verificación" : "Enviar a verificación"}
                 </Button>
               </article>
             );

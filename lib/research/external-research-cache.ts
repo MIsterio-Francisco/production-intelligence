@@ -13,7 +13,9 @@ export interface ResearchDiagnostics {
 function cacheIdentity(query: string, countryCode?: string) {
   const normalizedQuery = query.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   const normalizedCountry = countryCode?.trim().toUpperCase() || "GLOBAL";
-  return createHash("sha256").update(`${normalizedCountry}:${normalizedQuery}`).digest("hex");
+  // Versioned because v1 incorrectly persisted the requested market as a
+  // verified company country and treated every search result as an official site.
+  return createHash("sha256").update(`v2:${normalizedCountry}:${normalizedQuery}`).digest("hex");
 }
 
 export async function readExternalResearchCache(query: string, countryCode?: string) {

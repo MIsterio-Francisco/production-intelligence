@@ -32,6 +32,7 @@ export async function GET() {
   const [companiesResult, affiliationsResult, emailsResult] = await Promise.all([
     (supabase.from("companies") as any)
       .select("id, name, country_code, country_name, city, website_url")
+      .eq("is_demo", false)
       .order("name", { ascending: true }),
     (supabase.from("company_people") as any)
       .select("company_id, person_id, role, is_current, people(id, full_name, provenance_type, research_source_url, linkedin_source_url, research_last_checked_at, linkedin_last_checked_at)")
@@ -49,9 +50,11 @@ export async function GET() {
     );
   }
 
-  const affiliations = (affiliationsResult.data || []).filter((row: any) => row.people && isExportablePerson(row.people));
   const emails = emailsResult.data || [];
   const companies = new Map((companiesResult.data || []).map((row: any) => [row.id, row]));
+  const affiliations = (affiliationsResult.data || []).filter((row: any) =>
+    companies.has(row.company_id) && row.people && isExportablePerson(row.people)
+  );
   const genericEmails = new Map<string, any[]>();
   const personEmails = new Map<string, any[]>();
   for (const email of emails) {

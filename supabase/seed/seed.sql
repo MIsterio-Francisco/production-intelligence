@@ -69,6 +69,12 @@ INSERT INTO companies (
 
 ('c0000000-0000-0000-0000-000000000025', 'Fabula', 'fabula', 'Fabula Productions S.A.', 'Academy Award-winning Chilean film and television production company founded by Pablo and Juan de Dios Larraín.', 'independent', 2004, 'https://fabula.cl', 'CL', 'Chile', 'Santiago', 25, 75, true, 89.00, 95.00, 84.00, 88.00, 92.00, 74.00, 93.00, 95.00, 'Premio Oscar winning Latin American independent studio producing international films.');
 
+-- Seed records are useful for development only and must never be presented as
+-- verified live leads.
+UPDATE companies
+SET is_demo = true, provenance_type = 'seed', data_classification = 'DEMO'
+WHERE id::text LIKE 'c0000000-0000-0000-0000-%';
+
 -- 4. INSERT COMPANY CATEGORIES
 INSERT INTO company_categories (company_id, category) VALUES
 ('c0000000-0000-0000-0000-000000000001', 'film'),
