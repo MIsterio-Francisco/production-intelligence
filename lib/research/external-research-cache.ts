@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { ExternalCompanyResult } from "./free-company-research";
+import { normalizeMarket } from "./international-market";
 
 export interface ResearchDiagnostics {
   tavilyStatus: "OK" | "ERROR";
@@ -12,10 +13,10 @@ export interface ResearchDiagnostics {
 
 function cacheIdentity(query: string, countryCode?: string) {
   const normalizedQuery = query.trim().toLocaleLowerCase().replace(/\s+/g, " ");
-  const normalizedCountry = countryCode?.trim().toUpperCase() || "GLOBAL";
+  const normalizedCountry = normalizeMarket(countryCode) || "GLOBAL";
   // Versioned because v1 incorrectly persisted the requested market as a
   // verified company country and treated every search result as an official site.
-  return createHash("sha256").update(`v2:${normalizedCountry}:${normalizedQuery}`).digest("hex");
+  return createHash("sha256").update(`v3:${normalizedCountry}:${normalizedQuery}`).digest("hex");
 }
 
 export async function readExternalResearchCache(query: string, countryCode?: string) {

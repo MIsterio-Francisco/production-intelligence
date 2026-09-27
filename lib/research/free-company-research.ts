@@ -1,4 +1,5 @@
-import { discoverOfficialDecisionMakers } from "./official-decision-maker-discovery";
+import { researchWebsite, type WebsiteResearch } from "./website-contact-research";
+import { normalizeMarket, marketName, productionIntent } from "./international-market";
 import { searchCaliforniaApprovedProductions } from "./market-adapters/california-film-commission";
 import { searchNewMexicoCompletedProductions } from "./market-adapters/new-mexico-film-office";
 import type { ProductionSignal } from "./market-adapters/types";
@@ -18,6 +19,7 @@ export interface ExternalCompanyResult {
   evidence: string;
   decisionMakers: Array<{ name: string; role: string; sourceUrl: string }>;
   productionSignal?: ProductionSignal;
+  websiteResearch?: WebsiteResearch;
 }
 
 interface TavilySearchRow {
@@ -48,14 +50,6 @@ const WIKIDATA_COUNTRY_CODES: Record<string, string> = {
   Q414: "AR", Q664: "NZ", Q739: "CO", Q16: "CA", Q27: "IE", Q20: "NO",
 };
 
-function normalizeProductionIntent(query: string) {
-  const normalized = query.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (/^(productoras?|productores?|production companies?|film production compan(?:y|ies))$/.test(normalized)) {
-    return "film and television production companies";
-  }
-  return query.trim();
-}
-
 function companyNameFromTitle(title: string, url: URL) {
   const cleanTitle = title.split(/\s+[|–—-]\s+/)[0]?.trim();
   if (cleanTitle && cleanTitle.length >= 2 && cleanTitle.length <= 90) return cleanTitle;
@@ -64,7 +58,7 @@ function companyNameFromTitle(title: string, url: URL) {
 }
 
 export function mapTavilySearchResults(rows: TavilySearchRow[], countryCode?: string): ExternalCompanyResult[] {
-  const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
+  const normalizedCountry = normalizeMarket(countryCode);
   return rows.flatMap((row, index) => {
     if (!row.url) return [];
     let url: URL;
@@ -77,7 +71,7 @@ export function mapTavilySearchResults(rows: TavilySearchRow[], countryCode?: st
       countryCode: null,
       countryName: null,
       marketHintCode: normalizedCountry || null,
-      marketHintName: TAVILY_COUNTRIES[normalizedCountry || ""] || null,
+      marketHintName: normalizedCountry ? marketName(normalizedCountry) : null,
       countryVerification: "UNVERIFIED" as const,
       // Search results can point to directories, articles or subsidiaries. The
       // intake verifier must prove this is the company's own site before admission.
@@ -94,9 +88,9 @@ export function mapTavilySearchResults(rows: TavilySearchRow[], countryCode?: st
 async function searchTavilyCompanies(query: string, countryCode?: string): Promise<ExternalCompanyResult[]> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
   if (!apiKey) throw new Error("Tavily no está configurado en este despliegue (falta TAVILY_API_KEY). Vuelve a desplegar Netlify después de guardar la variable.");
-  const normalizedCountry = countryCode?.trim().toUpperCase().slice(0, 2);
-  const market = normalizedCountry ? TAVILY_COUNTRIES[normalizedCountry] || normalizedCountry : "global";
-  const userIntent = normalizeProductionIntent(query) || "film television TV commercial production companies producers";
+  const normalizedCountry = normalizeMarket(countryCode);
+  const market = marketName(normalizedCountry);
+  const userIntent = productionIntent(query);
   const searchQuery = `${userIntent} in ${market} official company websites`;
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
@@ -202,16 +196,7 @@ export async function searchWikidataCompanies(query: string, countryCode?: strin
       decisionMakers,
     }];
   });
-  return Promise.all(baseResults.map(async (result) => {
-    if (!result.officialWebsiteUrl) return result;
-    try {
-      const officialPeople = await discoverOfficialDecisionMakers(result.officialWebsiteUrl);
-      const seen = new Set(officialPeople.map((person) => person.name.toLowerCase()));
-      return { ...result, decisionMakers: [...officialPeople, ...result.decisionMakers.filter((person) => !seen.has(person.name.toLowerCase()))].slice(0, 6) };
-    } catch {
-      return result;
-    }
-  }));
+  return baseResults;
 }
 
 export async function researchExternalCompanies(query: string, countryCode?: string) {
@@ -219,7 +204,7 @@ export async function researchExternalCompanies(query: string, countryCode?: str
   const marketAlias = query.trim().toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const querySelectsUnitedStates = ["us", "usa", "united states", "estados unidos", "eeuu", "ee. uu."].includes(marketAlias);
   const effectiveQuery = querySelectsUnitedStates ? "" : query;
-  const normalizedCountry = querySelectsUnitedStates ? "US" : countryCode?.trim().toUpperCase();
+  const normalizedCountry = querySelectsUnitedStates ? "US" : normalizeMarket(countryCode);
   const tasks: Array<Promise<ExternalCompanyResult[]>> = [];
   tasks.push(searchTavilyCompanies(effectiveQuery, normalizedCountry));
   if (effectiveQuery.trim()) tasks.push(searchWikidataCompanies(effectiveQuery, normalizedCountry));
@@ -235,8 +220,9 @@ export async function researchExternalCompanies(query: string, countryCode?: str
     : null;
   const tavilyReturned = tavilyAttempt?.status === "fulfilled" ? tavilyAttempt.value.length : 0;
   const canonicalName = (name: string) => name.toLocaleLowerCase()
-    .replace(/\b(incorporated|corporation|company|productions?|pictures|studios?|inc|llc|ltd)\b/g, "")
-    .replace(/[^a-z0-9]+/g, "")
+    .normalize("NFKC")
+    .replace(/\b(incorporated|corporation|inc|llc|ltd)\b/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
     .trim();
   const wikidataResults = rawResults.filter((item) => item.source === "WIKIDATA");
   const matchedWikidata = new Set<string>();
@@ -262,11 +248,19 @@ export async function researchExternalCompanies(query: string, countryCode?: str
     if (item.officialWebsiteUrl) {
       try { domainKey = new URL(item.officialWebsiteUrl).hostname.toLowerCase().replace(/^www\./, ""); } catch { /* use name */ }
     }
-    const identityKeys = [domainKey && `domain:${domainKey}`, `name:${canonicalName(item.name)}`].filter(Boolean);
+    const normalizedName = canonicalName(item.name);
+    const identityKeys = [domainKey && `domain:${domainKey}`, normalizedName && `name:${normalizedName}`].filter(Boolean);
     if (identityKeys.some((key) => seen.has(key))) return false;
     identityKeys.forEach((key) => seen.add(key));
     return true;
   }).slice(0, 40);
+  // Bound concurrency and time: at most 12 websites, three pages per website.
+  // Remaining results stay visible rather than disappearing due to crawl limits.
+  for (let start = 0; start < Math.min(12, deduplicatedResults.length); start += 6) {
+    await Promise.all(deduplicatedResults.slice(start, Math.min(start + 6, 12)).map(async (item) => {
+      if (item.officialWebsiteUrl) item.websiteResearch = await researchWebsite(item.officialWebsiteUrl);
+    }));
+  }
   return {
     results: deduplicatedResults,
     diagnostics: {

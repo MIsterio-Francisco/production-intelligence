@@ -33,10 +33,12 @@ export function ExternalCompanyResearch() {
       if (selectedCountry.trim()) params.set("country", selectedCountry.trim().toUpperCase());
       const response = await fetch(`/api/v1/research/companies?${params}`, { cache: "no-store" });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "No se pudo investigar.");
+      if (!response.ok && !payload.data) throw new Error(payload.error || "No se pudo investigar.");
       setResults(payload.data || []);
       setSelected(new Set());
-      if (payload.diagnostics?.tavilyStatus === "ERROR") {
+      if (payload.error) {
+        setMessage(payload.error + " Exporta los resultados antes de cerrar esta página.");
+      } else if (payload.diagnostics?.tavilyStatus === "ERROR") {
         setMessage(`Tavily no completó la búsqueda: ${payload.diagnostics.tavilyError}`);
       } else if (!payload.data?.length) {
         setMessage(`Tavily respondió pero devolvió ${payload.diagnostics?.tavilyReturned ?? 0} resultados utilizables. No gastes más créditos con esta consulta hasta revisar el diagnóstico.`);
@@ -126,6 +128,22 @@ export function ExternalCompanyResearch() {
   const selectableResults = results.filter((result) => result.officialWebsiteUrl && !saved.has(`${result.source}:${result.externalId}`));
   const selectedResults = selectableResults.filter((result) => selected.has(`${result.source}:${result.externalId}`));
 
+  function exportResearch() {
+    const rows = [["Empresa", "Web candidata", "País confirmado", "Mercado solicitado", "Email publicado", "Fuente email", "Personas y fuentes", "Estado", "Fecha revisión"]];
+    for (const result of results) {
+      const research = result.websiteResearch;
+      for (const email of research?.emails.length ? research.emails : [{ email: "", sourceUrl: "" }]) {
+        rows.push([result.name, result.officialWebsiteUrl || "", result.countryCode || "", result.marketHintCode || "", email.email, email.sourceUrl,
+          [...result.decisionMakers, ...(research?.people || [])].map((person) => `${person.name} — ${person.role} (${person.sourceUrl})`).join(" | "),
+          research?.warning || "Web pendiente de analizar", research?.checkedAt || ""]);
+      }
+    }
+    const csv = rows.map((row) => row.map((value) => `"${(/^[=+@\-\t\r]/.test(value) ? "'" + value : value).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = "investigacion-productoras.csv"; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   return (
     <section className="rounded-lg border border-accent/25 bg-card p-4 space-y-4">
       <div>
@@ -135,7 +153,7 @@ export function ExternalCompanyResearch() {
       <div className="grid gap-2 sm:grid-cols-[1fr_130px_auto]">
         <Input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && research()} placeholder="Ej.: productoras de TVC, ficción, Producers, Head of Production…" />
         <Input value={country} onChange={(event) => setCountry(event.target.value)} maxLength={2} className="uppercase" placeholder="País: AR" />
-        <Button onClick={() => void research()} disabled={loading}><Search className="h-4 w-4 mr-1" />{loading ? "Buscando…" : "Buscar fuera"}</Button>
+        <Button onClick={() => void research()} disabled={loading}><Search className="h-4 w-4 mr-1" />{loading ? "Buscando y revisando webs…" : "Investigar webs y contactos"}</Button>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-muted-foreground">Búsqueda global activa:</span>
@@ -143,9 +161,11 @@ export function ExternalCompanyResearch() {
         <span className="text-[11px] text-muted-foreground">Usa ES, PT, GB, US, MX u otro código de país para priorizar el mercado.</span>
       </div>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
+      <p className="text-xs text-muted-foreground">Una consulta Tavily basic por búsqueda nueva; se reutiliza la caché 30 días. Revisión automática de hasta 12 webs y 3 páginas por web. Cobertura variable según país e idioma; los contactos requieren revisión.</p>
       {results.length > 0 && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/30 p-2">
+            <Button type="button" size="sm" variant="outline" onClick={exportResearch}>Exportar investigación CSV</Button>
             <Button type="button" size="sm" variant="outline" disabled={!selectableResults.length || saving} onClick={() => {
               const allSelected = selectableResults.every((result) => selected.has(`${result.source}:${result.externalId}`));
               setSelected(allSelected ? new Set() : new Set(selectableResults.map((result) => `${result.source}:${result.externalId}`)));
@@ -207,7 +227,14 @@ export function ExternalCompanyResearch() {
                     </Button>
                   </div>
                 )}
-                {result.decisionMakers.map((person) => (
+                {result.websiteResearch && <div className="rounded border p-2 space-y-1 text-xs">
+                  <p>{result.websiteResearch.warning}</p>
+                  {result.websiteResearch.emails.map((email) => <p key={email.email}>{email.email} · <a className="underline" href={email.sourceUrl} target="_blank" rel="noreferrer">Fuente</a></p>)}
+                  {result.websiteResearch.status !== "FAILED" && !result.websiteResearch.emails.length && <p>No se encontraron emails en las páginas revisadas.</p>}
+                  <p className="text-muted-foreground">{result.websiteResearch.pages.length} páginas revisadas · {result.websiteResearch.checkedAt.slice(0, 10)}</p>
+                </div>}
+                {!result.websiteResearch && <p className="text-xs text-muted-foreground">Contacto pendiente de analizar.</p>}
+                {[...result.decisionMakers, ...(result.websiteResearch?.people || [])].map((person) => (
                   <a key={`${person.sourceUrl}:${person.role}`} href={person.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-foreground hover:text-accent">
                     <UserRound className="h-3 w-3" /> {person.name} — {person.role}
                   </a>

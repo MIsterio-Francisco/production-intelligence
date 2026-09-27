@@ -4,7 +4,7 @@ export interface OfficialDecisionMaker {
   sourceUrl: string;
 }
 
-const TARGET_ROLE = /(head of production|director of production|production director|head producer|line producer|managing director|jef[ea] de producci[oó]n|director[ae]? de producci[oó]n|productor[ae]? de l[ií]nea|director[ae]? general|executive producer|productor[ae]? ejecutiv[oa]|diretor[ae]? de produ[cç][aã]o|produtor[ae]? executiv[oa])/i;
+const TARGET_ROLE = /\b(head of production|director of production|production director|head producer|line producer|managing director|jef[ea] de producci[oó]n|director[ae]? de producci[oó]n|productor[ae]? de l[ií]nea|director[ae]? general|executive producer|productor[ae]? ejecutiv[oa]|diretor[ae]? de produ[cç][aã]o|produtor[ae]? executiv[oa]|producer|productor|productora|producteur|productrice|produzent|produzentin|produttore|produttrice|produtor|produtora|produktionsleiter|directeur de production|directrice de production)\b/i;
 
 function collectJsonPeople(value: unknown, sourceUrl: string, output: OfficialDecisionMaker[]) {
   if (Array.isArray(value)) {
@@ -16,11 +16,11 @@ function collectJsonPeople(value: unknown, sourceUrl: string, output: OfficialDe
   const type = Array.isArray(record["@type"]) ? record["@type"] : [record["@type"]];
   const name = typeof record.name === "string" ? record.name.trim() : "";
   const role = typeof record.jobTitle === "string" ? record.jobTitle.trim() : "";
-  if (type.includes("Person") && name && TARGET_ROLE.test(role)) output.push({ name, role, sourceUrl });
+    if (type.includes("Person") && name && role) output.push({ name, role, sourceUrl });
   Object.values(record).forEach((item) => collectJsonPeople(item, sourceUrl, output));
 }
 
-function extractFromHtml(html: string, sourceUrl: string): OfficialDecisionMaker[] {
+export function extractFromHtml(html: string, sourceUrl: string): OfficialDecisionMaker[] {
   const output: OfficialDecisionMaker[] = [];
   for (const match of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
@@ -39,7 +39,10 @@ function extractFromHtml(html: string, sourceUrl: string): OfficialDecisionMaker
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter((line) => line.length >= 3 && line.length <= 100);
   for (let index = 0; index < lines.length; index += 1) {
-    if (!TARGET_ROLE.test(lines[index])) continue;
+    // Never link arbitrary neighbouring prose to a role. Structured Person
+    // records can carry any language; this fallback accepts only a role line.
+    const roleMatch = lines[index].match(TARGET_ROLE);
+    if (!roleMatch || roleMatch[0].length !== lines[index].length) continue;
     const role = lines[index].match(TARGET_ROLE)?.[0] || lines[index];
     const neighbours = [lines[index - 1], lines[index + 1]].filter(Boolean);
     const name = neighbours.find((item) =>
